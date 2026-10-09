@@ -1,5 +1,7 @@
 # República
 
+**▶ Jogue online: https://joaomasc.github.io/republica-jogo/**
+
 Simulador político e eleitoral jogável no navegador. Você cria um político cartoon, escolhe (ou funda) um partido, disputa eleições do município à Presidência, faz campanha com dinheiro, equipe, propaganda, entrevistas e debates — e, se vencer, governa um país com economia de verdade: mercado nacional, indústrias em 27 estados, comércio exterior, leis no estilo Victoria 3 (do liberalismo à economia planificada), decretos e um Congresso que tramita, engaveta, vota, veta e até abre impeachment. Cada partida conta uma história diferente.
 
 > Partidos, políticos, veículos de imprensa e institutos de pesquisa são **fictícios**. A malha territorial dos estados vem do IBGE (dado público). Os efeitos de leis e da economia são de um **modelo simplificado de jogo**, não previsões sobre o mundo real, e nenhuma ideologia é tratada como moralmente superior.
@@ -8,6 +10,7 @@ Simulador político e eleitoral jogável no navegador. Você cria um político c
 
 - [Stack](#stack)
 - [Como rodar](#como-rodar)
+- [Publicação (GitHub Pages)](#publicação-github-pages)
 - [Testes](#testes)
 - [Arquitetura](#arquitetura)
 - [Economia, leis e Congresso](#economia-leis-e-congresso)
@@ -62,6 +65,15 @@ docker compose --profile full up --build   # web em http://localhost:8080, API e
 npm run build        # web (apps/web/dist) + servidor (apps/server/dist)
 npm run preview      # serve o build do front em http://localhost:4173
 ```
+
+## Publicação (GitHub Pages)
+
+O site é estático (a IA usa textos procedurais e os saves ficam no navegador de cada jogador), então pode ser publicado no GitHub Pages:
+
+- `npm run deploy:pages` — faz o build com o caminho do repositório (`/republica-jogo/`) e envia para a branch `gh-pages`. Não depende do GitHub Actions.
+- `.github/workflows/deploy.yml` faz o mesmo automaticamente a cada push na `main` (quando o GitHub Actions estiver disponível na conta; aí basta mudar a origem do Pages para "GitHub Actions").
+
+A IA generativa e os saves na nuvem precisam do servidor (`apps/server`), que não vai junto para o Pages.
 
 ## Testes
 
