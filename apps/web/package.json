@@ -1,0 +1,34 @@
+{
+  "name": "@republica/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fontsource-variable/cinzel": "^5.3.0",
+    "@fontsource-variable/source-sans-3": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
+    "@republica/game-engine": "0.1.0",
+    "@republica/shared": "0.1.0",
+    "@republica/ui": "0.1.0",
+    "lucide-react": "^1.49.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0",
+    "recharts": "^3.10.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.2"
+  }
+}

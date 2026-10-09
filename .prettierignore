@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+package-lock.json
+data/geo
+packages/ui/src/map/brazilGeometry.generated.ts
+apps/server/src/generated

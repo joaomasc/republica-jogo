@@ -1,0 +1,14 @@
+{
+  "name": "@republica/game-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Motor de simulação política e eleitoral do República (TypeScript puro, sem dependências de UI)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --project game-engine"
+  }
+}

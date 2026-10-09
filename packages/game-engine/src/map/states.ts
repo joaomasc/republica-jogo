@@ -1,0 +1,483 @@
+import type { IssueId } from '../ideology/issues';
+import type { RegionId, StateId } from '../core/types';
+
+/**
+ * Dados estáticos das UFs.
+ *
+ * Fonte demográfica: IBGE, Censo 2022 (valores arredondados, em milhares de habitantes).
+ * Cadeiras na Câmara: distribuição vigente (513 deputados).
+ * Índices econômicos (`profile`) são APROXIMAÇÕES SIMPLIFICADAS para gameplay (0..1),
+ * e não pretendem reproduzir estatísticas oficiais.
+ */
+export interface StateProfile {
+  /** Taxa de urbanização (0..1). */
+  urbanization: number;
+  /** Peso relativo da agropecuária (0..1). */
+  agro: number;
+  /** Peso relativo da indústria (0..1). */
+  industry: number;
+  /** Peso relativo do setor público no emprego (0..1). */
+  publicSector: number;
+  /** Peso relativo do setor de tecnologia (0..1). */
+  tech: number;
+}
+
+export interface StateData {
+  id: StateId;
+  name: string;
+  region: RegionId;
+  capital: string;
+  /** População em milhares de habitantes. */
+  population: number;
+  /** População da capital em milhares. */
+  capitalPopulation: number;
+  /** Coordenadas da capital [longitude, latitude]. */
+  capitalCoords: [number, number];
+  federalSeats: number;
+  /** PIB per capita aproximado (R$ mil/ano) — usado como índice de renda. */
+  gdpPerCapita: number;
+  /** Desemprego de referência (%). */
+  unemployment: number;
+  profile: StateProfile;
+  mainIssues: IssueId[];
+  /** Código IBGE da UF (para cruzar com a malha geográfica). */
+  ibgeCode: string;
+}
+
+export const DATA_SOURCE = {
+  demographics: 'IBGE — Censo Demográfico 2022 (valores arredondados)',
+  geometry: 'IBGE — API de Malhas Territoriais v3, qualidade mínima',
+  profile: 'Índices simplificados criados para o jogo (não são estatísticas oficiais)',
+};
+
+export const STATES: Record<StateId, StateData> = {
+  AC: {
+    id: 'AC',
+    name: 'Acre',
+    region: 'norte',
+    capital: 'Rio Branco',
+    population: 830,
+    capitalPopulation: 364,
+    capitalCoords: [-67.81, -9.97],
+    federalSeats: 8,
+    gdpPerCapita: 22,
+    unemployment: 7.5,
+    profile: { urbanization: 0.73, agro: 0.4, industry: 0.15, publicSector: 0.65, tech: 0.2 },
+    mainIssues: ['healthcare', 'infrastructure', 'jobs'],
+    ibgeCode: '12',
+  },
+  AL: {
+    id: 'AL',
+    name: 'Alagoas',
+    region: 'nordeste',
+    capital: 'Maceió',
+    population: 3127,
+    capitalPopulation: 958,
+    capitalCoords: [-35.73, -9.66],
+    federalSeats: 9,
+    gdpPerCapita: 19,
+    unemployment: 9,
+    profile: { urbanization: 0.74, agro: 0.35, industry: 0.25, publicSector: 0.5, tech: 0.2 },
+    mainIssues: ['security', 'jobs', 'education'],
+    ibgeCode: '27',
+  },
+  AP: {
+    id: 'AP',
+    name: 'Amapá',
+    region: 'norte',
+    capital: 'Macapá',
+    population: 733,
+    capitalPopulation: 442,
+    capitalCoords: [-51.07, 0.03],
+    federalSeats: 8,
+    gdpPerCapita: 24,
+    unemployment: 9,
+    profile: { urbanization: 0.9, agro: 0.2, industry: 0.15, publicSector: 0.7, tech: 0.2 },
+    mainIssues: ['jobs', 'infrastructure', 'healthcare'],
+    ibgeCode: '16',
+  },
+  AM: {
+    id: 'AM',
+    name: 'Amazonas',
+    region: 'norte',
+    capital: 'Manaus',
+    population: 3941,
+    capitalPopulation: 2063,
+    capitalCoords: [-60.02, -3.12],
+    federalSeats: 8,
+    gdpPerCapita: 30,
+    unemployment: 8.5,
+    profile: { urbanization: 0.79, agro: 0.2, industry: 0.7, publicSector: 0.45, tech: 0.3 },
+    mainIssues: ['environment', 'jobs', 'infrastructure'],
+    ibgeCode: '13',
+  },
+  BA: {
+    id: 'BA',
+    name: 'Bahia',
+    region: 'nordeste',
+    capital: 'Salvador',
+    population: 14141,
+    capitalPopulation: 2418,
+    capitalCoords: [-38.5, -12.97],
+    federalSeats: 39,
+    gdpPerCapita: 22,
+    unemployment: 11,
+    profile: { urbanization: 0.72, agro: 0.4, industry: 0.45, publicSector: 0.45, tech: 0.3 },
+    mainIssues: ['jobs', 'security', 'healthcare'],
+    ibgeCode: '29',
+  },
+  CE: {
+    id: 'CE',
+    name: 'Ceará',
+    region: 'nordeste',
+    capital: 'Fortaleza',
+    population: 8794,
+    capitalPopulation: 2428,
+    capitalCoords: [-38.53, -3.73],
+    federalSeats: 22,
+    gdpPerCapita: 20,
+    unemployment: 8,
+    profile: { urbanization: 0.75, agro: 0.3, industry: 0.4, publicSector: 0.45, tech: 0.35 },
+    mainIssues: ['security', 'jobs', 'education'],
+    ibgeCode: '23',
+  },
+  DF: {
+    id: 'DF',
+    name: 'Distrito Federal',
+    region: 'centro_oeste',
+    capital: 'Brasília',
+    population: 2817,
+    capitalPopulation: 2817,
+    capitalCoords: [-47.88, -15.79],
+    federalSeats: 8,
+    gdpPerCapita: 87,
+    unemployment: 8.5,
+    profile: { urbanization: 0.96, agro: 0.05, industry: 0.1, publicSector: 0.95, tech: 0.6 },
+    mainIssues: ['transport', 'healthcare', 'corruption'],
+    ibgeCode: '53',
+  },
+  ES: {
+    id: 'ES',
+    name: 'Espírito Santo',
+    region: 'sudeste',
+    capital: 'Vitória',
+    population: 3834,
+    capitalPopulation: 323,
+    capitalCoords: [-40.34, -20.32],
+    federalSeats: 10,
+    gdpPerCapita: 42,
+    unemployment: 5.5,
+    profile: { urbanization: 0.84, agro: 0.3, industry: 0.55, publicSector: 0.4, tech: 0.35 },
+    mainIssues: ['security', 'infrastructure', 'jobs'],
+    ibgeCode: '32',
+  },
+  GO: {
+    id: 'GO',
+    name: 'Goiás',
+    region: 'centro_oeste',
+    capital: 'Goiânia',
+    population: 7056,
+    capitalPopulation: 1437,
+    capitalCoords: [-49.25, -16.68],
+    federalSeats: 17,
+    gdpPerCapita: 39,
+    unemployment: 5.5,
+    profile: { urbanization: 0.9, agro: 0.65, industry: 0.45, publicSector: 0.35, tech: 0.3 },
+    mainIssues: ['security', 'agriculture', 'healthcare'],
+    ibgeCode: '52',
+  },
+  MA: {
+    id: 'MA',
+    name: 'Maranhão',
+    region: 'nordeste',
+    capital: 'São Luís',
+    population: 6777,
+    capitalPopulation: 1037,
+    capitalCoords: [-44.3, -2.53],
+    federalSeats: 18,
+    gdpPerCapita: 16,
+    unemployment: 7.5,
+    profile: { urbanization: 0.63, agro: 0.45, industry: 0.25, publicSector: 0.5, tech: 0.15 },
+    mainIssues: ['welfare', 'healthcare', 'infrastructure'],
+    ibgeCode: '21',
+  },
+  MT: {
+    id: 'MT',
+    name: 'Mato Grosso',
+    region: 'centro_oeste',
+    capital: 'Cuiabá',
+    population: 3659,
+    capitalPopulation: 650,
+    capitalCoords: [-56.1, -15.6],
+    federalSeats: 8,
+    gdpPerCapita: 65,
+    unemployment: 3.5,
+    profile: { urbanization: 0.82, agro: 0.9, industry: 0.3, publicSector: 0.35, tech: 0.2 },
+    mainIssues: ['agriculture', 'infrastructure', 'credit'],
+    ibgeCode: '51',
+  },
+  MS: {
+    id: 'MS',
+    name: 'Mato Grosso do Sul',
+    region: 'centro_oeste',
+    capital: 'Campo Grande',
+    population: 2757,
+    capitalPopulation: 898,
+    capitalCoords: [-54.62, -20.47],
+    federalSeats: 8,
+    gdpPerCapita: 52,
+    unemployment: 4,
+    profile: { urbanization: 0.85, agro: 0.75, industry: 0.35, publicSector: 0.4, tech: 0.25 },
+    mainIssues: ['agriculture', 'security', 'infrastructure'],
+    ibgeCode: '50',
+  },
+  MG: {
+    id: 'MG',
+    name: 'Minas Gerais',
+    region: 'sudeste',
+    capital: 'Belo Horizonte',
+    population: 20539,
+    capitalPopulation: 2316,
+    capitalCoords: [-43.94, -19.92],
+    federalSeats: 53,
+    gdpPerCapita: 37,
+    unemployment: 5.5,
+    profile: { urbanization: 0.85, agro: 0.4, industry: 0.65, publicSector: 0.4, tech: 0.5 },
+    mainIssues: ['healthcare', 'jobs', 'infrastructure'],
+    ibgeCode: '31',
+  },
+  PA: {
+    id: 'PA',
+    name: 'Pará',
+    region: 'norte',
+    capital: 'Belém',
+    population: 8121,
+    capitalPopulation: 1303,
+    capitalCoords: [-48.49, -1.46],
+    federalSeats: 17,
+    gdpPerCapita: 26,
+    unemployment: 8,
+    profile: { urbanization: 0.68, agro: 0.45, industry: 0.35, publicSector: 0.45, tech: 0.2 },
+    mainIssues: ['environment', 'security', 'infrastructure'],
+    ibgeCode: '15',
+  },
+  PB: {
+    id: 'PB',
+    name: 'Paraíba',
+    region: 'nordeste',
+    capital: 'João Pessoa',
+    population: 3974,
+    capitalPopulation: 833,
+    capitalCoords: [-34.86, -7.12],
+    federalSeats: 12,
+    gdpPerCapita: 18,
+    unemployment: 8.5,
+    profile: { urbanization: 0.75, agro: 0.3, industry: 0.3, publicSector: 0.5, tech: 0.3 },
+    mainIssues: ['jobs', 'healthcare', 'education'],
+    ibgeCode: '25',
+  },
+  PR: {
+    id: 'PR',
+    name: 'Paraná',
+    region: 'sul',
+    capital: 'Curitiba',
+    population: 11444,
+    capitalPopulation: 1773,
+    capitalCoords: [-49.27, -25.43],
+    federalSeats: 30,
+    gdpPerCapita: 47,
+    unemployment: 4.5,
+    profile: { urbanization: 0.85, agro: 0.55, industry: 0.65, publicSector: 0.35, tech: 0.55 },
+    mainIssues: ['security', 'taxes', 'agriculture'],
+    ibgeCode: '41',
+  },
+  PE: {
+    id: 'PE',
+    name: 'Pernambuco',
+    region: 'nordeste',
+    capital: 'Recife',
+    population: 9058,
+    capitalPopulation: 1488,
+    capitalCoords: [-34.88, -8.05],
+    federalSeats: 25,
+    gdpPerCapita: 23,
+    unemployment: 11,
+    profile: { urbanization: 0.8, agro: 0.3, industry: 0.4, publicSector: 0.45, tech: 0.5 },
+    mainIssues: ['jobs', 'security', 'housing'],
+    ibgeCode: '26',
+  },
+  PI: {
+    id: 'PI',
+    name: 'Piauí',
+    region: 'nordeste',
+    capital: 'Teresina',
+    population: 3271,
+    capitalPopulation: 866,
+    capitalCoords: [-42.8, -5.09],
+    federalSeats: 10,
+    gdpPerCapita: 18,
+    unemployment: 8,
+    profile: { urbanization: 0.66, agro: 0.45, industry: 0.2, publicSector: 0.55, tech: 0.2 },
+    mainIssues: ['welfare', 'healthcare', 'jobs'],
+    ibgeCode: '22',
+  },
+  RJ: {
+    id: 'RJ',
+    name: 'Rio de Janeiro',
+    region: 'sudeste',
+    capital: 'Rio de Janeiro',
+    population: 16055,
+    capitalPopulation: 6211,
+    capitalCoords: [-43.17, -22.91],
+    federalSeats: 46,
+    gdpPerCapita: 54,
+    unemployment: 9,
+    profile: { urbanization: 0.97, agro: 0.05, industry: 0.55, publicSector: 0.5, tech: 0.6 },
+    mainIssues: ['security', 'corruption', 'jobs'],
+    ibgeCode: '33',
+  },
+  RN: {
+    id: 'RN',
+    name: 'Rio Grande do Norte',
+    region: 'nordeste',
+    capital: 'Natal',
+    population: 3302,
+    capitalPopulation: 751,
+    capitalCoords: [-35.21, -5.79],
+    federalSeats: 8,
+    gdpPerCapita: 22,
+    unemployment: 9,
+    profile: { urbanization: 0.78, agro: 0.3, industry: 0.3, publicSector: 0.5, tech: 0.3 },
+    mainIssues: ['security', 'jobs', 'healthcare'],
+    ibgeCode: '24',
+  },
+  RS: {
+    id: 'RS',
+    name: 'Rio Grande do Sul',
+    region: 'sul',
+    capital: 'Porto Alegre',
+    population: 10882,
+    capitalPopulation: 1332,
+    capitalCoords: [-51.23, -30.03],
+    federalSeats: 31,
+    gdpPerCapita: 50,
+    unemployment: 5,
+    profile: { urbanization: 0.85, agro: 0.5, industry: 0.7, publicSector: 0.4, tech: 0.55 },
+    mainIssues: ['infrastructure', 'pensions', 'security'],
+    ibgeCode: '43',
+  },
+  RO: {
+    id: 'RO',
+    name: 'Rondônia',
+    region: 'norte',
+    capital: 'Porto Velho',
+    population: 1581,
+    capitalPopulation: 460,
+    capitalCoords: [-63.9, -8.76],
+    federalSeats: 8,
+    gdpPerCapita: 33,
+    unemployment: 3.5,
+    profile: { urbanization: 0.74, agro: 0.55, industry: 0.25, publicSector: 0.45, tech: 0.2 },
+    mainIssues: ['agriculture', 'infrastructure', 'security'],
+    ibgeCode: '11',
+  },
+  RR: {
+    id: 'RR',
+    name: 'Roraima',
+    region: 'norte',
+    capital: 'Boa Vista',
+    population: 636,
+    capitalPopulation: 413,
+    capitalCoords: [-60.67, 2.82],
+    federalSeats: 8,
+    gdpPerCapita: 30,
+    unemployment: 6.5,
+    profile: { urbanization: 0.76, agro: 0.35, industry: 0.15, publicSector: 0.7, tech: 0.2 },
+    mainIssues: ['healthcare', 'infrastructure', 'jobs'],
+    ibgeCode: '14',
+  },
+  SC: {
+    id: 'SC',
+    name: 'Santa Catarina',
+    region: 'sul',
+    capital: 'Florianópolis',
+    population: 7610,
+    capitalPopulation: 537,
+    capitalCoords: [-48.55, -27.59],
+    federalSeats: 16,
+    gdpPerCapita: 54,
+    unemployment: 3,
+    profile: { urbanization: 0.84, agro: 0.35, industry: 0.75, publicSector: 0.3, tech: 0.7 },
+    mainIssues: ['infrastructure', 'taxes', 'security'],
+    ibgeCode: '42',
+  },
+  SP: {
+    id: 'SP',
+    name: 'São Paulo',
+    region: 'sudeste',
+    capital: 'São Paulo',
+    population: 44411,
+    capitalPopulation: 11451,
+    capitalCoords: [-46.63, -23.55],
+    federalSeats: 70,
+    gdpPerCapita: 58,
+    unemployment: 6.5,
+    profile: { urbanization: 0.96, agro: 0.2, industry: 0.85, publicSector: 0.3, tech: 0.8 },
+    mainIssues: ['security', 'housing', 'transport'],
+    ibgeCode: '35',
+  },
+  SE: {
+    id: 'SE',
+    name: 'Sergipe',
+    region: 'nordeste',
+    capital: 'Aracaju',
+    population: 2210,
+    capitalPopulation: 602,
+    capitalCoords: [-37.07, -10.91],
+    federalSeats: 8,
+    gdpPerCapita: 21,
+    unemployment: 9,
+    profile: { urbanization: 0.74, agro: 0.3, industry: 0.35, publicSector: 0.5, tech: 0.25 },
+    mainIssues: ['jobs', 'security', 'healthcare'],
+    ibgeCode: '28',
+  },
+  TO: {
+    id: 'TO',
+    name: 'Tocantins',
+    region: 'norte',
+    capital: 'Palmas',
+    population: 1511,
+    capitalPopulation: 302,
+    capitalCoords: [-48.33, -10.18],
+    federalSeats: 8,
+    gdpPerCapita: 32,
+    unemployment: 6.5,
+    profile: { urbanization: 0.79, agro: 0.6, industry: 0.2, publicSector: 0.5, tech: 0.2 },
+    mainIssues: ['infrastructure', 'agriculture', 'healthcare'],
+    ibgeCode: '17',
+  },
+};
+
+export const STATE_LIST: StateData[] = Object.values(STATES);
+
+export function getState(id: StateId): StateData {
+  return STATES[id];
+}
+
+/** Assembleia Legislativa: 3x a bancada federal até 36; acima de 12 federais, 36 + (federais - 12). */
+export function stateAssemblySeats(stateId: StateId): number {
+  const federal = STATES[stateId].federalSeats;
+  return federal <= 12 ? federal * 3 : 36 + (federal - 12);
+}
+
+/** Câmara municipal da capital — faixas simplificadas por população. */
+export function cityCouncilSeats(stateId: StateId): number {
+  const pop = STATES[stateId].capitalPopulation;
+  if (pop >= 8000) return 55;
+  if (pop >= 5000) return 51;
+  if (pop >= 2000) return 43;
+  if (pop >= 1000) return 39;
+  if (pop >= 600) return 29;
+  if (pop >= 300) return 23;
+  return 21;
+}

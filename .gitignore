@@ -1,0 +1,20 @@
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+.env
+.env.local
+apps/server/src/generated/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.DS_Store
+Thumbs.db
+*.log
+
+# Arquivos locais do editor/assistente e capturas soltas
+.claude/
+undefined/

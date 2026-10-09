@@ -1,0 +1,80 @@
+// Schema do República (PostgreSQL via Prisma 7).
+// A URL do banco fica em prisma.config.ts (variável DATABASE_URL).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Partida salva. O estado completo é JSON (o motor garante que é serializável).
+model SaveGame {
+  id          String   @id @default(cuid())
+  slotId      String   @unique
+  name        String
+  playerName  String
+  officeName  String
+  phase       String
+  difficulty  String
+  saveVersion Int
+  summary     Json
+  state       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+/// Origem de um dado de referência: fictício (cenário padrão) ou histórico (fonte e data obrigatórias na carga).
+enum DataKind {
+  FICTIONAL
+  HISTORICAL
+}
+
+/// Partido de referência (permite carregar futuramente partidos reais, separados dos fictícios).
+model ReferenceParty {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  acronym    String
+  color      String
+  ideology   Json
+  kind       DataKind @default(FICTIONAL)
+  source     String?
+  sourceDate DateTime?
+  notes      String?
+  politicians ReferencePolitician[]
+  createdAt  DateTime @default(now())
+}
+
+/// Político de referência (histórico ou fictício).
+model ReferencePolitician {
+  id         String          @id @default(cuid())
+  name       String
+  partyId    String?
+  party      ReferenceParty? @relation(fields: [partyId], references: [id])
+  attributes Json?
+  kind       DataKind        @default(FICTIONAL)
+  source     String?
+  sourceDate DateTime?
+  createdAt  DateTime        @default(now())
+}
+
+/// Resultado eleitoral de referência (ex.: dados históricos do TSE no futuro), sempre com fonte.
+model ReferenceElectionResult {
+  id         String   @id @default(cuid())
+  year       Int
+  office     String
+  stateId    String?
+  round      Int      @default(1)
+  results    Json
+  kind       DataKind @default(HISTORICAL)
+  source     String
+  sourceDate DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([year, office])
+}

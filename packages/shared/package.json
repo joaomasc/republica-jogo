@@ -1,0 +1,16 @@
+{
+  "name": "@republica/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contratos compartilhados entre cliente e servidor (rotas, DTOs da API)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@republica/game-engine": "0.1.0"
+  }
+}
