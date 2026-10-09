@@ -1,4 +1,5 @@
 import { GameConstants } from '../config/constants';
+import { processStreetMonth, setRemovalHandler } from '../nation/revolt';
 import { addMonths, firstSundayOfOctober, makeDate, addDays, yearOf } from '../core/date';
 import { approach, clamp, clamp100, round, sum } from '../core/math';
 import { hashSeed, Rng, withRng } from '../core/rng';
@@ -224,6 +225,7 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
   processLawsMonthly(state, rng);
   processLegislatureMonth(state, rng);
   nationalMonthlyTick(state, rng);
+  if (state.government) processStreetMonth(state);
   driftRelations(state);
   driftParties(state.parties, rng, 30);
   player.scandal = clamp(player.scandal * 0.93, 0, 100);
@@ -327,3 +329,8 @@ export function endTerm(state: GameState): TermEvaluation | null {
 export function termYear(state: GameState): number {
   return yearOf(state.date);
 }
+
+// Cassação por revolta popular (governador/prefeito) encerra o mandato.
+setRemovalHandler((state) => {
+  endTerm(state);
+});

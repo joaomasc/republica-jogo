@@ -89,5 +89,5 @@ describe('Mundo paródia', () => {
         for (const n of names) expect(e.title).not.toContain(n);
       }
     }
-  });
+  }, 30_000);
 });

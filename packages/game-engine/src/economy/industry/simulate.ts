@@ -1,4 +1,5 @@
 import { approach, clamp } from '../../core/math';
+import { worksUnemploymentRelief } from '../works/works';
 import { type Rng } from '../../core/rng';
 import { STATE_IDS, type StateId } from '../../core/types';
 import { popId } from '../../population/population';
@@ -784,7 +785,7 @@ export function laborTargets(
   const phi = clamp(K.jobs.informalAbsorption + (m.informality ?? 0), K.labor.informalMin, K.labor.informalMax);
   const unemployed0 = people0.unemployed ?? 0;
   const shock = ((state.industry.unemploymentShock ?? 0) / 100) * laborForce;
-  let unemployed = unemployed0 + (1 - phi) * (slack - slack0) + shock;
+  let unemployed = unemployed0 + (1 - phi) * (slack - slack0) + shock - worksUnemploymentRelief(state, stateId);
   unemployed = clamp(unemployed, unemployed0 * K.labor.minUnemploymentShare, slack);
   const workersExtra = slack - unemployed;
   raw.workers = (raw.workers ?? 0) + workersExtra;

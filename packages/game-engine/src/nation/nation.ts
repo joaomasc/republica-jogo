@@ -1,4 +1,5 @@
 import { addMonths, diffMonths } from '../core/date';
+import { promisesOnLawChanged } from '../government/promises';
 import { approach, clamp100 } from '../core/math';
 import type { Rng } from '../core/rng';
 import { isFederalExecutive } from '../executive/executive';
@@ -183,6 +184,7 @@ function applyRegimeChange(state: GameState, special: LawSpecial): boolean {
 export function onLawEnacted(state: GameState, categoryId: string, optionId: string): void {
   const option = getLawOption(categoryId, optionId);
   if (!option) return;
+  promisesOnLawChanged(state, categoryId, optionId);
   const nation = state.nation;
   const before = nation.identity;
 

@@ -12,7 +12,7 @@ import { InterviewModal } from '../media/InterviewModal';
 import { WeekModal } from '../week/WeekModal';
 import { Dock } from './Dock';
 import { LAYOUT, panelWidthPx, useViewportWidth } from './layout';
-import { panelSegment, routeMeta } from './navigation';
+import { panelSegment, routeMeta, scopedItem } from './navigation';
 import { Outliner } from './Outliner';
 import { PanelHost } from './PanelHost';
 import { TimeControls } from './TimeControls';
@@ -44,7 +44,7 @@ function ActivePanel({ viewport }: { viewport: number }) {
   const panelWide = useUi((s) => s.panelWide);
   const segment = panelSegment(location.pathname);
   if (segment === null) return null;
-  const meta = routeMeta(segment);
+  const meta = scopedItem(routeMeta(segment), game);
   const kind = meta.width === 'narrow' ? 'narrow' : panelWide ? 'wide' : (meta.width ?? 'normal');
   const regionName = regionMatch
     ? mapUnits(game).find((u) => u.id === regionMatch.params.unitId)?.name

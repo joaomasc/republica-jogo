@@ -6,15 +6,15 @@ import {
   getLawOption,
   OFFICES,
   promiseOverview,
-  promiseStatusLabel,
 } from '@republica/game-engine';
-import { Badge, Button, EmptyState, Panel, PartyEmblem, StatTile } from '@republica/ui';
+import { Button, EmptyState, Panel, PartyEmblem, StatTile } from '@republica/ui';
 import { useNavigate } from 'react-router';
 import { LineChartBox } from '../../components/charts';
 import { billions, num } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
+import { PromiseRow } from './PromiseRow';
+import { StreetPanel } from './StreetPanel';
 
-const STATUS_TONE = { pending: 'info', fulfilled: 'good', partial: 'warn', broken: 'bad' } as const;
 
 function ApprovalGauge({ value }: { value: number }) {
   const angle = (value / 100) * 180;
@@ -83,6 +83,7 @@ export function GovernmentView() {
 
   return (
     <div className="space-y-3">
+      <StreetPanel />
       <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">
         <Panel title={`${office.name} — ${gov.jurisdiction.label}`} icon={office.icon}>
           <div className="flex flex-col items-center">
@@ -230,23 +231,7 @@ export function GovernmentView() {
           ) : (
             <ul className="space-y-1.5">
               {promises.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-ink-900 px-2.5 py-1.5 text-sm"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate">{p.title}</span>
-                    {p.status === 'pending' && p.projected !== 'pending' && (
-                      <span className="text-[11px] text-muted">
-                        Se o mandato acabasse hoje:{' '}
-                        {promiseStatusLabel(p.projected as 'pending').toLowerCase()}
-                      </span>
-                    )}
-                  </span>
-                  <Badge tone={STATUS_TONE[p.status as keyof typeof STATUS_TONE] ?? 'info'}>
-                    {promiseStatusLabel(p.status as 'pending')}
-                  </Badge>
-                </li>
+                <PromiseRow key={p.id} p={p} />
               ))}
             </ul>
           )}

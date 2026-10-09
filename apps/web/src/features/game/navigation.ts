@@ -1,4 +1,4 @@
-import type { GamePhase, GameState } from '@republica/game-engine';
+import { localScope, type GamePhase, type GameState, type OfficeLevel } from '@republica/game-engine';
 
 /** Largura do painel aberto sobre o mapa. */
 export type PanelWidth = 'narrow' | 'normal' | 'wide';
@@ -11,6 +11,8 @@ export interface NavItem {
   phases?: GamePhase[];
   executiveOnly?: boolean;
   width?: PanelWidth;
+  /** Só aparece para quem governa nestas esferas (fora do mandato, aparece sempre). */
+  levels?: OfficeLevel[];
 }
 
 export interface NavGroup {
@@ -39,6 +41,7 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: 'stamp',
         phases: ['governing'],
         executiveOnly: true,
+        levels: ['federal'],
       },
       {
         path: 'orcamento',
@@ -54,9 +57,10 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Economia',
     items: [
       { path: 'economia', label: 'Economia', icon: 'chart-line' },
-      { path: 'mercado', label: 'Mercado nacional', icon: 'store', width: 'wide' },
-      { path: 'industria', label: 'Indústria e obras', icon: 'factory', width: 'wide' },
-      { path: 'comercio', label: 'Comércio exterior', icon: 'ship', width: 'wide' },
+      { path: 'mercado', label: 'Mercado nacional', icon: 'store', width: 'wide', levels: ['estadual', 'federal'] },
+      { path: 'obras', label: 'Obras públicas', icon: 'hard-hat', width: 'wide' },
+      { path: 'industria', label: 'Indústria', icon: 'factory', width: 'wide', levels: ['estadual', 'federal'] },
+      { path: 'comercio', label: 'Comércio exterior', icon: 'ship', width: 'wide', levels: ['federal'] },
     ],
   },
   {
@@ -105,10 +109,22 @@ const EXTRA_ROUTES: NavItem[] = [
 ];
 
 export function isNavItemVisible(item: NavItem, game: GameState): boolean {
+  const level = game.government?.jurisdiction?.level;
   return (
     (!item.phases || item.phases.includes(game.phase)) &&
-    (!item.executiveOnly || game.government?.branch === 'executive')
+    (!item.executiveOnly || game.government?.branch === 'executive') &&
+    (!item.levels || !level || item.levels.includes(level))
   );
+}
+
+/** Rótulos que dependem do cargo: o prefeito vê "Economia de Salvador", o governador "da Bahia". */
+export function scopedItem(item: NavItem, game: GameState): NavItem {
+  const scope = localScope(game);
+  if (scope.kind === 'country') return item;
+  if (item.path === 'economia') return { ...item, label: `Economia ${scope.ofName}` };
+  if (item.path === 'obras') return { ...item, label: `Obras ${scope.ofName}` };
+  if (item.path === 'nacao') return { ...item, label: 'Brasil (contexto nacional)' };
+  return item;
 }
 
 /** Metadados do painel para o primeiro segmento da rota (`/jogo/<segmento>`). */

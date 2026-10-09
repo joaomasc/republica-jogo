@@ -1,4 +1,5 @@
 import { GameConstants } from '../config/constants';
+import { processPublicWorksMonth } from './works/works';
 import { approach, clamp, round } from '../core/math';
 import type { Rng } from '../core/rng';
 import { STATE_IDS } from '../core/types';
@@ -143,6 +144,7 @@ function updateDebtAndConfidence(state: GameState, shocks: ReturnType<typeof act
  * confiança seguem as regras macro. Sem o motor (estado sem calibração), usa o modelo agregado.
  */
 export function updateEconomy(state: GameState, rng: Rng): void {
+  processPublicWorksMonth(state);
   const ind = state.industry;
   const prevOutput = ind?.stats.realOutput ?? 0;
   runIndustryMonth(state, rng);

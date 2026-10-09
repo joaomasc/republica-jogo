@@ -66,4 +66,6 @@ export interface NationState {
   objectives: ScenarioObjective[];
   /** Linha do tempo de marcos nacionais (mudança de regime, grandes reformas, crises). */
   milestones: { date: IsoDate; title: string; description: string }[];
+  /** Clima nas ruas no lugar que o jogador governa (ver nation/revolt.ts). */
+  street?: unknown;
 }

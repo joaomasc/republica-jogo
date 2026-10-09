@@ -1,15 +1,14 @@
 import {
-  BUILDINGS,
   DECREES,
   formatDateShort,
   getLawOption,
   isBillActive,
   pendingDecisions,
-  STATES,
   type Bill,
   type BillStatus,
   type GameState,
   type PendingLegislativeDecision,
+  worksOverview,
 } from '@republica/game-engine';
 import { Bar, cn, Icon, Tooltip } from '@republica/ui';
 import type { ReactNode } from 'react';
@@ -40,13 +39,6 @@ const DECISION_ICON: Record<PendingLegislativeDecision['kind'], string> = {
   impeachment_vote: 'gavel',
   impeachment_defense: 'shield',
 };
-
-const OWNER_LABEL = {
-  state: 'Estatal',
-  private: 'Privada',
-  cooperative: 'Cooperativa',
-  foreign: 'Estrangeira',
-} as const;
 
 const ALERT_TONE = {
   info: 'text-info',
@@ -244,7 +236,8 @@ export function Outliner({ forceCollapsed = false }: { forceCollapsed?: boolean 
       ? game.nation.federalLaws.bills.filter(isBillActive).map((b) => ({ bill: b, federal: true }))
       : []),
   ].sort((a, b) => a.bill.nextDate.localeCompare(b.bill.nextDate));
-  const works = game.industry?.queue ?? [];
+  const worksOv = worksOverview(game);
+  const works = [...worksOv.mine, ...worksOv.local];
   const decrees = game.executive?.decrees ?? [];
   const unread = game.alerts.filter((a) => !a.read);
   const inRace =
@@ -365,22 +358,19 @@ export function Outliner({ forceCollapsed = false }: { forceCollapsed?: boolean 
         {works.length > 0 && (
           <Section id="works" title="Obras" icon="construction" count={works.length}>
             <div className="space-y-1">
-              {works.slice(0, 5).map((w) => {
-                const def = BUILDINGS[w.buildingId];
-                const progress = w.totalPoints > 0 ? w.progress / w.totalPoints : 0;
-                return (
-                  <Row
-                    key={w.id}
-                    icon={def?.icon ?? 'construction'}
-                    title={def?.name ?? w.buildingId}
-                    sub={`${STATES[w.stateId]?.name ?? w.stateId} · ${OWNER_LABEL[w.owner] ?? w.owner}`}
-                    right={`${Math.round(progress * 100)}%`}
-                    onClick={() => navigate('/jogo/industria')}
-                  >
-                    <Bar value={progress} height={4} className="mt-1" />
-                  </Row>
-                );
-              })}
+              {works.slice(0, 5).map((w) => (
+                <Row
+                  key={w.id}
+                  icon={w.icon}
+                  iconClass={w.player ? 'text-gold-400' : undefined}
+                  title={w.name}
+                  sub={`${w.player ? 'Sua obra' : w.sponsor} · ${w.stateName}`}
+                  right={w.status === 'stalled' ? 'parada' : `${Math.round(w.progress * 100)}%`}
+                  onClick={() => navigate('/jogo/obras')}
+                >
+                  <Bar value={w.progress} height={4} className="mt-1" />
+                </Row>
+              ))}
               {works.length > 5 && (
                 <div className="px-2 text-[11px] text-muted">e mais {works.length - 5} obra(s)…</div>
               )}

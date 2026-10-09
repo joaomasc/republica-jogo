@@ -4,6 +4,7 @@ import {
   budgetTotals,
   GameConstants,
   ISSUE_DEFINITIONS,
+  playerWorksAnnualCost,
   serviceQuality,
 } from '@republica/game-engine';
 import { Badge, EmptyState, Icon, Panel, Slider, StatTile } from '@republica/ui';
@@ -17,6 +18,7 @@ export function BudgetView() {
   if (!budget || game.government?.branch !== 'executive')
     return <EmptyState icon="receipt" title="Orçamento é atribuição do Executivo" />;
   const t = budgetTotals(budget);
+  const works = playerWorksAnnualCost(game);
   const max = GameConstants.budget.maxAdjustment;
 
   return (
@@ -49,6 +51,13 @@ export function BudgetView() {
           value={billions(budget.amendmentsSpent)}
         />
       </div>
+      {works > 0 && (
+        <p className="rounded-lg bg-ink-900 px-3 py-2 text-sm">
+          <Icon name="hard-hat" size={14} className="mr-1 inline text-gold-400" />
+          Obras públicas em andamento consomem <b>{billions(works)}</b> por ano do caixa, além das despesas acima. Se o caixa
+          ficar muito negativo, as obras param.
+        </p>
+      )}
       <Panel title="Alocação de despesas" icon="receipt">
         <p className="mb-3 text-sm text-muted">
           Cada área pode variar ±{Math.round(max * 100)}% da referência. Mais verba melhora o

@@ -424,6 +424,14 @@ export interface IndustryState {
   shockLevel?: number;
   /** Efeito acumulado dos choques de desemprego dos eventos (p.p.). */
   unemploymentShock?: number;
+  /** Obras públicas (prefeituras, estados, União) — ver economy/works. */
+  works?: unknown[];
+  /** Empregos em obras públicas em andamento, por estado. */
+  worksJobs?: Partial<Record<StateId, number>>;
+  /** Empregos permanentes deixados por obras públicas inauguradas, por estado. */
+  worksPermanent?: Partial<Record<StateId, number>>;
+  /** Ganho de qualidade de serviço por esfera ("municipal:BA", "estadual:SP", "federal"). */
+  worksService?: Record<string, Partial<Record<string, number>>>;
   /** Índice salarial por estado (aperto do mercado de trabalho e produtividade). */
   wageIndex?: Record<StateId, number>;
   /** Disponibilidade de mão de obra por estado (1 = sem falta). */

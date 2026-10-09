@@ -1027,6 +1027,11 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
             como o governo cai.
           </li>
           <li>
+            <b>Promessas</b>: uma promessa de lei vira “Cumprida” assim que a lei é aprovada no seu mandato, seja quem
+            for o autor. Promessa de lei de outra esfera (ex.: prefeito prometendo lei federal) conta quando a outra esfera
+            aprova, valendo menos credibilidade. Se a lei for revogada depois, é recuo e custa credibilidade.
+          </li>
+          <li>
             <b>Bandeiras</b>: na criação do personagem (e ao fundar um partido) você escolhe até 8 leis
             que defende. Eleitores que ganham com elas gostam mais de você, os que perdem gostam menos;
             grupos de interesse reagem; partidos votam pelas próprias bandeiras no Congresso. No governo,
@@ -1090,6 +1095,72 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
         </Ul>
         <Tip>A oposição também manobra: projetos seus com muita gente contra podem sofrer obstrução e pedidos de vista. Urgência protege contra isso.</Tip>
         <Tip>O Congresso também propõe leis sozinho: bancadas e partidos apresentam projetos o tempo todo.</Tip>
+      </>
+    ),
+  },
+  {
+    id: 'obras',
+    title: 'Obras públicas e emprego',
+    icon: 'hard-hat',
+    keywords: 'obras públicas prefeitura governo estadual federal creche ubs hospital rodovia metrô distrito polo industrial emprego desemprego inauguração',
+    body: () => (
+      <>
+        <P>
+          Cada esfera tem as suas obras: a prefeitura faz creches, postos de saúde, saneamento, asfalto, moradia, BRT e
+          distrito industrial; o governo estadual faz hospitais regionais, escolas técnicas, rodovias, segurança, metrô e
+          polos industriais; a União faz ferrovias, universidades, portos e programas nacionais de moradia.
+        </P>
+        <Ul>
+          <li>
+            <b>Emprego</b>: enquanto anda, a obra contrata trabalhadores da construção (cerca de 12 mil por R$ 1 bi/ano) e gera
+            empregos indiretos no comércio e serviços. Ao inaugurar, deixa empregos permanentes. Fábricas e empresas que você
+            manda construir também empregam durante a obra.
+          </li>
+          <li>
+            <b>Serviços</b>: obras concluídas melhoram a qualidade do serviço da sua esfera (saúde, educação, transporte…),
+            o que agrada quem prioriza o tema.
+          </li>
+          <li>
+            <b>Indústria</b>: prefeituras não abrem fábricas — o distrito industrial atrai empresas privadas. Governos
+            estaduais e a União podem fazer polos industriais e também mandar construir edifícios.
+          </li>
+          <li>
+            <b>Dinheiro</b>: a obra é paga pelo orçamento da sua esfera ao longo do prazo (até 30% da receita por ano em
+            obras). Com o caixa muito negativo, as obras param — e a imprensa nota.
+          </li>
+          <li>A tela Obras separa as suas obras, as de outros governos no seu lugar e as do país.</li>
+        </Ul>
+      </>
+    ),
+  },
+  {
+    id: 'ruas',
+    title: 'Clima nas ruas e revolta popular',
+    icon: 'flame',
+    keywords: 'revolta protestos manifestações greve geral ocupações bloqueios repressão negociação cassação impeachment ruas',
+    body: () => (
+      <>
+        <P>
+          O lugar que você governa tem uma temperatura nas ruas. Ela sobe com desemprego, inflação, serviços ruins,
+          promessas não cumpridas, escândalos e impopularidade, e cai com emprego, obras entregues e diálogo. O Gabinete
+          mostra cada causa e a pauta dos manifestantes.
+        </P>
+        <Ul>
+          <li>
+            <b>Escada</b>: Calma → Insatisfação → Protestos → Grandes manifestações → Ocupações e bloqueios → Greve geral →
+            Revolta. Sobe no máximo um degrau por mês, e cada degrau custa aprovação, capital político, legitimidade e
+            confiança na economia.
+          </li>
+          <li>
+            <b>Respostas</b>: pronunciamento, mesa de negociação, atender a pauta, reprimir (acalma na hora, mas radicaliza e
+            pode sair pela culatra) e, só para o presidente, estado de emergência.
+          </li>
+          <li>
+            <b>No topo</b>: o presidente enfrenta impeachment; governadores e prefeitos, uma votação de cassação na
+            Assembleia ou na Câmara Municipal (2/3). Ruas mais calmas e base fiel salvam o mandato.
+          </li>
+        </Ul>
+        <Tip>As respostas só ganham tempo. O jeito duradouro de acalmar as ruas é resolver as causas.</Tip>
       </>
     ),
   },

@@ -189,3 +189,8 @@ export * from './scenarios/public';
 export { deepClone } from './core/clone';
 export { previewDecreeImpact, previewLawImpact, simulateImpact, type ImpactReport, type ImpactRow } from './simulation/impact';
 export * from './laws/platform';
+export * from './economy/works/works';
+export * from './economy/works/works.data';
+export { localScope, type LocalScope } from './simulation/localScope';
+export { stateOfName } from './map/stateNames';
+export { STREET_STAGES, streetView, streetFactors, type StreetResponse, type StreetView, type StreetFactor, type StreetResponseView } from './nation/revolt';

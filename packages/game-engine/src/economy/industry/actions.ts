@@ -22,6 +22,8 @@ function executiveScope(state: GameState): { level: 'federal' | 'estadual' | 'mu
 export function canOrderConstruction(state: GameState, stateId: StateId, buildingId: BuildingId): string | null {
   const scope = executiveScope(state);
   if (!scope) return 'Só o chefe do Executivo manda construir obras públicas.';
+  if (scope.level === 'municipal')
+    return 'Prefeituras não abrem fábricas: construa um distrito industrial (Obras públicas) para atrair empresas.';
   if (scope.level !== 'federal' && scope.stateId !== stateId) return 'Sua esfera só pode investir no próprio estado.';
   const def = BUILDINGS[buildingId];
   if (!def.buildableBy.includes('state')) return 'O Estado não constrói este tipo de edifício.';

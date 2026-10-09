@@ -1,4 +1,5 @@
 import { addMonths, makeDate, yearOf } from '../core/date';
+import { localScope } from '../simulation/localScope';
 import { clamp01, mean, round } from '../core/math';
 import { addHistory } from '../history/history';
 import { federalLaws } from '../laws/federal';
@@ -99,7 +100,8 @@ export function measureObjective(
     case 'gdp_growth_avg':
       return averageGrowth(state);
     case 'unemployment_max':
-      return state.economy.unemployment;
+      // Desemprego do lugar governado (cidade, estado ou país).
+      return localScope(state).unemployment;
     case 'inflation_max':
       return state.economy.inflation;
     case 'approval_min':

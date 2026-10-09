@@ -3,7 +3,7 @@ import { cn, Icon, Tooltip } from '@republica/ui';
 import { Fragment } from 'react';
 import { NavLink } from 'react-router';
 import { useGameState } from '../../store/gameStore';
-import { isNavItemVisible, MAP_ITEM, NAV_GROUPS, type NavItem } from './navigation';
+import { isNavItemVisible, MAP_ITEM, NAV_GROUPS, scopedItem, type NavItem } from './navigation';
 
 function DockLink({
   item,
@@ -106,7 +106,7 @@ export function Dock() {
               return (
                 <li key={item.path} className="w-full">
                   <DockLink
-                    item={item}
+                    item={scopedItem(item, game)}
                     group={g.title}
                     {...(b && b.n > 0 ? { badge: b.n, badgeTone: b.tone } : {})}
                   />

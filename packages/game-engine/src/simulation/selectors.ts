@@ -7,7 +7,7 @@ import { OFFICES } from '../election/offices';
 import { latestPoll } from '../election/polls';
 import type { ElectoralUnit, Poll } from '../election/types';
 import { computeIntentions, OTHERS_KEY, type IntentionSnapshot } from '../election/voterModel';
-import { evaluatePromise } from '../government/promises';
+import { evaluatePromise, promiseInOwnSphere } from '../government/promises';
 import { IDEOLOGY_AXES, type IdeologyVector } from '../ideology/axes';
 import { averageIdeology, ideologyExtremity } from '../ideology/ideology';
 import { ISSUES, topIssues, type IssueId } from '../ideology/issues';
@@ -532,14 +532,25 @@ export function popTypeSummaries(state: GameState): PopTypeSummary[] {
   });
 }
 
-export function promiseOverview(
-  state: GameState,
-): { id: string; title: string; status: string; projected: string }[] {
+export function promiseOverview(state: GameState): {
+  id: string;
+  title: string;
+  status: string;
+  projected: string;
+  /** Último fato (lei aprovada, projeto apresentado, recuo). */
+  note: string | null;
+  /** A promessa depende de uma lei que outra esfera faz (ex.: prefeito prometendo lei federal). */
+  otherSphere: boolean;
+  reverted: boolean;
+}[] {
   return state.promises.map((p) => ({
     id: p.id,
     title: p.title,
     status: p.status,
     projected: p.status === 'pending' && state.government ? evaluatePromise(state, p) : p.status,
+    note: p.note ?? null,
+    otherSphere: (p.target.kind === 'law' || p.target.kind === 'noLaw') && !promiseInOwnSphere(state, p.target.categoryId),
+    reverted: !!p.reverted,
   }));
 }
 

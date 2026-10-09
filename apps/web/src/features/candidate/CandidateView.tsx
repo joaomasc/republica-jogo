@@ -8,7 +8,6 @@ import {
   getBackground,
   OFFICES,
   promiseOverview,
-  promiseStatusLabel,
   STATES,
 } from '@republica/game-engine';
 import {
@@ -27,6 +26,7 @@ import { formatNumber } from '../../lib/format';
 import { useState } from 'react';
 import { useGame, useGameState } from '../../store/gameStore';
 import { PlatformChips, PlatformPicker } from '../platform/PlatformPicker';
+import { PromiseRow } from '../government/PromiseRow';
 
 /** Bandeiras do jogador, com edição (trocar ou abandonar custa credibilidade). */
 function PlatformPanel() {
@@ -83,7 +83,6 @@ function PlatformPanel() {
   );
 }
 
-const STATUS_TONE = { pending: 'info', fulfilled: 'good', partial: 'warn', broken: 'bad' } as const;
 
 export function CandidateView() {
   const game = useGameState();
@@ -191,22 +190,7 @@ export function CandidateView() {
           ) : (
             <ul className="space-y-1.5">
               {promises.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-ink-900 px-3 py-1.5 text-sm"
-                >
-                  <span>{p.title}</span>
-                  <span className="flex items-center gap-1">
-                    <Badge tone={STATUS_TONE[p.status as keyof typeof STATUS_TONE] ?? 'info'}>
-                      {promiseStatusLabel(p.status as 'pending')}
-                    </Badge>
-                    {p.status === 'pending' && p.projected !== 'pending' && (
-                      <Badge tone={STATUS_TONE[p.projected as keyof typeof STATUS_TONE] ?? 'info'}>
-                        hoje: {promiseStatusLabel(p.projected as 'pending')}
-                      </Badge>
-                    )}
-                  </span>
-                </li>
+                <PromiseRow key={p.id} p={p} />
               ))}
             </ul>
           )}

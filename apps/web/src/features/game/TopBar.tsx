@@ -7,6 +7,8 @@ import {
   PARODY_DISCLAIMER,
   topBarMetrics,
   type GameState,
+  localScope,
+  streetView,
 } from '@republica/game-engine';
 import { Badge, cn, Icon, Tooltip, type Tone } from '@republica/ui';
 import type { ReactNode } from 'react';
@@ -176,6 +178,9 @@ export function TopBar() {
   const officialName = identity?.officialName ?? 'República Federativa do Brasil';
   const systemLabel = identity?.systemLabel ?? '';
   const e = game.economy;
+  const scope = localScope(game);
+  const local = scope.kind !== 'country';
+  const street = streetView(game);
   const prev = e.history.length >= 2 ? e.history[e.history.length - 2] : undefined;
   const gov = game.government;
   const budget = gov?.budget ?? null;
@@ -256,16 +261,28 @@ export function TopBar() {
       <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-1 [mask-image:linear-gradient(to_right,#000_calc(100%-14px),transparent)]">
         <Reading
           icon="landmark"
-          label="PIB"
-          value={`R$ ${num(e.gdp / 1000)} tri`}
+          label={local ? `PIB ${scope.ofName}` : 'PIB'}
+          value={local ? `R$ ${num(scope.gdp, 0)} bi` : `R$ ${num(e.gdp / 1000)} tri`}
           sub={
-            <span className={cn('text-[11px] font-semibold tabular-nums', e.growth >= 0 ? 'text-good' : 'text-bad')}>
-              {signed(e.growth)}%
+            <span className={cn('text-[11px] font-semibold tabular-nums', scope.growth >= 0 ? 'text-good' : 'text-bad')}>
+              {signed(scope.growth)}%
             </span>
           }
-          hint="Produto Interno Bruto nominal anual e crescimento real anualizado."
+          hint={
+            local
+              ? `PIB anual ${scope.estimated ? 'estimado ' : ''}${scope.ofName} e crescimento. Brasil: R$ ${num(e.gdp / 1000)} tri.`
+              : 'Produto Interno Bruto nominal anual e crescimento real anualizado.'
+          }
           details={
             <>
+              {local && (
+                <div className="flex justify-between gap-3">
+                  <span>Brasil</span>
+                  <span className="font-semibold tabular-nums">
+                    R$ {num(e.gdp / 1000)} tri · {signed(e.growth)}%
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between gap-3">
                 <span>Crescimento</span>
                 <span className="font-semibold tabular-nums">{signed(e.growth)}% a.a.</span>
@@ -283,19 +300,56 @@ export function TopBar() {
           label="Inflação"
           value={`${num(e.inflation)}%`}
           tone={e.inflation > 6 ? 'bad' : e.inflation > 4.5 ? 'warn' : 'neutral'}
-          hint="Inflação anual (IPCA do modelo)."
+          hint={local ? 'Inflação anual do Brasil (a mesma para todo o país).' : 'Inflação anual (IPCA do modelo).'}
           details={prev && <DeltaLine label="Variação no mês" delta={e.inflation - prev.inflation} unit=" p.p." invert />}
         />
         <Reading
           icon="user-x"
-          label="Desemprego"
-          value={`${num(e.unemployment)}%`}
-          tone={e.unemployment > 11 ? 'bad' : e.unemployment > 8 ? 'warn' : 'neutral'}
-          hint="Desempregados sobre a força de trabalho."
+          label={local ? `Desemprego ${scope.ofName}` : 'Desemprego'}
+          value={`${num(local ? scope.unemployment : e.unemployment)}%`}
+          tone={(local ? scope.unemployment : e.unemployment) > 11 ? 'bad' : (local ? scope.unemployment : e.unemployment) > 8 ? 'warn' : 'neutral'}
+          hint={
+            local
+              ? `Desempregados sobre a força de trabalho ${scope.ofName}${scope.estimated ? ' (estimado a partir do estado; suas obras contam aqui)' : ''}.`
+              : 'Desempregados sobre a força de trabalho.'
+          }
           details={
-            prev && <DeltaLine label="Variação no mês" delta={e.unemployment - prev.unemployment} unit=" p.p." invert />
+            <>
+              {local && (
+                <>
+                  <div className="flex justify-between gap-3">
+                    <span>No início do jogo</span>
+                    <span className="font-semibold tabular-nums">{num(scope.unemployment0)}%</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span>Brasil</span>
+                    <span className="font-semibold tabular-nums">{num(e.unemployment)}%</span>
+                  </div>
+                </>
+              )}
+              {!local && prev && <DeltaLine label="Variação no mês" delta={e.unemployment - prev.unemployment} unit=" p.p." invert />}
+            </>
           }
         />
+        {street.active && (
+          <Reading
+            icon="flame"
+            label="Ruas"
+            value={street.stageName}
+            tone={street.stage >= 4 ? 'bad' : street.stage >= 2 ? 'warn' : 'neutral'}
+            hint={`Clima nas ruas ${local ? scope.ofName : 'do país'}: ${street.heat}/100. Causas e respostas no Gabinete.`}
+            details={
+              <>
+                {street.factors.slice(0, 4).map((f) => (
+                  <div key={f.label} className="flex justify-between gap-3">
+                    <span>{f.label}</span>
+                    <span className="font-semibold tabular-nums">{f.value > 0 ? '+' : ''}{f.value}</span>
+                  </div>
+                ))}
+              </>
+            }
+          />
+        )}
         <Divider />
         {m.money !== null && (
           <Reading

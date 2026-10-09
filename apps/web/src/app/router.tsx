@@ -11,6 +11,7 @@ import { MarketView } from '../features/economy/MarketView';
 import { TradeView } from '../features/economy/TradeView';
 import { DecreesView } from '../features/executive/DecreesView';
 import { NationView } from '../features/nation/NationView';
+import { WorksView } from '../features/works/WorksView';
 import { RegionPanel } from '../features/region/RegionPanel';
 import { EventsView } from '../features/events/EventsView';
 import { GameLayout } from '../features/game/GameLayout';
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
           { path: 'economia', element: <EconomyView /> },
           { path: 'mercado', element: <MarketView /> },
           { path: 'industria', element: <IndustryView /> },
+          { path: 'obras', element: <WorksView /> },
           { path: 'comercio', element: <TradeView /> },
           { path: 'decretos', element: <DecreesView /> },
           { path: 'nacao', element: <NationView /> },

@@ -1,4 +1,5 @@
 import { addDays, diffDays, yearOf } from '../core/date';
+import { promisesOnBillFiled, promisesOnLawApproved } from '../government/promises';
 import { clamp, sigmoid } from '../core/math';
 import type { PartyId } from '../core/types';
 import { addHistory } from '../history/history';
@@ -151,6 +152,7 @@ export function fileBill(state: GameState, input: FileBillInput): Bill {
     timeline: [{ date: state.date, text: `Apresentado por ${input.authorLabel}.` }],
   };
   state.laws.bills.unshift(bill);
+  if (isPlayerBill(state, bill)) promisesOnBillFiled(state, bill.categoryId, bill.number);
   if (bill.instrument === 'mp') {
     applyMp(state, bill);
     billNote(state, bill, 'Medida provisória em vigor desde a publicação; o Congresso tem 120 dias para convertê-la em lei.');
@@ -321,6 +323,7 @@ export function enactBill(state: GameState, bill: Bill): void {
   bill.status = 'passed';
   bill.closedOn = state.date;
   bill.scheduled = false;
+  promisesOnLawApproved(state, bill.categoryId, bill.optionId, bill.number, isPlayerBill(state, bill));
   if (bill.instrument !== 'mp' && option) {
     const strength = clamp(1 - bill.concessions * L.concessionEffectCut, 0.3, 1);
     state.laws.implementing = state.laws.implementing.filter((i) => i.categoryId !== bill.categoryId);

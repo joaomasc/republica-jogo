@@ -191,7 +191,17 @@ export function MapStage({ style, className }: { style?: CSSProperties; classNam
             renderTooltip={tooltip}
           />
         ) : (
-          <BrazilMap fills={fills} selected={selected} onSelect={open} renderTooltip={tooltip} />
+          <BrazilMap
+            fills={fills}
+            selected={selected}
+            onSelect={open}
+            renderTooltip={tooltip}
+            focus={
+              game.government && game.government.jurisdiction.level !== 'federal' && game.government.jurisdiction.stateId
+                ? [game.government.jurisdiction.stateId]
+                : null
+            }
+          />
         )}
       </div>
       <MapLegend layer={layer} mode={mode} />

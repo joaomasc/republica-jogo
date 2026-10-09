@@ -18,6 +18,7 @@ import {
   type CampaignActionDefinition,
   type PopTypeId,
   type StaffRoleId,
+  getLawCategory,
 } from '@republica/game-engine';
 import {
   Badge,
@@ -165,6 +166,10 @@ function ActionDialog({
                     />
                     {p.title}
                     {made.has(p.id) && <Badge tone="info">já prometida</Badge>}
+                    {(p.promise.kind === 'law' || p.promise.kind === 'noLaw') &&
+                      !getLawCategory(p.promise.categoryId)?.levels.includes(level) && (
+                        <Badge tone="neutral">depende de outra esfera</Badge>
+                      )}
                   </div>
                   <div className="text-xs text-muted">{p.description}</div>
                 </button>

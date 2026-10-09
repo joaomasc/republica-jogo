@@ -1,4 +1,7 @@
 import { deepClone } from '../core/clone';
+import { respondToStreet, type StreetResponse } from '../nation/revolt';
+import { cancelPublicWork, startPublicWork } from '../economy/works/works';
+import type { WorkSize } from '../economy/works/works.data';
 import { cancelAdCampaign, createAdCampaign, type AdCampaignInput } from '../campaign/ads';
 import { performCampaignAction, type CampaignActionInput } from '../campaign/actions';
 import { summarizeAgenda, updateAgenda } from '../campaign/agenda';
@@ -106,6 +109,9 @@ export type GameAction =
   | { type: 'career/break' }
   // Economia industrial
   | { type: 'industry/build'; stateId: StateId; buildingId: BuildingId; levels: number }
+  | { type: 'works/start'; typeId: string; size: WorkSize; stateId?: StateId }
+  | { type: 'works/cancel'; workId: string }
+  | { type: 'street/respond'; response: StreetResponse }
   | { type: 'industry/cancel'; projectId: string }
   | { type: 'industry/method'; stateId: StateId; buildingId: BuildingId; methodId: string }
   | { type: 'industry/plan'; weights: Partial<Record<SectorId, number>> | null }
@@ -254,6 +260,12 @@ function apply(state: GameState, action: GameAction): ActionResult {
       return retire(state);
     case 'career/break':
       return takeBreak(state);
+    case 'works/start':
+      return startPublicWork(state, action.typeId, action.size, action.stateId);
+    case 'works/cancel':
+      return cancelPublicWork(state, action.workId);
+    case 'street/respond':
+      return respondToStreet(state, action.response);
     case 'industry/build':
       return orderConstruction(state, action.stateId, action.buildingId, action.levels);
     case 'industry/cancel':

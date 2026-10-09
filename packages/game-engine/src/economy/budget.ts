@@ -1,4 +1,5 @@
 import { GameConstants } from '../config/constants';
+import { worksServiceBonus } from './works/works';
 import { clamp, round, sum } from '../core/math';
 import type { ActionResult } from '../core/types';
 import type { Jurisdiction } from '../election/offices';
@@ -70,7 +71,7 @@ const SHARES: Record<Jurisdiction['level'], Record<BudgetCategory, number>> = {
   },
 };
 
-function stateGdpShare(stateId: keyof typeof STATES): number {
+export function stateGdpShare(stateId: keyof typeof STATES): number {
   const total = sum(STATE_LIST.map((s) => s.population * s.gdpPerCapita));
   const s = STATES[stateId];
   return (s.population * s.gdpPerCapita) / total;
@@ -126,7 +127,7 @@ export function serviceQuality(state: GameState, category: BudgetCategory): numb
   const competence =
     ministers.length > 0 ? sum(ministers.map((m) => m.competence)) / ministers.length : 50;
   const efficiency = 0.75 + management / 200 + (competence - 50) / 400;
-  return clamp(1 + (ratio - 1) * efficiency, B.qualityFloor, B.qualityCeiling);
+  return clamp(1 + (ratio - 1) * efficiency + worksServiceBonus(state, category), B.qualityFloor, B.qualityCeiling);
 }
 
 export function setBudgetAllocation(

@@ -232,4 +232,10 @@ export interface PlayerPromise {
   /** Valor de referência do indicador quando o mandato começou. */
   baseline: number | null;
   evaluatedOn: IsoDate | null;
+  /** Último fato que mexeu na promessa (ex.: "Lei aprovada em mar/2028 · PL 1.004/2028"). */
+  note?: string;
+  /** Projeto do jogador/governo que atende uma promessa de "apresentar projeto". */
+  billNumber?: string;
+  /** A lei prometida foi aprovada e depois revogada (recuo). */
+  reverted?: boolean;
 }

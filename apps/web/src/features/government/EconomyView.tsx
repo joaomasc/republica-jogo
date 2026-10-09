@@ -1,10 +1,11 @@
-import { economySummary, STATE_LIST } from '@republica/game-engine';
+import { economySummary, localScope, STATE_LIST } from '@republica/game-engine';
 import { Panel, StatTile } from '@republica/ui';
 import { HBar, LineChartBox } from '../../components/charts';
 import { num } from '../../lib/format';
 import { useGameState } from '../../store/gameStore';
 import { EconomyDashboard } from '../economy/EconomyDashboard';
 import { HowItConnects } from '../economy/HowItConnects';
+import { LocalEconomy } from '../economy/LocalEconomy';
 
 export function EconomyView() {
   const game = useGameState();
@@ -23,9 +24,9 @@ export function EconomyView() {
   );
   const baseline = e.termBaseline;
 
-  return (
-    <div className="space-y-3">
-      <HowItConnects />
+  const local = localScope(game).kind !== 'country';
+  const national = (
+    <>
       <p className="text-sm text-muted">
         Modelo econômico SIMPLIFICADO para fins de jogo: as relações entre leis, orçamento e
         indicadores são do modelo, não previsões sobre a economia real.
@@ -131,6 +132,25 @@ export function EconomyView() {
         </Panel>
       </div>
       <EconomyDashboard />
+    </>
+  );
+
+  return (
+    <div className="space-y-3">
+      <HowItConnects />
+      {local ? (
+        <>
+          <LocalEconomy />
+          <details className="rounded-[6px] border border-ink-600 bg-ink-950/30 p-2.5">
+            <summary className="cursor-pointer font-display text-sm font-semibold text-gold-300">
+              Contexto nacional (Brasil) — inflação, juros, câmbio e setores do país
+            </summary>
+            <div className="mt-3 space-y-3">{national}</div>
+          </details>
+        </>
+      ) : (
+        national
+      )}
     </div>
   );
 }
