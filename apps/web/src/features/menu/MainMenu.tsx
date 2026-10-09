@@ -1,4 +1,4 @@
-import { loadGame, type SaveSlotInfo } from '@republica/game-engine';
+import { LAW_CATEGORIES, loadGame, type SaveSlotInfo } from '@republica/game-engine';
 import { BrazilMap, cn, Icon } from '@republica/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -129,7 +129,7 @@ export function MainMenu() {
               27 estados · 324 grupos de eleitores
             </span>
             <span className="rounded-full border-2 border-ink-600 bg-ink-900 px-3 py-1">
-              7 cargos · 13 áreas de leis
+              7 cargos · {LAW_CATEGORIES.length} áreas de leis
             </span>
             <span className="rounded-full border-2 border-ink-600 bg-ink-900 px-3 py-1">
               Partidos e políticos fictícios
