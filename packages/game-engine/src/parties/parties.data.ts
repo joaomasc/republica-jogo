@@ -1,6 +1,6 @@
 import type { Party } from './types';
 
-type PartySeed = Omit<Party, 'candidateIds' | 'unity' | 'lawPositions'>;
+export type PartySeed = Omit<Party, 'candidateIds' | 'unity' | 'lawPositions'>;
 
 /**
  * Partidos FICTÍCIOS do cenário padrão. Qualquer semelhança com siglas reais é coincidência.

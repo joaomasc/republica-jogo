@@ -13,10 +13,14 @@ import type { PartyId, StateId } from '../core/types';
 import type { OfficeId } from '../election/offices';
 import type { PartySymbol } from '../parties/types';
 
-export const WORLD_IDS = ['fictional', 'parody'] as const;
+export const WORLD_IDS = ['real', 'fictional', 'parody'] as const;
 export type WorldId = (typeof WORLD_IDS)[number];
 
 export const WORLDS: Record<WorldId, { name: string; description: string }> = {
+  real: {
+    name: 'Brasil real',
+    description: 'Os 30 partidos registrados no TSE, com sigla, número e logo oficiais.',
+  },
   fictional: {
     name: 'Fictício',
     description: 'Partidos e políticos inventados. Qualquer semelhança é coincidência.',
@@ -27,6 +31,9 @@ export const WORLDS: Record<WorldId, { name: string; description: string }> = {
       'Sátira à la charge: partidos e políticos com nomes-trocadilho e caricaturas. É humor, não notícia.',
   },
 };
+
+export const REAL_WORLD_DISCLAIMER =
+  'Partidos reais (registro no TSE em out/2026). Posições ideológicas e forças são aproximações do modelo do jogo; candidatos, eventos e escândalos são fictícios.';
 
 export const PARODY_DISCLAIMER =
   'Mundo paródia: personagens e partidos são caricaturas fictícias, em tom de sátira. Nada aqui descreve fatos, falas ou posições reais.';

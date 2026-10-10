@@ -14,12 +14,15 @@ import {
   OFFICE_LIST,
   OFFICES,
   PARTY_SYMBOLS,
+  defaultPartyId,
   partyCompatibility,
+  partyIdForWorld,
   partyPlatformView,
   partySeeds,
   partyPlatformMatch,
   PARODY_DISCLAIMER,
   PARODY_POLITICIANS,
+  REAL_WORLD_DISCLAIMER,
   WORLD_IDS,
   WORLDS,
   pointsSpent,
@@ -342,12 +345,19 @@ export function PartyStep({ state, update }: StepProps) {
     <div className="space-y-4">
       <div className="rounded-2xl border-2 border-ink-600 bg-ink-900 p-3">
         <div className="label mb-1.5">Mundo do jogo</div>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-3">
           {WORLD_IDS.map((w) => (
             <button
               key={w}
               type="button"
-              onClick={() => update({ world: w })}
+              onClick={() =>
+                update({
+                  world: w,
+                  ...(state.party.kind === 'existing'
+                    ? { party: { kind: 'existing', partyId: partyIdForWorld(state.party.partyId, w) } }
+                    : {}),
+                })
+              }
               className={cn(
                 'rounded-xl border-2 p-2.5 text-left',
                 state.world === w ? 'border-gold-400 bg-gold-500/10' : 'border-ink-600',
@@ -359,6 +369,7 @@ export function PartyStep({ state, update }: StepProps) {
             </button>
           ))}
         </div>
+        {state.world === 'real' && <p className="mt-3 text-xs text-muted">{REAL_WORLD_DISCLAIMER}</p>}
         {state.world === 'parody' && (
           <div className="mt-3 space-y-2">
             <p className="text-xs text-warn">{PARODY_DISCLAIMER}</p>
@@ -385,7 +396,9 @@ export function PartyStep({ state, update }: StepProps) {
         ]}
         value={tab}
         onChange={(t) =>
-          t === 'existing' ? update({ party: { kind: 'existing', partyId: 'udc' } }) : setInput({})
+          t === 'existing'
+            ? update({ party: { kind: 'existing', partyId: defaultPartyId(state.world) } })
+            : setInput({})
         }
       />
       {state.party.kind === 'existing' ? (
@@ -411,6 +424,9 @@ export function PartyStep({ state, update }: StepProps) {
                   <div className="min-w-0">
                     <div className="font-display text-lg font-semibold leading-tight">
                       {p.acronym}
+                      {p.number !== undefined && (
+                        <span className="ml-1.5 text-sm font-normal tabular-nums text-muted">{p.number}</span>
+                      )}
                     </div>
                     <div className="truncate text-xs text-muted">{p.name}</div>
                   </div>

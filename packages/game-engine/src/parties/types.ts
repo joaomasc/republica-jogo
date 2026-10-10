@@ -68,6 +68,12 @@ export interface Party {
   candidateIds: string[];
   provenance: DataProvenance;
   description: string;
+  /** Número na urna (só partidos reais). */
+  number?: number;
+  /** Logo oficial, relativo à raiz pública do site (ex.: 'partidos/pt.png'). */
+  logo?: string;
+  /** Fundo atrás do logo quando a arte é clara (padrão: branco). */
+  logoBackground?: string;
 }
 
 export interface PartyStrengthByState {

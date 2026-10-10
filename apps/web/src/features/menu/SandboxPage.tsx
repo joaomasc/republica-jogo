@@ -1,11 +1,12 @@
 import {
-  DEFAULT_PARTIES,
+  defaultPartyId,
   DIFFICULTIES,
   DIFFICULTY_IDS,
   ECONOMIC_SITUATIONS,
   formatMoney,
   OFFICE_LIST,
   OFFICES,
+  partySeeds,
   STATE_LIST,
   type DifficultyId,
   type EconomicSituation,
@@ -30,7 +31,7 @@ export function SandboxPage() {
   const [fame, setFame] = useState(15);
   const [popScale, setPopScale] = useState(1);
   const [days, setDays] = useState(60);
-  const [partyId, setPartyId] = useState('udc');
+  const [partyId, setPartyId] = useState(defaultPartyId('real'));
   const office = OFFICES[officeId];
   const cycleYears = Array.from(
     { length: 5 },
@@ -110,7 +111,7 @@ export function SandboxPage() {
                 value={partyId}
                 onChange={(e) => setPartyId(e.target.value)}
               >
-                {DEFAULT_PARTIES.map((p) => (
+                {partySeeds('real').map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.acronym} — {p.name}
                   </option>

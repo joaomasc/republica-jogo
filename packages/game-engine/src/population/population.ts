@@ -222,7 +222,7 @@ export function generatePopulation(
         partyIds.length > 0
           ? (rng.weightedPick(
               partyIds,
-              (id) => (strength[id] ?? 0) * (parties[id]?.popularity ?? 0),
+              (id) => ((strength[id] ?? 0) * (parties[id]?.popularity ?? 0)) ** 2,
             ) ?? partyIds[0]!)
           : '',
       problems: aggregateProblems(statePops),

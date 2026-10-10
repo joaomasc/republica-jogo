@@ -31,10 +31,13 @@ export { satisfactionTarget } from './population/satisfaction';
 export * from './parties/types';
 export * from './world/parody';
 export { DEFAULT_PARTIES } from './parties/parties.data';
+export { REAL_PARTIES, REAL_PARTY_EQUIVALENTS } from './parties/realParties.data';
 export {
   computeUnity,
+  defaultPartyId,
   initParties,
   partyCompatibility,
+  partyIdForWorld,
   partySeeds,
   validatePartyInput,
   type CreatePartyInput,

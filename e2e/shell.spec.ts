@@ -10,7 +10,7 @@ async function startInOffice(page: Page) {
   for (let i = 0; i < 8; i++) {
     if (await page.getByTestId('start-game').isVisible()) break;
     if (await page.getByTestId('bg-teacher').isVisible()) await page.getByTestId('bg-teacher').click();
-    if (await page.getByTestId('party-udc').isVisible()) await page.getByTestId('party-udc').click();
+    if (await page.getByTestId('party-mdb').isVisible()) await page.getByTestId('party-mdb').click();
     await page.getByTestId('wizard-next').click();
   }
   await page.getByTestId('start-game').click();

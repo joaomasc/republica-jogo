@@ -38,6 +38,17 @@ function advance(state: GameState, days: number): { state: GameState; details: s
       s = must(s, { type: 'debate/decline', debateId: debate.id });
       continue;
     }
+    const interview = s.interactions.interview;
+    if (interview) {
+      const q = interview.questions[interview.index];
+      s = must(
+        s,
+        interview.finished || !q
+          ? { type: 'interview/close' }
+          : { type: 'interview/answer', answerId: q.answers[0]!.id },
+      );
+      continue;
+    }
     const out = dispatch(s, { type: 'time/advance', step: 'day' });
     expect(out.result.ok).toBe(true);
     details.push(...(out.result.details ?? []));

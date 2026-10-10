@@ -15,6 +15,7 @@ import {
   validateNewGame,
   validatePartyInput,
   initParties,
+  partyIdForWorld,
   partySeeds,
   type Gender,
   type NewGameConfig,
@@ -54,6 +55,7 @@ function initialState(
   const rng = new Rng(Date.now() >>> 0);
   const gender: Gender = rng.chance(0.5) ? 'female' : 'male';
   const { firstName, lastName } = randomIdentity(gender, rng);
+  const world = preset?.world ?? 'real';
   const age = 42;
   return {
     firstName,
@@ -67,11 +69,11 @@ function initialState(
     attributes: baseAttributes(),
     ideology: neutralIdeology(),
     platform: {},
-    party: { kind: 'existing', partyId: preset?.partyId ?? 'udc' },
+    party: { kind: 'existing', partyId: partyIdForWorld(preset?.partyId, world) },
     officeId: preset?.officeId ?? 'presidente',
     stateId: preset?.stateId ?? 'SP',
     difficulty: preset?.difficulty ?? defaultDifficulty,
-    world: preset?.world ?? 'fictional',
+    world,
     weekly: true,
   };
 }

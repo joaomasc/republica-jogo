@@ -359,6 +359,8 @@ export const GameConstants = {
   congress: {
     coattailFactor: 0.25,
     seatNoiseSd: 0.15,
+    /** Fatia mínima do peso total para eleger alguém (aproxima o quociente eleitoral). */
+    minSeatShare: 0.006,
   },
 
   career: {

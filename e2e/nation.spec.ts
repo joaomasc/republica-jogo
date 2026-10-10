@@ -16,8 +16,8 @@ async function startPresidency(page: Page) {
       await page.getByTestId('platform-edu_tech').click();
       await shot(page, '00a-bandeiras');
     }
-    if (await page.getByTestId('party-udc').isVisible()) {
-      await page.getByTestId('party-udc').click();
+    if (await page.getByTestId('party-mdb').isVisible()) {
+      await page.getByTestId('party-mdb').click();
       await shot(page, '00b-partidos');
     }
     await page.getByTestId('wizard-next').click();

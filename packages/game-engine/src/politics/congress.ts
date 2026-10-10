@@ -27,6 +27,9 @@ function partyWeights(
       base ** 1.15 * Math.exp(rng.normal(0, C.seatNoiseSd)) * (1 + (boost[party.id] ?? 0)),
     );
   }
+  // Cláusula de barreira: quem não alcança o quociente em nenhum estado fica sem cadeiras.
+  const total = Object.values(out).reduce((a, b) => a + b, 0);
+  for (const [id, weight] of Object.entries(out)) if (weight < total * C.minSeatShare) out[id] = 0;
   return out;
 }
 

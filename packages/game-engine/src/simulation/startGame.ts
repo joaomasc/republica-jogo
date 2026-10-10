@@ -28,10 +28,12 @@ import { initLawsState } from '../laws/laws';
 import { publishNews } from '../media/news';
 import {
   createPartyFromInput,
+  defaultPartyId,
   initParties,
   validatePartyInput,
   type CreatePartyInput,
 } from '../parties/parties';
+import { REAL_INCUMBENT_PRESIDENT } from '../parties/realParties.data';
 import { initCongress } from '../politics/congress';
 import { initInterestGroups } from '../politics/interestGroups.data';
 import { generatePopulation, refreshPartyAffinities } from '../population/population';
@@ -152,7 +154,7 @@ export function startGame(config: NewGameConfig): GameState {
     rng.weightedPick(
       Object.values(parties).filter((p) => p.provenance.kind !== 'player'),
       weight,
-    )?.id ?? 'udc';
+    )?.id ?? defaultPartyId(config.world);
   const governors = {} as Record<StateId, string>;
   const mayors = {} as Record<StateId, string>;
   for (const id of STATE_IDS) {
@@ -197,7 +199,10 @@ export function startGame(config: NewGameConfig): GameState {
     laws: initLawsState('federal'),
     interestGroups: initInterestGroups(),
     landscape: {
-      presidentPartyId: pickParty((p) => (p.popularity * (0.5 + p.influence / 100)) ** 2),
+      presidentPartyId:
+        config.world === 'real' && year <= REAL_INCUMBENT_PRESIDENT.lastYear
+          ? REAL_INCUMBENT_PRESIDENT.partyId
+          : pickParty((p) => (p.popularity * (0.5 + p.influence / 100)) ** 2),
       governors,
       mayors,
     },

@@ -17,7 +17,7 @@ export async function createCandidate(
   // Bandeiras: escolhe uma lei para defender.
   await page.getByTestId('platform-edu_tech').click();
   await page.getByTestId('wizard-next').click();
-  await page.getByTestId(`party-${opts.partyId ?? 'udc'}`).click();
+  await page.getByTestId(`party-${opts.partyId ?? 'mdb'}`).click();
   await page.getByTestId('wizard-next').click();
   await page.getByTestId(opts.officeTestId).click();
   if (opts.stateId) await page.getByTestId('office-state').selectOption(opts.stateId);

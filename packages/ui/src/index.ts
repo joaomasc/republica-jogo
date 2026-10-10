@@ -2,7 +2,7 @@ export * from './primitives';
 export * from './icons';
 export { Avatar } from './avatar/Avatar';
 export { mix, readableOn, shade } from './avatar/color';
-export { PartyEmblem } from './PartyEmblem';
+export { PartyEmblem, preloadPartyLogos } from './PartyEmblem';
 export { IdeologyBars, type IdeologyMarker } from './IdeologyBars';
 export {
   BrazilMap,

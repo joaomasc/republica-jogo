@@ -9,6 +9,7 @@ import type { IssueId } from '../ideology/issues';
 import type { PopTypeId } from '../population/popTypes';
 import { PARODY_PARTY_SKINS, type WorldId } from '../world/parody';
 import { DEFAULT_PARTIES } from './parties.data';
+import { REAL_PARTIES, REAL_PARTY_EQUIVALENTS } from './realParties.data';
 import type { Party, PartySymbol } from './types';
 
 const C = GameConstants.party;
@@ -23,8 +24,12 @@ export function computeUnity(party: Pick<Party, 'factions'>): number {
   return size === 0 ? 70 : round(total / size, 1);
 }
 
-/** Sementes dos partidos do mundo escolhido (a paródia só troca nome, sigla, cor e líder). */
+/**
+ * Sementes dos partidos do mundo escolhido. A paródia só troca nome, sigla, cor e líder;
+ * o mundo real tem o próprio elenco (os 30 partidos registrados no TSE).
+ */
 export function partySeeds(world: WorldId = 'fictional'): typeof DEFAULT_PARTIES {
+  if (world === 'real') return REAL_PARTIES;
   if (world !== 'parody') return DEFAULT_PARTIES;
   return DEFAULT_PARTIES.map((seed) => {
     const skin = PARODY_PARTY_SKINS[seed.id];
@@ -39,6 +44,29 @@ export function partySeeds(world: WorldId = 'fictional'): typeof DEFAULT_PARTIES
       description: skin.description,
     };
   });
+}
+
+/** Partido pré-selecionado no assistente de cada mundo (um grande partido de centro). */
+export function defaultPartyId(world: WorldId = 'fictional'): PartyId {
+  return world === 'real' ? 'mdb' : 'udc';
+}
+
+/**
+ * Traduz um partido para o mundo escolhido: mantém se já existe lá, troca pelo equivalente
+ * real/fictício quando houver, senão cai no padrão do mundo.
+ */
+export function partyIdForWorld(
+  partyId: PartyId | undefined,
+  world: WorldId = 'fictional',
+): PartyId {
+  if (partyId && partySeeds(world).some((p) => p.id === partyId)) return partyId;
+  if (partyId && world === 'real' && REAL_PARTY_EQUIVALENTS[partyId])
+    return REAL_PARTY_EQUIVALENTS[partyId];
+  if (partyId && world !== 'real') {
+    const model = Object.entries(REAL_PARTY_EQUIVALENTS).find(([, real]) => real === partyId);
+    if (model) return model[0];
+  }
+  return defaultPartyId(world);
 }
 
 export function initParties(world: WorldId = 'fictional'): Record<PartyId, Party> {

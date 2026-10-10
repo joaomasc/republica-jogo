@@ -127,11 +127,12 @@ function pickOpponentParties(
   count: number,
   exclude: PartyId[],
   stateId: StateId | null,
-  mustInclude: PartyId | null,
+  mustInclude: PartyId[],
 ): PartyId[] {
   const chosen: PartyId[] = [];
-  if (mustInclude && !exclude.includes(mustInclude) && state.parties[mustInclude])
-    chosen.push(mustInclude);
+  for (const id of mustInclude)
+    if (chosen.length < count && !exclude.includes(id) && !chosen.includes(id) && state.parties[id])
+      chosen.push(id);
   const pool = Object.values(state.parties).filter(
     (p) => !exclude.includes(p.id) && !chosen.includes(p.id),
   );
@@ -208,18 +209,27 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
         P.notableCandidates - P.notableFromPlayerParty,
         [],
         jurisdiction.stateId,
-        null,
+        [],
       );
       for (const p of others) opponentPlan.push({ partyId: p, incumbent: rng.chance(0.35) });
     } else {
       const count = Math.max(2, office.opponents + rng.int(-1, 1));
+      const incumbentParty = setup.playerIncumbent ? null : governingParty;
+      // A maior força de oposição sempre lança nome (com 30 partidos, o sorteio a diluiria).
+      const mainOpposition = Object.values(state.parties)
+        .filter((p) => p.id !== player.partyId && p.id !== incumbentParty)
+        .sort(
+          (a, b) =>
+            localStrength(state, b, jurisdiction.stateId) -
+            localStrength(state, a, jurisdiction.stateId),
+        )[0]?.id;
       const parties = pickOpponentParties(
         state,
         rng,
         count,
         [player.partyId],
         jurisdiction.stateId,
-        setup.playerIncumbent ? null : governingParty,
+        [incumbentParty, mainOpposition].filter((id): id is PartyId => !!id),
       );
       for (const p of parties)
         opponentPlan.push({

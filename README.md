@@ -4,7 +4,7 @@
 
 Simulador político e eleitoral jogável no navegador. Você cria um político cartoon, escolhe (ou funda) um partido, disputa eleições do município à Presidência, faz campanha com dinheiro, equipe, propaganda, entrevistas e debates — e, se vencer, governa um país com economia de verdade: mercado nacional, indústrias em 27 estados, comércio exterior, leis no estilo Victoria 3 (do liberalismo à economia planificada), decretos e um Congresso que tramita, engaveta, vota, veta e até abre impeachment. Cada partida conta uma história diferente.
 
-> Partidos, políticos, veículos de imprensa e institutos de pesquisa são **fictícios**. A malha territorial dos estados vem do IBGE (dado público). Os efeitos de leis e da economia são de um **modelo simplificado de jogo**, não previsões sobre o mundo real, e nenhuma ideologia é tratada como moralmente superior.
+> No mundo **Brasil real** (padrão), os partidos são os 30 registrados no TSE, com sigla, número e logo oficiais ([fontes e créditos](docs/PARTIDOS_REAIS.md)). Suas posições e forças são aproximações do modelo. Políticos, eventos, veículos de imprensa e institutos de pesquisa são **fictícios** em todos os mundos, e os mundos Fictício e Paródia também têm partidos inventados. A malha territorial dos estados vem do IBGE (dado público). Os efeitos de leis e da economia são de um **modelo simplificado de jogo**, não previsões sobre o mundo real, e nenhuma ideologia é tratada como moralmente superior.
 
 ## Sumário
 
@@ -135,7 +135,7 @@ packages/
     src/ideology/         9 eixos ideológicos e temas (issues)
     src/map/              27 UFs (Censo 2022), regiões, unidades eleitorais (estados / zonas)
     src/population/       Pops (tipo × estado), satisfação
-    src/parties/          Partidos fictícios, facções, compatibilidade, criação de partido
+    src/parties/          Partidos reais (TSE) e fictícios, facções, compatibilidade, criação de partido
     src/candidate/        Atributos, aparência (avatar), origens, nomes
     src/campaign/         Ações, propaganda, finanças, equipe, propostas/promessas, IA dos adversários
     src/election/         Cargos, modelo de voto, pesquisas, simulateElection, proporcional (D'Hondt), fluxo
@@ -168,7 +168,7 @@ docs/GAME_DESIGN.md       Mecânicas e fórmulas
 
 ### Adicionar um partido
 
-Edite `packages/game-engine/src/parties/parties.data.ts` e acrescente um objeto com `id`, nome, sigla, cor, símbolo (`PARTY_SYMBOLS`), vetor ideológico (9 eixos de 0 a 100), popularidade, influência, dinheiro, militância, regiões fortes/fracas, prioridades, grupos prioritários e facções. Para dados reais, use `provenance: { kind: 'historical', source, sourceDate }` — o banco tem tabelas `Reference*` com fonte e data para manter dados históricos separados dos fictícios.
+Edite `packages/game-engine/src/parties/parties.data.ts` e acrescente um objeto com `id`, nome, sigla, cor, símbolo (`PARTY_SYMBOLS`), vetor ideológico (9 eixos de 0 a 100), popularidade, influência, dinheiro, militância, regiões fortes/fracas, prioridades, grupos prioritários e facções. Para dados reais, use `provenance: { kind: 'historical', source, sourceDate }` — o banco tem tabelas `Reference*` com fonte e data para manter dados históricos separados dos fictícios. Os partidos reais ficam em `realParties.data.ts`; veja [docs/PARTIDOS_REAIS.md](docs/PARTIDOS_REAIS.md) para atualizá-los após fusões ou novos registros.
 
 ### Adicionar uma lei
 
