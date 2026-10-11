@@ -6,6 +6,7 @@ import type { CandidateId, PartyId } from '../core/types';
 import { IDEOLOGY_AXES, type IdeologyVector } from '../ideology/axes';
 import { ideologyDistance, ideologyExtremity, type AxisWeights } from '../ideology/ideology';
 import { ISSUE_DEFINITIONS, ISSUES, type IssueId } from '../ideology/issues';
+import { mayorPartyOf } from '../map/cities';
 import { POP_TYPE_IDS, POP_TYPES, type PopTypeId } from '../population/popTypes';
 import type { Pop } from '../population/types';
 import type { GameState } from '../simulation/state';
@@ -103,7 +104,8 @@ export function governingPartyFor(state: GameState, election: Election): PartyId
   const level = OFFICES[election.officeId].level;
   const stateId = election.jurisdiction.stateId;
   if (level === 'federal' || !stateId) return state.landscape.presidentPartyId;
-  if (election.jurisdiction.level === 'municipal') return state.landscape.mayors[stateId] ?? null;
+  if (election.jurisdiction.level === 'municipal')
+    return mayorPartyOf(state, stateId, election.jurisdiction.cityId);
   return state.landscape.governors[stateId] ?? null;
 }
 

@@ -44,6 +44,8 @@ export interface WizardState {
   party: { kind: 'existing'; partyId: string } | { kind: 'new'; input: CreatePartyInput };
   officeId: OfficeId;
   stateId: StateId;
+  /** Cidade das eleições municipais (código IBGE; `null` = capital). */
+  cityId: string | null;
   difficulty: DifficultyId;
   world: WorldId;
   weekly: boolean;

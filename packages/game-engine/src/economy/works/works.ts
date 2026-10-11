@@ -4,6 +4,7 @@ import { hashSeed, Rng } from '../../core/rng';
 import { STATE_IDS, type ActionResult, type IsoDate, type StateId } from '../../core/types';
 import type { OfficeLevel } from '../../election/offices';
 import { stateOfName } from '../../map/stateNames';
+import { cityOf } from '../../map/cities';
 import { STATES } from '../../map/states';
 import { pushAlert } from '../../media/alerts';
 import { publishNews } from '../../media/news';
@@ -73,20 +74,25 @@ function works(state: GameState): PublicWork[] {
 }
 
 /** Esfera do Executivo do jogador (ou null se não é chefe de Executivo). */
-export function playerWorksScope(state: GameState): { level: OfficeLevel; stateId: StateId | null } | null {
+export function playerWorksScope(
+  state: GameState,
+): { level: OfficeLevel; stateId: StateId | null; cityId?: string } | null {
   const gov = state.government;
   if (!gov || gov.branch !== 'executive' || state.phase !== 'governing') return null;
-  return { level: gov.jurisdiction.level, stateId: (gov.jurisdiction.stateId as StateId | undefined) ?? null };
+  return {
+    level: gov.jurisdiction.level,
+    stateId: (gov.jurisdiction.stateId as StateId | undefined) ?? null,
+    ...(gov.jurisdiction.cityId ? { cityId: gov.jurisdiction.cityId } : {}),
+  };
 }
 
-export function sponsorLabel(level: OfficeLevel, stateId: StateId): string {
-  const st = STATES[stateId];
-  if (level === 'municipal') return `Prefeitura de ${st.capital}`;
+export function sponsorLabel(level: OfficeLevel, stateId: StateId, cityId?: string): string {
+  if (level === 'municipal') return `Prefeitura de ${cityOf(stateId, cityId).name}`;
   if (level === 'estadual') return `Governo ${stateOfName(stateId)}`;
   return 'Governo Federal';
 }
 
-function makeWork(state: GameState, type: PublicWorkType, size: WorkSize, level: OfficeLevel, stateId: StateId, player: boolean): PublicWork {
+function makeWork(state: GameState, type: PublicWorkType, size: WorkSize, level: OfficeLevel, stateId: StateId, player: boolean, cityId?: string): PublicWork {
   const sz = WORK_SIZES[size];
   const cost = round(type.cost * sz.cost, 2);
   const months = Math.max(4, Math.round(type.months * sz.months));
@@ -99,7 +105,7 @@ function makeWork(state: GameState, type: PublicWorkType, size: WorkSize, level:
     level,
     stateId,
     player,
-    sponsor: sponsorLabel(level, stateId),
+    sponsor: sponsorLabel(level, stateId, cityId),
     cost,
     months,
     monthsLeft: months,
@@ -159,7 +165,7 @@ export function startPublicWork(state: GameState, typeId: string, size: WorkSize
   if (!stateId || !STATE_IDS.includes(stateId)) return { ok: false, message: 'Escolha onde construir.' };
   const b = state.government?.budget;
   if (!b) return { ok: false, message: 'Orçamento indisponível.' };
-  const w = makeWork(state, type, size, scope.level, stateId, true);
+  const w = makeWork(state, type, size, scope.level, stateId, true, scope.cityId);
   const revenue = b.revenueTaxes + b.revenueOther;
   if (playerWorksAnnualCost(state) + w.cost / (w.months / 12) > revenue * W.maxCommitment)
     return { ok: false, message: `Capacidade de investimento esgotada (até ${Math.round(W.maxCommitment * 100)}% da receita por ano em obras).` };
@@ -381,7 +387,7 @@ export function worksOverview(state: GameState): {
     local: stateId ? active.filter((w) => !w.player && w.stateId === stateId).map(view) : [],
     national: active.filter((w) => !w.player).map(view),
     done: list.filter((w) => w.status === 'done').slice(-20).reverse().map(view),
-    scopeLabel: !stateId || level === 'federal' ? 'Brasil' : level === 'municipal' ? STATES[stateId].capital : STATES[stateId].name,
+    scopeLabel: !stateId || level === 'federal' ? 'Brasil' : level === 'municipal' ? cityOf(stateId, gov?.jurisdiction.cityId).name : STATES[stateId].name,
     annualCommitment: playerWorksAnnualCost(state),
     maxCommitment: b ? (b.revenueTaxes + b.revenueOther) * W.maxCommitment : 0,
   };

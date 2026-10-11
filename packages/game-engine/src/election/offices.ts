@@ -1,5 +1,6 @@
 import type { StateId } from '../core/types';
-import { cityCouncilSeats, stateAssemblySeats, STATES } from '../map/states';
+import { cityCouncilSeats, cityOf } from '../map/cities';
+import { stateAssemblySeats, STATES } from '../map/states';
 
 export const OFFICE_IDS = [
   'vereador',
@@ -56,7 +57,7 @@ export const OFFICES: Record<OfficeId, OfficeDefinition> = {
     unitsKind: 'cityZones',
     legislatureName: 'Câmara Municipal',
     prestige: 1,
-    description: 'Representa os bairros da capital na Câmara Municipal.',
+    description: 'Representa os bairros da cidade na Câmara Municipal.',
     rules: [
       'Eleição proporcional: votos do partido definem cadeiras',
       'Disputa por zonas da cidade',
@@ -81,7 +82,7 @@ export const OFFICES: Record<OfficeId, OfficeDefinition> = {
     legislatureName: 'Câmara Municipal',
     termLimit: 2,
     prestige: 3,
-    description: 'Governa a capital: orçamento municipal, vereadores e serviços locais.',
+    description: 'Governa a cidade: orçamento municipal, vereadores e serviços locais.',
     rules: [
       'Maioria absoluta ou segundo turno',
       'Orçamento municipal',
@@ -198,11 +199,11 @@ export function getOffice(id: OfficeId): OfficeDefinition {
   return OFFICES[id];
 }
 
-/** Número de cadeiras em disputa (eleições proporcionais) para o estado. */
-export function officeSeats(officeId: OfficeId, stateId: StateId): number {
+/** Número de cadeiras em disputa (eleições proporcionais) no estado ou na cidade. */
+export function officeSeats(officeId: OfficeId, stateId: StateId, cityId?: string | null): number {
   switch (officeId) {
     case 'vereador':
-      return cityCouncilSeats(stateId);
+      return cityCouncilSeats(stateId, cityId);
     case 'deputado_estadual':
       return stateAssemblySeats(stateId);
     case 'deputado_federal':
@@ -222,16 +223,24 @@ export function nextElectionYear(officeId: OfficeId, fromYear: number): number {
 export interface Jurisdiction {
   level: OfficeLevel;
   stateId: StateId | null;
+  /** Cidade (código IBGE) nas esferas municipais; ausente = capital (saves antigos). */
+  cityId?: string;
   label: string;
 }
 
-export function jurisdictionFor(officeId: OfficeId, stateId: StateId): Jurisdiction {
+export function jurisdictionFor(
+  officeId: OfficeId,
+  stateId: StateId,
+  cityId?: string | null,
+): Jurisdiction {
   const office = OFFICES[officeId];
   const state = STATES[stateId];
   if (office.level === 'federal' && office.unitsKind === 'states')
     return { level: 'federal', stateId: null, label: 'Brasil' };
-  if (office.unitsKind === 'cityZones')
-    return { level: 'municipal', stateId, label: `${state.capital} (${state.id})` };
+  if (office.unitsKind === 'cityZones') {
+    const city = cityOf(stateId, cityId);
+    return { level: 'municipal', stateId, cityId: city.id, label: `${city.name} (${state.id})` };
+  }
   return {
     level: office.level === 'federal' ? 'estadual' : office.level,
     stateId,

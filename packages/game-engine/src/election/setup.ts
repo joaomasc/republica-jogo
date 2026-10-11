@@ -24,6 +24,8 @@ const C = GameConstants;
 export interface ElectionSetup {
   officeId: OfficeId;
   stateId: StateId;
+  /** Cidade nas eleições municipais (código IBGE); ausente = capital. */
+  cityId?: string | null;
   year: number;
   /** O jogador disputa a reeleição. */
   playerIncumbent?: boolean;
@@ -179,7 +181,7 @@ function pruneCandidates(state: GameState): void {
 export function setupElection(state: GameState, setup: ElectionSetup): Election {
   const office = OFFICES[setup.officeId];
   const player = getPlayer(state);
-  const jurisdiction = jurisdictionFor(setup.officeId, setup.stateId);
+  const jurisdiction = jurisdictionFor(setup.officeId, setup.stateId, setup.cityId);
   const electionDate = firstSundayOfOctober(setup.year);
   const campaignDays = setup.campaignDays ?? office.campaignDays;
   const startDate = addDays(electionDate, -campaignDays);
@@ -188,7 +190,13 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
   pruneCandidates(state);
 
   return withRng(state, (rng) => {
-    const units = buildUnits(state.population, setup.officeId, setup.stateId, rng);
+    const units = buildUnits(
+      state.population,
+      setup.officeId,
+      setup.stateId,
+      rng,
+      jurisdiction.cityId,
+    );
     const totalVoters = sum(units.map((u) => u.voters));
     const moneyScale = computeMoneyScale(setup.officeId, totalVoters);
     const proportional = office.system === 'proportional';
@@ -340,7 +348,7 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
       polls: [],
       debates: proportional ? [] : scheduleDebates(state, electionDate, startDate, 1),
       results: [],
-      seats: proportional ? officeSeats(setup.officeId, setup.stateId) : 1,
+      seats: proportional ? officeSeats(setup.officeId, setup.stateId, jurisdiction.cityId) : 1,
       status: 'campaign',
       outcome: null,
       electorateIdeology,

@@ -1,6 +1,15 @@
-import { useId, useMemo, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { floatingTooltipStyle, MAP_INK, type MapFill, type MousePos } from './BrazilMap';
 import { projectLonLat, STATE_GEOMETRY } from './brazilGeometry.generated';
+import type { CityGeometry } from './cityGeometry.generated';
 import { MapControls, type MapControlsPosition } from './MapControls';
 import { useZoomPan } from './useZoomPan';
 
@@ -14,6 +23,8 @@ export interface ZoneSpec {
 export interface ZoneMapProps {
   kind: 'state' | 'city';
   stateId: string;
+  /** Cidade (código IBGE) no modo `city`: desenha o contorno real do município. */
+  cityId?: string;
   capitalCoords: [number, number];
   zones: ZoneSpec[];
   fills: Record<string, MapFill>;
@@ -47,10 +58,27 @@ function dirVector(dir: 'n' | 's' | 'l' | 'o'): [number, number] {
   return dir === 'n' ? [0, -1] : dir === 's' ? [0, 1] : dir === 'l' ? [1, 0] : [-1, 0];
 }
 
-/** Mapa estilizado de zonas: setores do estado (recortados no contorno real) ou bairros da capital. */
+/** Contornos municipais: módulo grande, carregado só quando um mapa de cidade aparece. */
+function useCityGeometry(cityId: string | undefined): CityGeometry | null {
+  const [loaded, setLoaded] = useState<{ id: string; geo: CityGeometry | null } | null>(null);
+  useEffect(() => {
+    if (!cityId) return;
+    let alive = true;
+    void import('./cityGeometry.generated').then((m) => {
+      if (alive) setLoaded({ id: cityId, geo: m.CITY_GEOMETRY[cityId] ?? null });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [cityId]);
+  return loaded && loaded.id === cityId ? loaded.geo : null;
+}
+
+/** Mapa de zonas: setores do estado ou bairros da cidade, recortados no contorno real. */
 export function ZoneMap({
   kind,
   stateId,
+  cityId,
   capitalCoords,
   zones,
   fills,
@@ -61,7 +89,24 @@ export function ZoneMap({
 }: ZoneMapProps) {
   const uid = useId().replace(/:/g, '');
   const geo = STATE_GEOMETRY[stateId];
+  const cityShape = useCityGeometry(kind === 'city' ? cityId : undefined);
   const layout = useMemo(() => {
+    if (kind === 'city' && cityShape) {
+      const [x0, y0, x1, y1] = cityShape.bbox;
+      const w = x1 - x0;
+      const h = y1 - y0;
+      const pad = Math.max(w, h) * 0.1;
+      // Folga extra à direita: o Panorama cobre essa faixa do mapa (cidades largas, como o Rio).
+      const padRight = pad + w * 0.3;
+      return {
+        box: { x: x0 - pad, y: y0 - pad, w: w + pad + padRight, h: h + pad * 2 },
+        outline: cityShape.d,
+        center: cityShape.centroid,
+        capital: cityShape.centroid,
+        unit: Math.min(w, h),
+        size: [w, h] as [number, number],
+      };
+    }
     if (kind === 'city' || !geo) {
       return {
         box: { x: 0, y: 0, w: 400, h: 340 },
@@ -69,6 +114,7 @@ export function ZoneMap({
         center: [205, 172] as [number, number],
         capital: [205, 172] as [number, number],
         unit: 340,
+        size: null,
       };
     }
     const [x0, y0, x1, y1] = geo.bbox;
@@ -81,8 +127,9 @@ export function ZoneMap({
       center: geo.centroid,
       capital: projectLonLat(capitalCoords[0], capitalCoords[1]),
       unit: Math.min(w, h),
+      size: null,
     };
-  }, [kind, geo, capitalCoords]);
+  }, [kind, geo, capitalCoords, cityShape]);
 
   const { svgRef, viewBoxAttr, handlers, wasDrag, zoomIn, zoomOut, reset } = useZoomPan(
     layout.box,
@@ -94,8 +141,11 @@ export function ZoneMap({
   const [focusId, setFocusId] = useState<string | null>(null);
   const [mouse, setMouse] = useState<MousePos | null>(null);
   const R = Math.max(layout.box.w, layout.box.h) * 1.5;
-  const fontSize = layout.box.w / (kind === 'city' ? 30 : 46);
-  const stroke = layout.box.w / 260;
+  // Contorno real da cidade: o mapa (mais largo que alto) enquadra pela altura nas cidades
+  // "altas" e pela largura nas "largas" — texto e traço seguem a dimensão que limita.
+  const fit = layout.size ? Math.max(layout.box.w / 1.6, layout.box.h) : null;
+  const fontSize = fit ? fit / 44 : layout.box.w / (kind === 'city' ? 30 : 46);
+  const stroke = fit ? fit / 300 : layout.box.w / 260;
 
   const shapeFor = (
     z: ZoneSpec,
@@ -111,15 +161,21 @@ export function ZoneMap({
         cy: layout.capital[1],
         r: Math.max(layout.unit * 0.09, layout.box.w * 0.025),
       };
-    return { el: 'circle', cx: layout.center[0], cy: layout.center[1], r: 62 };
+    // Centro da cidade: proporcional ao contorno real (o desenho genérico usa medida fixa).
+    const r = layout.size ? Math.max(layout.size[0], layout.size[1]) * 0.09 : 62;
+    return { el: 'circle', cx: layout.center[0], cy: layout.center[1], r };
   };
 
   const labelPos = (z: ZoneSpec): [number, number] => {
     if (z.type === 'sector' && z.direction) {
       const [dx, dy] = dirVector(z.direction);
-      const anchor = kind === 'city' ? layout.center : layout.center;
-      const dist = kind === 'city' ? 115 : layout.unit * 0.32;
-      return [anchor[0] + dx * dist, anchor[1] + dy * dist];
+      // No contorno real, a distância segue a extensão da cidade naquele eixo.
+      const dist = layout.size
+        ? (dx !== 0 ? layout.size[0] : layout.size[1]) * 0.3
+        : kind === 'city'
+          ? 115
+          : layout.unit * 0.32;
+      return [layout.center[0] + dx * dist, layout.center[1] + dy * dist];
     }
     if (z.type === 'metro')
       return [layout.capital[0], layout.capital[1] + layout.unit * 0.2 + fontSize];

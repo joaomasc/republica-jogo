@@ -4,6 +4,7 @@ import { clamp, round, sum } from '../core/math';
 import type { ActionResult } from '../core/types';
 import type { Jurisdiction } from '../election/offices';
 import type { IssueId } from '../ideology/issues';
+import { cityOf } from '../map/cities';
 import { STATE_LIST, STATES } from '../map/states';
 import type { GameState } from '../simulation/state';
 import { BUDGET_CATEGORIES, type BudgetCategory, type BudgetState } from './types';
@@ -86,12 +87,13 @@ export function initBudget(state: GameState, jurisdiction: Jurisdiction): Budget
     revenue = national * 0.27 * stateGdpShare(jurisdiction.stateId) * 1.1;
   else {
     const s = STATES[jurisdiction.stateId];
+    const city = cityOf(jurisdiction.stateId, jurisdiction.cityId);
     revenue =
       national *
       0.11 *
       stateGdpShare(jurisdiction.stateId) *
-      (s.capitalPopulation / s.population) *
-      1.6;
+      Math.min(0.95, city.population / s.population) *
+      (city.capital ? 1.6 : 1.3);
   }
   const shares = SHARES[jurisdiction.level];
   const total = revenue * 0.98;

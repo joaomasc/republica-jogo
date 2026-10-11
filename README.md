@@ -4,7 +4,7 @@
 
 Simulador político e eleitoral jogável no navegador. Você cria um político cartoon, escolhe (ou funda) um partido, disputa eleições do município à Presidência, faz campanha com dinheiro, equipe, propaganda, entrevistas e debates — e, se vencer, governa um país com economia de verdade: mercado nacional, indústrias em 27 estados, comércio exterior, leis no estilo Victoria 3 (do liberalismo à economia planificada), decretos e um Congresso que tramita, engaveta, vota, veta e até abre impeachment. Cada partida conta uma história diferente.
 
-> No mundo **Brasil real** (padrão), os partidos são os 30 registrados no TSE, com sigla, número e logo oficiais ([fontes e créditos](docs/PARTIDOS_REAIS.md)). Suas posições e forças são aproximações do modelo. Políticos, eventos, veículos de imprensa e institutos de pesquisa são **fictícios** em todos os mundos, e os mundos Fictício e Paródia também têm partidos inventados. A malha territorial dos estados vem do IBGE (dado público). Os efeitos de leis e da economia são de um **modelo simplificado de jogo**, não previsões sobre o mundo real, e nenhuma ideologia é tratada como moralmente superior.
+> No mundo **Brasil real** (padrão), os partidos são os 30 registrados no TSE, com sigla, número e logo oficiais ([fontes e créditos](docs/PARTIDOS_REAIS.md)). Suas posições e forças são aproximações do modelo. Políticos, eventos, veículos de imprensa e institutos de pesquisa são **fictícios** em todos os mundos, e os mundos Fictício e Paródia também têm partidos inventados. Estados e cidades usam dados públicos do IBGE: malha territorial, população do Censo 2022 e as cidades-polo da REGIC 2018. Os efeitos de leis e da economia são de um **modelo simplificado de jogo**, não previsões sobre o mundo real, e nenhuma ideologia é tratada como moralmente superior.
 
 ## Sumário
 
@@ -158,8 +158,10 @@ packages/
     scripts/              Bots e simulação em lote (balanceamento)
   ui/                     Componentes visuais: avatar SVG, mapa do Brasil e de zonas, painéis, barras
   shared/                 Rotas e DTOs da API
-data/geo/                 Malha das UFs (IBGE), fonte do mapa
-scripts/generate-map.mjs  Converte a malha em paths SVG (packages/ui/src/map/brazilGeometry.generated.ts)
+data/geo/                 Malhas das UFs e das cidades jogáveis (IBGE), fonte dos mapas
+data/cidades-ibge.json    Cidades jogáveis: código IBGE, população (Censo 2022), nível REGIC
+scripts/fetch-cities.mjs  Baixa do IBGE os dados e contornos das cidades (npm run fetch:cities)
+scripts/generate-map.mjs  Converte as malhas em paths SVG e gera o cadastro de cidades do motor
 e2e/                      Testes Playwright
 docs/GAME_DESIGN.md       Mecânicas e fórmulas
 ```
@@ -184,7 +186,13 @@ Em `packages/game-engine/src/election/offices.ts`, inclua o id em `OFFICE_IDS` e
 
 ### Adicionar uma região
 
-Os estados ficam em `packages/game-engine/src/map/states.ts` (população, capital, coordenadas, perfil econômico, problemas). A geometria vem de `data/geo/br-uf-ibge.geojson`; depois de trocar a malha, rode `npm run generate:map`. Zonas dentro de estados e capitais são geradas em `map/units.ts`.
+Os estados ficam em `packages/game-engine/src/map/states.ts` (população, capital, coordenadas, perfil econômico, problemas). A geometria vem de `data/geo/br-uf-ibge.geojson`; depois de trocar a malha, rode `npm run generate:map`. Zonas dentro de estados e cidades são geradas em `map/units.ts`.
+
+### Cidades jogáveis
+
+As eleições municipais (prefeito e vereador) podem ser disputadas em 123 cidades: as capitais, as metrópoles e as capitais regionais da [REGIC 2018](https://www.ibge.gov.br/geociencias/organizacao-do-territorio/redes-e-fluxos-geograficos/15798-regioes-de-influencia-das-cidades.html) do IBGE (as cidades-polo de cada estado, como Caxias do Sul, Santa Maria e Passo Fundo no RS), mais os municípios com 500 mil habitantes ou mais que a REGIC agrupa no arranjo da capital (Guarulhos, São Gonçalo, Contagem...). Cada cidade tem o contorno real do município no mapa, eleitorado proporcional à população do Censo 2022 e câmara municipal no teto constitucional de vereadores.
+
+Para mudar a lista, edite `CITIES` em `scripts/fetch-cities.mjs` e rode `npm run fetch:cities` (com internet) e depois `npm run generate:map`. O jogo em si nunca acessa a internet: os contornos (cerca de 165 KB) ficam num módulo carregado só quando um mapa de cidade aparece.
 
 ## IA generativa
 

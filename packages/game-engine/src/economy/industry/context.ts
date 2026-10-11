@@ -2,6 +2,7 @@ import { clamp } from '../../core/math';
 import { isStateId, STATE_IDS, type StateId } from '../../core/types';
 import { aggregateLawEffects, type AggregatedLawEffects } from '../../laws/laws';
 import { aggregateEconomyModifiers, mergeModifiers } from '../../laws/modifiers';
+import { cityOf } from '../../map/cities';
 import { STATES } from '../../map/states';
 import type { GameState } from '../../simulation/state';
 import { BUDGET_CATEGORIES, type BudgetCategory, type BudgetState } from '../types';
@@ -150,7 +151,8 @@ export function buildContext(state: GameState): IndustryContext {
         if (playerLevel === 'estadual') v += ws * (r - 1);
         else if (playerLevel === 'municipal') {
           const s = STATES[id];
-          v += wm * (s.capitalPopulation / Math.max(1, s.population)) * (r - 1);
+          const city = cityOf(id, gov?.jurisdiction.cityId);
+          v += wm * Math.min(0.95, city.population / Math.max(1, s.population)) * (r - 1);
         }
       }
       row[id] = Math.max(0, v);

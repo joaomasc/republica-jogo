@@ -1,5 +1,6 @@
 import {
   careerOptions,
+  cityOf,
   formatDateLong,
   ISSUE_DEFINITIONS,
   ISSUES,
@@ -25,6 +26,7 @@ import {
 } from '@republica/ui';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { CitySelect } from '../../components/CitySelect';
 import { pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 
@@ -168,6 +170,12 @@ export function CareerView() {
   const navigate = useNavigate();
   const player = game.candidates[game.playerId];
   const [stateId, setStateId] = useState<StateId>(player?.homeStateId ?? 'SP');
+  // Cidade das candidaturas municipais (null = capital): começa na do último cargo municipal.
+  const [cityId, setCityId] = useState<string | null>(() => {
+    const last = game.government?.jurisdiction ?? game.election?.jurisdiction;
+    return last?.cityId && last.stateId === stateId ? last.cityId : null;
+  });
+  const city = cityOf(stateId, cityId);
   const [founding, setFounding] = useState(false);
   const [confirmRetire, setConfirmRetire] = useState(false);
   if (!player) return null;
@@ -264,17 +272,30 @@ export function CareerView() {
             title="Próxima candidatura"
             icon="vote"
             actions={
-              <select
-                className="game-select py-1 text-xs"
-                value={stateId}
-                onChange={(e) => setStateId(e.target.value as StateId)}
-              >
-                {STATE_LIST.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-wrap gap-1.5">
+                <select
+                  className="game-select py-1 text-xs"
+                  value={stateId}
+                  onChange={(e) => {
+                    setStateId(e.target.value as StateId);
+                    setCityId(null);
+                  }}
+                  aria-label="Estado"
+                >
+                  {STATE_LIST.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <CitySelect
+                  stateId={stateId}
+                  value={cityId}
+                  onChange={setCityId}
+                  className="py-1 text-xs"
+                  testId="career-city"
+                />
+              </div>
             }
           >
             <div className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-4">
@@ -305,10 +326,22 @@ export function CareerView() {
                       variant="primary"
                       className="mt-auto"
                       disabled={!o.eligible}
-                      onClick={() => act({ type: 'career/run', officeId: o.officeId, stateId })}
+                      onClick={() =>
+                        act({
+                          type: 'career/run',
+                          officeId: o.officeId,
+                          stateId,
+                          ...(office.unitsKind === 'cityZones' && cityId ? { cityId } : {}),
+                        })
+                      }
                       data-testid={`run-${o.officeId}`}
                     >
-                      Concorrer {office.unitsKind === 'states' ? '' : `(${stateId})`}
+                      Concorrer{' '}
+                      {office.unitsKind === 'states'
+                        ? ''
+                        : office.unitsKind === 'cityZones'
+                          ? `(${city.name})`
+                          : `(${stateId})`}
                     </Button>
                   </div>
                 );

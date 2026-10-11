@@ -469,15 +469,3 @@ export function stateAssemblySeats(stateId: StateId): number {
   const federal = STATES[stateId].federalSeats;
   return federal <= 12 ? federal * 3 : 36 + (federal - 12);
 }
-
-/** Câmara municipal da capital — faixas simplificadas por população. */
-export function cityCouncilSeats(stateId: StateId): number {
-  const pop = STATES[stateId].capitalPopulation;
-  if (pop >= 8000) return 55;
-  if (pop >= 5000) return 51;
-  if (pop >= 2000) return 43;
-  if (pop >= 1000) return 39;
-  if (pop >= 600) return 29;
-  if (pop >= 300) return 23;
-  return 21;
-}

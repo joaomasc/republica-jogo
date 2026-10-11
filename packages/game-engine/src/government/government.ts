@@ -13,6 +13,7 @@ import { nationalMonthlyTick } from '../simulation/nationalTick';
 import { switchLawJurisdiction } from '../laws/federal';
 import { aggregateLawEffects, jurisdictionKey, processLawsMonthly } from '../laws/laws';
 import { initLegislature, processLegislatureMonth } from '../legislature/legislature';
+import { setMayorParty } from '../map/cities';
 import { pushAlert } from '../media/alerts';
 import { publishNews } from '../media/news';
 import { driftParties } from '../parties/parties';
@@ -82,7 +83,7 @@ export function assumeOffice(state: GameState): void {
   else if (office.id === 'governador' && election.jurisdiction.stateId)
     state.landscape.governors[election.jurisdiction.stateId] = party.id;
   else if (office.id === 'prefeito' && election.jurisdiction.stateId)
-    state.landscape.mayors[election.jurisdiction.stateId] = party.id;
+    setMayorParty(state, election.jurisdiction.stateId, election.jurisdiction.cityId, party.id);
 
   const legislature = legislatureJurisdiction(election.jurisdiction, election.officeId);
   const key = jurisdictionKey(office.branch === 'executive' ? election.jurisdiction : legislature);

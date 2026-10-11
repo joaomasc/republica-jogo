@@ -20,6 +20,17 @@ export * from './ideology/issues';
 
 // Território e população
 export * from './map/states';
+export {
+  capitalOf,
+  CITIES,
+  citiesOf,
+  cityCouncilSeats,
+  cityOf,
+  cityOfJurisdiction,
+  mayorPartyOf,
+  type CityData,
+  type RegicLevel,
+} from './map/cities';
 export * from './map/regions';
 export { buildNationalUnits } from './map/units';
 export * from './population/popTypes';

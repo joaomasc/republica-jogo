@@ -7,6 +7,7 @@ import type { ElectoralUnit, ZoneDirection } from '../election/types';
 import { POP_TYPE_IDS, type PopTypeId } from '../population/popTypes';
 import { popId, popsOfState } from '../population/population';
 import type { PopulationState } from '../population/types';
+import { cityOf } from './cities';
 import { STATES } from './states';
 
 type ZoneProfile = Partial<Record<PopTypeId, number>>;
@@ -47,6 +48,16 @@ const CITY_PROFILE: ZoneProfile = {
   business: 1.2,
   middle_class: 1.2,
   health_workers: 1.2,
+};
+/** Cidade-polo do interior: mais agro e comércio, menos máquina pública que a capital. */
+const REGIONAL_CITY_PROFILE: ZoneProfile = {
+  farmers: 0.45,
+  merchants: 1.3,
+  industrial_workers: 1.15,
+  business: 1.1,
+  students: 1.1,
+  civil_servants: 0.9,
+  tech_workers: 0.9,
 };
 const CITY_ZONE_PROFILES: ZoneProfile[] = [
   {
@@ -175,9 +186,11 @@ export function buildCityZones(
   stateId: StateId,
   rng: Rng,
   electorateShare?: number,
+  cityId?: string | null,
 ): ElectoralUnit[] {
   const s = STATES[stateId];
-  const share = electorateShare ?? s.capitalPopulation / s.population;
+  const city = cityOf(stateId, cityId);
+  const share = electorateShare ?? Math.min(0.95, city.population / s.population);
   const profiles = rng.shuffle(CITY_ZONE_PROFILES);
   const sectorShares = randomShares(rng, 4, 0.88, 0.25);
   const zones: ZoneSpec[] = [
@@ -196,7 +209,13 @@ export function buildCityZones(
       zone: { type: 'sector' as const, direction: d.dir },
     })),
   ];
-  return distribute(population, stateId, zones, CITY_PROFILE, share);
+  return distribute(
+    population,
+    stateId,
+    zones,
+    city.capital ? CITY_PROFILE : REGIONAL_CITY_PROFILE,
+    share,
+  );
 }
 
 export function buildNationalUnits(population: PopulationState): ElectoralUnit[] {
@@ -218,6 +237,7 @@ export function buildUnits(
   officeId: OfficeId,
   stateId: StateId,
   rng: Rng,
+  cityId?: string | null,
 ): ElectoralUnit[] {
   switch (OFFICES[officeId].unitsKind) {
     case 'states':
@@ -225,6 +245,6 @@ export function buildUnits(
     case 'stateZones':
       return buildStateZones(population, stateId, rng);
     case 'cityZones':
-      return buildCityZones(population, stateId, rng);
+      return buildCityZones(population, stateId, rng, undefined, cityId);
   }
 }

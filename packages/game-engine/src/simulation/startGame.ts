@@ -36,6 +36,7 @@ import {
 import { REAL_INCUMBENT_PRESIDENT } from '../parties/realParties.data';
 import { initCongress } from '../politics/congress';
 import { initInterestGroups } from '../politics/interestGroups.data';
+import { CITIES, rollCityMayors } from '../map/cities';
 import { generatePopulation, refreshPartyAffinities } from '../population/population';
 import type { ObjectiveDefinition } from '../scenarios/objectives';
 import { getScenario } from '../scenarios/scenarios';
@@ -62,7 +63,8 @@ export interface NewGameConfig {
   scenarioId?: string | null;
   candidate: CreateCandidateInput;
   party: { kind: 'existing'; partyId: string } | { kind: 'new'; input: CreatePartyInput };
-  office: { officeId: OfficeId; stateId: StateId };
+  /** `cityId`: cidade das eleições municipais (código IBGE); ausente = capital. */
+  office: { officeId: OfficeId; stateId: StateId; cityId?: string };
   year?: number;
   sandbox?: SandboxOptions;
   economy?: EconomicSituation;
@@ -112,6 +114,8 @@ export function validateNewGame(config: NewGameConfig): string | null {
   if (config.candidate.age < office.minAge)
     return `Idade mínima para ${office.name}: ${office.minAge} anos.`;
   if (!STATE_IDS.includes(config.office.stateId)) return 'Estado inválido.';
+  if (config.office.cityId && CITIES[config.office.cityId]?.stateId !== config.office.stateId)
+    return 'Cidade inválida para o estado.';
   if (config.party.kind === 'new')
     return validatePartyInput(config.party.input, initParties(config.world));
   if (!initParties(config.world)[config.party.partyId]) return 'Partido inválido.';
@@ -205,6 +209,7 @@ export function startGame(config: NewGameConfig): GameState {
           : pickParty((p) => (p.popularity * (0.5 + p.influence / 100)) ** 2),
       governors,
       mayors,
+      cityMayors: rollCityMayors({ parties, regions }, new Rng(hashSeed(seed, 'city-mayors'))),
     },
     media: { news: [] },
     events: { pending: [], scheduled: [], log: [], lastFired: {}, firedCount: {}, modifiers: [] },
@@ -249,6 +254,7 @@ export function startGame(config: NewGameConfig): GameState {
   setupElection(state, {
     officeId,
     stateId: config.office.stateId,
+    cityId: config.office.cityId ?? null,
     year,
     ...(config.sandbox?.campaignDays ? { campaignDays: config.sandbox.campaignDays } : {}),
     ...(config.sandbox?.startingMoney !== undefined

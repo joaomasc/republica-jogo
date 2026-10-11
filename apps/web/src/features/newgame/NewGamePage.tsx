@@ -72,6 +72,7 @@ function initialState(
     party: { kind: 'existing', partyId: partyIdForWorld(preset?.partyId, world) },
     officeId: preset?.officeId ?? 'presidente',
     stateId: preset?.stateId ?? 'SP',
+    cityId: null,
     difficulty: preset?.difficulty ?? defaultDifficulty,
     world,
     weekly: true,
@@ -181,6 +182,9 @@ export function NewGamePage() {
       office: {
         officeId: state.officeId,
         stateId: OFFICES[state.officeId].unitsKind === 'states' ? state.homeStateId : state.stateId,
+        ...(OFFICES[state.officeId].unitsKind === 'cityZones' && state.cityId
+          ? { cityId: state.cityId }
+          : {}),
       },
       ...(preset?.year ? { year: preset.year } : {}),
       ...(preset?.economy ? { economy: preset.economy } : {}),
@@ -321,7 +325,7 @@ export function NewGamePage() {
                         homeStateId: e.target.value as WizardState['homeStateId'],
                         ...(preset?.lockOffice
                           ? {}
-                          : { stateId: e.target.value as WizardState['stateId'] }),
+                          : { stateId: e.target.value as WizardState['stateId'], cityId: null }),
                       })
                     }
                   >

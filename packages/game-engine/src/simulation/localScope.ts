@@ -3,6 +3,7 @@ import { stateGdpShare } from '../economy/budget';
 import { worksUnemploymentRelief } from '../economy/works/works';
 import type { OfficeLevel } from '../election/offices';
 import { stateOfName } from '../map/stateNames';
+import { cityOf } from '../map/cities';
 import { STATES } from '../map/states';
 import type { GameState } from './state';
 
@@ -75,8 +76,9 @@ export function localScope(state: GameState): LocalScope {
       estimated: false,
     };
   }
-  // Cidade (capital): proporção da população; capitais têm renda per capita maior.
-  const share = st.capitalPopulation / Math.max(1, st.population);
+  // Cidade: proporção da população; capitais têm renda per capita maior que as cidades-polo.
+  const city = cityOf(stateId, office.cityId);
+  const share = Math.min(0.95, city.population / Math.max(1, st.population));
   const stateRate = region?.unemployment ?? e.unemployment;
   // As obras do prefeito empregam gente da cidade: o efeito, diluído no estado, concentra-se nela.
   const lab = state.industry?.labor?.[stateId];
@@ -88,14 +90,14 @@ export function localScope(state: GameState): LocalScope {
     kind: 'city',
     level: 'municipal',
     stateId,
-    name: st.capital,
-    ofName: `de ${st.capital}`,
-    population: st.capitalPopulation * 1000,
-    gdp: stateGdp * share * 1.25,
+    name: city.name,
+    ofName: `de ${city.name}`,
+    population: city.population * 1000,
+    gdp: stateGdp * share * (city.capital ? 1.25 : 1.1),
     growth: region?.growth ?? e.growth,
     unemployment: cityRate,
     unemployment0,
-    income: (region?.income ?? e.income) * 1.15,
+    income: (region?.income ?? e.income) * (city.capital ? 1.15 : 1.05),
     estimated: true,
   };
 }

@@ -10,6 +10,13 @@ export interface ViewBox {
 /** Zoom (roda do mouse / botões) e arrasto para um SVG controlado por viewBox. */
 export function useZoomPan(base: ViewBox, minScale = 1, maxScale = 6) {
   const [view, setView] = useState<ViewBox>(base);
+  // Área base nova (ex.: o contorno real da cidade terminou de carregar): reenquadra.
+  const baseKey = `${base.x},${base.y},${base.w},${base.h}`;
+  const [viewFor, setViewFor] = useState(baseKey);
+  if (viewFor !== baseKey) {
+    setViewFor(baseKey);
+    setView(base);
+  }
   const drag = useRef<{ x: number; y: number; view: ViewBox; moved: boolean } | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 

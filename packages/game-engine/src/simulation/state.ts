@@ -50,7 +50,10 @@ export interface GameMeta {
 export interface PoliticalLandscape {
   presidentPartyId: PartyId;
   governors: Record<StateId, PartyId>;
+  /** Prefeitos das capitais. */
   mayors: Record<StateId, PartyId>;
+  /** Prefeitos das demais cidades jogáveis (código IBGE → partido); ausente em saves antigos. */
+  cityMayors?: Record<string, PartyId>;
 }
 
 /** Valores de referência para detectar mudanças e gerar alertas/notícias. */

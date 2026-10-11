@@ -3,6 +3,7 @@ import { clamp, sigmoid } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { ActionResult, PartyId } from '../core/types';
 import { OFFICES, type Jurisdiction, type OfficeLevel } from '../election/offices';
+import { cityOfJurisdiction } from '../map/cities';
 import type { BudgetCategory } from '../economy/types';
 import { IDEOLOGY_AXES, type IdeologyVector } from '../ideology/axes';
 import { ideologyAffinity } from '../ideology/ideology';
@@ -24,8 +25,14 @@ import { isBillActive, type Bill, type LawEconomyEffects, type LawOptionDefiniti
 
 const L = GameConstants.laws;
 
-export function jurisdictionKey(j: Pick<Jurisdiction, 'level' | 'stateId'>): string {
-  return j.level === 'federal' || !j.stateId ? 'federal' : `${j.level}:${j.stateId}`;
+/**
+ * Chave das leis de uma esfera. Cidades que não são capitais ganham um terceiro trecho
+ * (`municipal:RS:4305108`); as capitais mantêm `municipal:RS` (compatível com saves antigos).
+ */
+export function jurisdictionKey(j: Pick<Jurisdiction, 'level' | 'stateId' | 'cityId'>): string {
+  if (j.level === 'federal' || !j.stateId) return 'federal';
+  const city = cityOfJurisdiction(j);
+  return city && !city.capital ? `${j.level}:${j.stateId}:${city.id}` : `${j.level}:${j.stateId}`;
 }
 
 export function initLawsState(key = 'federal'): LawsState {

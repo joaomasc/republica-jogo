@@ -2,13 +2,14 @@ import { beginWeek } from '../campaign/weekly';
 import { GameConstants } from '../config/constants';
 import { addDays, addMonths, diffDays, firstSundayOfOctober, makeDate, yearOf } from '../core/date';
 import { clamp, clamp100 } from '../core/math';
-import { withRng, type Rng } from '../core/rng';
+import { hashSeed, Rng, withRng } from '../core/rng';
 import { STATE_IDS, type ActionResult, type PartyId, type StateId } from '../core/types';
 import { updateEconomy } from '../economy/economy';
 import { nextElectionYear, OFFICE_LIST, OFFICES, type OfficeId } from '../election/offices';
 import { addPoll, createPoll, pickPollster } from '../election/polls';
 import { setupElection } from '../election/setup';
 import { addHistory } from '../history/history';
+import { rollCityMayors } from '../map/cities';
 import { publishNews } from '../media/news';
 import {
   createPartyFromInput,
@@ -83,6 +84,10 @@ function rollLandscape(state: GameState, rng: Rng, kind: 'general' | 'municipal'
       state.landscape.mayors[id] = pick(
         (p) => (p.popularity * ((state.regions[id]?.partyStrength[p.id] ?? 50) / 50)) ** 2,
       );
+    state.landscape.cityMayors = rollCityMayors(
+      state,
+      new Rng(hashSeed(state.meta.seed, 'city-mayors', state.date)),
+    );
   }
 }
 
@@ -115,7 +120,12 @@ export function fastForward(state: GameState, toDate: string): void {
   }
 }
 
-export function runForOffice(state: GameState, officeId: OfficeId, stateId: StateId): ActionResult {
+export function runForOffice(
+  state: GameState,
+  officeId: OfficeId,
+  stateId: StateId,
+  cityId?: string | null,
+): ActionResult {
   if (state.phase !== 'career')
     return {
       ok: false,
@@ -130,6 +140,7 @@ export function runForOffice(state: GameState, officeId: OfficeId, stateId: Stat
   setupElection(state, {
     officeId,
     stateId,
+    cityId: cityId ?? null,
     year: option.year,
     playerIncumbent: option.reelection && !!evaluation,
   });

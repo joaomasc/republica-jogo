@@ -5,7 +5,8 @@ import type { PartyId, StateId } from '../core/types';
 import type { Jurisdiction } from '../election/offices';
 import { dhondt } from '../election/proportional';
 import { ideologyAffinity } from '../ideology/ideology';
-import { cityCouncilSeats, stateAssemblySeats } from '../map/states';
+import { cityCouncilSeats } from '../map/cities';
+import { stateAssemblySeats } from '../map/states';
 import type { Party } from '../parties/types';
 import type { GameState } from '../simulation/state';
 import type { Chamber, CongressState } from './types';
@@ -69,7 +70,7 @@ export function buildChambers(
     makeChamber(
       'camara_municipal',
       'Câmara Municipal',
-      cityCouncilSeats(jurisdiction.stateId),
+      cityCouncilSeats(jurisdiction.stateId, jurisdiction.cityId),
       partyWeights(state, jurisdiction.stateId, rng, coattail),
     ),
   ];

@@ -3,6 +3,7 @@ import { isStateId, type PartyId, type StateId } from '../core/types';
 import type { OfficeLevel } from '../election/offices';
 import { getLawOption } from '../laws/laws.data';
 import type { Bill, BillInstrument } from '../laws/types';
+import { mayorPartyOf } from '../map/cities';
 import { pushAlert, type AlertInput } from '../media/alerts';
 import { publishNews, type NewsInput } from '../media/news';
 import { NEWS_OUTLETS } from '../media/outlets';
@@ -100,7 +101,8 @@ export function executiveInfo(state: GameState): ExecutiveInfo {
     level === 'estadual' && stateId
       ? (land.governors[stateId] ?? land.presidentPartyId)
       : level === 'municipal' && stateId
-        ? (land.mayors[stateId] ?? land.presidentPartyId)
+        ? (mayorPartyOf(state, stateId, state.government?.jurisdiction.cityId) ??
+          land.presidentPartyId)
         : land.presidentPartyId;
   return { isPlayer: false, partyId, label: EXEC_LABEL[level], office: EXEC_OFFICE[level], level };
 }

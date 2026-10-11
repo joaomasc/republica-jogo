@@ -1,4 +1,5 @@
 import {
+  capitalOf,
   diffDays,
   formatDateLong,
   formatDateShort,
@@ -50,6 +51,7 @@ function ResultMap({ game }: { game: GameState }) {
       <ZoneMap
         kind={units.some((u) => u.zone?.type === 'center') ? 'city' : 'state'}
         stateId={stateId}
+        cityId={game.election?.jurisdiction.cityId ?? capitalOf(stateId).id}
         capitalCoords={STATES[stateId].capitalCoords}
         zones={units.map((u) => ({
           id: u.id,

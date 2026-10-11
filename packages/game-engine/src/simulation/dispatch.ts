@@ -101,7 +101,7 @@ export type GameAction =
   | { type: 'gov/amendments'; partyId: PartyId; billId: string }
   | { type: 'gov/concession'; billId: string }
   | { type: 'gov/publicCampaign'; billId: string }
-  | { type: 'career/run'; officeId: OfficeId; stateId: StateId }
+  | { type: 'career/run'; officeId: OfficeId; stateId: StateId; cityId?: string }
   | { type: 'career/switchParty'; partyId: PartyId }
   | { type: 'career/foundParty'; input: CreatePartyInput }
   | { type: 'career/platform'; platform: Record<string, string> }
@@ -249,7 +249,7 @@ function apply(state: GameState, action: GameAction): ActionResult {
     case 'gov/publicCampaign':
       return publicCampaignForBill(state, action.billId);
     case 'career/run':
-      return runForOffice(state, action.officeId, action.stateId);
+      return runForOffice(state, action.officeId, action.stateId, action.cityId);
     case 'career/switchParty':
       return switchParty(state, action.partyId);
     case 'career/foundParty':

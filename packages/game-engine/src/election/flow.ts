@@ -3,6 +3,7 @@ import { clamp100, formatPct } from '../core/math';
 import type { ActionResult } from '../core/types';
 import { assumeOffice } from '../government/government';
 import { addHistory } from '../history/history';
+import { setMayorParty } from '../map/cities';
 import { publishNews } from '../media/news';
 import { getPlayer, getPlayerParty, requireElection } from '../simulation/access';
 import type { GameState } from '../simulation/state';
@@ -86,7 +87,7 @@ function setLandscapeWinner(state: GameState, winnerId: string): void {
   else if (election.officeId === 'governador' && stateId)
     state.landscape.governors[stateId] = cand.partyId;
   else if (election.officeId === 'prefeito' && stateId)
-    state.landscape.mayors[stateId] = cand.partyId;
+    setMayorParty(state, stateId, election.jurisdiction.cityId, cand.partyId);
 }
 
 function recordElection(state: GameState, won: boolean, pct: number, round: 1 | 2): void {

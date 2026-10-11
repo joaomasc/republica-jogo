@@ -194,3 +194,124 @@ writeFileSync(target, body);
 console.log(
   `Mapa gerado: ${Object.keys(out).length} UFs, ${total} pontos, ${WIDTH}x${HEIGHT} → ${target}`,
 );
+
+// ---------------------------------------------------------------------------
+// Cidades jogáveis: contorno municipal (cada uma na própria escala) e dados do motor.
+// Entradas: data/cidades-ibge.json e data/geo/br-cidades-ibge.geojson (scripts/fetch-cities.mjs).
+// ---------------------------------------------------------------------------
+
+const CITY_SIZE = 400;
+const cityInfo = JSON.parse(readFileSync(resolve(root, 'data/cidades-ibge.json'), 'utf8'));
+const cityGeo = JSON.parse(readFileSync(resolve(root, 'data/geo/br-cidades-ibge.geojson'), 'utf8'));
+const cityShapes = {};
+const citySeeds = [];
+let cityPoints = 0;
+for (const c of cityInfo) {
+  const f = cityGeo.features.find((x) => x.properties.codarea === c.code);
+  if (!f) throw new Error(`Sem contorno para ${c.name} (${c.code})`);
+  let lon0 = Infinity,
+    lon1 = -Infinity,
+    lat0 = Infinity,
+    lat1 = -Infinity;
+  for (const poly of polygonsOf(f.geometry))
+    for (const [lon, lat] of poly[0]) {
+      lon0 = Math.min(lon0, lon);
+      lon1 = Math.max(lon1, lon);
+      lat0 = Math.min(lat0, lat);
+      lat1 = Math.max(lat1, lat);
+    }
+  const kx = Math.cos((((lat0 + lat1) / 2) * Math.PI) / 180);
+  const s = CITY_SIZE / Math.max((lon1 - lon0) * kx, lat1 - lat0);
+  const proj = (lon, lat) => [(lon - lon0) * kx * s, (lat1 - lat) * s];
+  let d = '';
+  let bestArea = 0,
+    bestCentroid = [CITY_SIZE / 2, CITY_SIZE / 2];
+  for (const poly of polygonsOf(f.geometry)) {
+    for (const [ri, ring] of poly.entries()) {
+      const simple = simplify(
+        ring.map(([lon, lat]) => proj(lon, lat)),
+        0.9,
+      );
+      if (simple.length < 3) continue;
+      const area = Math.abs(ringArea(simple));
+      if (area < 4) continue;
+      cityPoints += simple.length;
+      d += `M${simple.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}Z`;
+      if (ri === 0 && area > bestArea) {
+        bestArea = area;
+        bestCentroid = centroid(simple);
+      }
+    }
+  }
+  const w = (lon1 - lon0) * kx * s;
+  const h = (lat1 - lat0) * s;
+  cityShapes[c.code] = {
+    d,
+    bbox: [0, 0, r1(w), r1(h)],
+    centroid: [r1(bestCentroid[0]), r1(bestCentroid[1])],
+  };
+  const lon = lon0 + bestCentroid[0] / (kx * s);
+  const lat = lat1 - bestCentroid[1] / s;
+  citySeeds.push({
+    id: c.code,
+    name: c.name,
+    stateId: c.uf,
+    population: Math.round(c.population / 100) / 10,
+    regic: c.regic,
+    capital: c.capital,
+    coords: [Math.round(lon * 1000) / 1000, Math.round(lat * 1000) / 1000],
+  });
+}
+citySeeds.sort((a, b) => a.stateId.localeCompare(b.stateId) || b.population - a.population);
+
+const cityGeoTarget = resolve(root, 'packages/ui/src/map/cityGeometry.generated.ts');
+writeFileSync(
+  cityGeoTarget,
+  `/* eslint-disable */
+// ARQUIVO GERADO por scripts/generate-map.mjs — não edite à mão.
+// Fonte: IBGE, API de Malhas Territoriais v3 (qualidade intermediária), simplificado.
+// Cada cidade tem a própria escala (lado maior = ${CITY_SIZE}). Carregado sob demanda pelo ZoneMap.
+
+export interface CityGeometry {
+  d: string;
+  centroid: [number, number];
+  bbox: [number, number, number, number];
+}
+
+export const CITY_GEOMETRY: Record<string, CityGeometry> = ${JSON.stringify(cityShapes).replace(/},"/g, '},\n  "')};
+`,
+);
+
+const citySeedTarget = resolve(root, 'packages/game-engine/src/map/cities.generated.ts');
+writeFileSync(
+  citySeedTarget,
+  `/* eslint-disable */
+// ARQUIVO GERADO por scripts/generate-map.mjs — não edite à mão.
+// Fontes: IBGE — Censo 2022 (população), REGIC 2018 (hierarquia urbana), Malhas Territoriais (centro).
+
+import type { StateId } from '../core/types';
+
+/** Nível na hierarquia urbana da REGIC 2018 ('metro' = 500 mil+ no arranjo da capital). */
+export type RegicLevel = '1A' | '1B' | '1C' | '2A' | '2B' | '2C' | 'metro';
+
+export interface CitySeed {
+  /** Código IBGE do município. */
+  id: string;
+  name: string;
+  stateId: StateId;
+  /** População em milhares (Censo 2022). */
+  population: number;
+  regic: RegicLevel;
+  capital: boolean;
+  /** Centro do contorno municipal [longitude, latitude]. */
+  coords: [number, number];
+}
+
+export const CITY_SEEDS: CitySeed[] = [
+${citySeeds.map((c) => `  ${JSON.stringify(c)},`).join('\n')}
+];
+`,
+);
+console.log(
+  `Cidades geradas: ${citySeeds.length}, ${cityPoints} pontos → ${cityGeoTarget}, ${citySeedTarget}`,
+);

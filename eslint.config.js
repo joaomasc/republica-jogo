@@ -14,6 +14,8 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'packages/ui/src/map/brazilGeometry.generated.ts',
+      'packages/ui/src/map/cityGeometry.generated.ts',
+      'packages/game-engine/src/map/cities.generated.ts',
     ],
   },
   js.configs.recommended,

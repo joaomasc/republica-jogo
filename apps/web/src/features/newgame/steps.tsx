@@ -5,6 +5,7 @@ import {
   ATTRIBUTES,
   AXIS_DEFINITIONS,
   BACKGROUNDS,
+  cityOf,
   DIFFICULTIES,
   DIFFICULTY_IDS,
   IDEOLOGY_AXES,
@@ -13,6 +14,7 @@ import {
   neutralIdeology,
   OFFICE_LIST,
   OFFICES,
+  officeSeats,
   PARTY_SYMBOLS,
   defaultPartyId,
   partyCompatibility,
@@ -50,6 +52,8 @@ import {
 import { Minus, Plus, Shuffle } from 'lucide-react';
 import type { WizardState } from './wizardTypes';
 import { PlatformChips, PlatformPicker } from '../platform/PlatformPicker';
+import { CitySelect } from '../../components/CitySelect';
+import { cityKindLabel, cityPopulationLabel } from '../../lib/cities';
 
 export interface StepProps {
   state: WizardState;
@@ -706,23 +710,46 @@ export function OfficeStep({ state, update, locked }: StepProps & { locked?: boo
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {office.unitsKind !== 'states' && (
-          <div className="rounded-xl border-2 border-ink-700 bg-ink-900 p-3">
-            <div className="label mb-1">
-              {office.unitsKind === 'cityZones' ? 'Capital (estado)' : 'Estado'}
+          <div className="space-y-2 rounded-xl border-2 border-ink-700 bg-ink-900 p-3">
+            <div>
+              <div className="label mb-1">Estado</div>
+              <select
+                className="game-select w-full"
+                value={state.stateId}
+                disabled={locked}
+                onChange={(e) =>
+                  update({ stateId: e.target.value as typeof state.stateId, cityId: null })
+                }
+                data-testid="office-state"
+              >
+                {STATE_LIST.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              className="game-select w-full"
-              value={state.stateId}
-              disabled={locked}
-              onChange={(e) => update({ stateId: e.target.value as typeof state.stateId })}
-              data-testid="office-state"
-            >
-              {STATE_LIST.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {office.unitsKind === 'cityZones' ? `${s.capital} (${s.id})` : s.name}
-                </option>
-              ))}
-            </select>
+            {office.unitsKind === 'cityZones' &&
+              (() => {
+                const city = cityOf(state.stateId, state.cityId);
+                return (
+                  <div>
+                    <div className="label mb-1">Cidade</div>
+                    <CitySelect
+                      stateId={state.stateId}
+                      value={state.cityId}
+                      onChange={(cityId) => update({ cityId })}
+                      {...(locked ? { disabled: true } : {})}
+                      className="w-full"
+                    />
+                    <p className="mt-1 text-xs text-muted">
+                      {cityKindLabel(city)} · {cityPopulationLabel(city)}
+                      {office.system === 'proportional' &&
+                        ` · ${officeSeats(office.id, state.stateId, city.id)} vereadores`}
+                    </p>
+                  </div>
+                );
+              })()}
           </div>
         )}
         <div className="rounded-xl border-2 border-ink-700 bg-ink-900 p-3">
@@ -823,7 +850,7 @@ export function ReviewStep({ state }: StepProps) {
               {office.unitsKind === 'states'
                 ? 'Brasil'
                 : office.unitsKind === 'cityZones'
-                  ? `${STATES[state.stateId].capital} (${state.stateId})`
+                  ? `${cityOf(state.stateId, state.cityId).name} (${state.stateId})`
                   : STATES[state.stateId].name}{' '}
               · {DIFFICULTIES[state.difficulty].name}
             </div>

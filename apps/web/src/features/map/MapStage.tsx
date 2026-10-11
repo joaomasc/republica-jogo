@@ -1,4 +1,5 @@
 import {
+  capitalOf,
   mapLayer,
   mapUnits,
   STATES,
@@ -143,6 +144,12 @@ export function MapStage({ style, className }: { style?: CSSProperties; classNam
   const isZones = units[0]?.kind === 'zone';
   const isCity = units.some((u) => u.zone?.type === 'center');
   const stateId = units[0]?.stateId ?? 'SP';
+  // Saves antigos e o DF (zonas de cidade sem cidade definida) usam a capital.
+  const cityId = isCity
+    ? (game.election?.jurisdiction.cityId ??
+      game.government?.jurisdiction.cityId ??
+      capitalOf(stateId).id)
+    : undefined;
 
   const open = (id: string) => {
     selectUnit(id);
@@ -183,6 +190,7 @@ export function MapStage({ style, className }: { style?: CSSProperties; classNam
           <ZoneMap
             kind={isCity ? 'city' : 'state'}
             stateId={stateId}
+            {...(cityId ? { cityId } : {})}
             capitalCoords={STATES[stateId].capitalCoords}
             zones={zones}
             fills={fills}
