@@ -35,16 +35,16 @@ export function NationView() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Legitimidade" icon="badge-check" value={Math.round(n.legitimacy)} sub={`tendência ${Math.round(n.legitimacyTarget)}`} tone={n.legitimacy >= 60 ? 'good' : n.legitimacy < 35 ? 'bad' : 'warn'} />
         <StatTile label="Inquietação" icon="flame" value={Math.round(n.unrest)} tone={n.unrest >= 50 ? 'bad' : 'neutral'} />
         <StatTile label="Indústria" icon="factory" value={pct(econ.manufacturingShare)} sub="do valor adicionado" />
         <StatTile label="Greves" icon="hand-fist" value={n.strikes.length} tone={n.strikes.length ? 'bad' : 'good'} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
-        <Panel title="Pilares do sistema" icon="landmark" className="xl:col-span-2">
-          <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-3">
+        <Panel title="Pilares do sistema" icon="landmark" className="@3xl:col-span-2">
+          <div className="grid gap-2 @sm:grid-cols-2">
             {PILLARS.map((id) => {
               const cat = getLawCategory(id);
               const opt = federalOption(game, id);
@@ -83,7 +83,7 @@ export function NationView() {
         </Panel>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
+      <div className="grid gap-3 @3xl:grid-cols-3">
         <Panel title="Greves e mobilizações" icon="hand-fist">
           {n.strikes.length === 0 ? (
             <p className="text-sm text-muted">Nenhuma greve em curso.</p>

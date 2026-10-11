@@ -129,7 +129,7 @@ export function PollsView() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Você" icon="vote" value={pct(share(poll, game.playerId))} tone="gold" />
         <StatTile label="Indecisos" icon="users" value={pct(poll.total.undecided)} />
         <StatTile label="Brancos/nulos" icon="file-text" value={pct(poll.total.blankNull)} />
@@ -141,7 +141,7 @@ export function PollsView() {
         />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title={`Intenção de voto — ${poll.pollster}`} icon="bar-chart-3">
           <div className="space-y-2.5" data-testid="poll-results">
             {ranked.map((id) => (
@@ -207,7 +207,7 @@ export function PollsView() {
         </Panel>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
+      <div className="grid gap-3 @3xl:grid-cols-3">
         {poll.runoffScenarios && poll.runoffScenarios.length > 0 && (
           <Panel title="Cenários de 2º turno" icon="vote">
             <div className="space-y-3">
@@ -327,7 +327,7 @@ export function PollsView() {
               />
             ))}
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-3 grid gap-2 @sm:grid-cols-3 @2xl:grid-cols-6">
             {SEGMENTS.map((s) => (
               <div key={s.key} className="rounded-lg bg-ink-900 p-2" title={s.hint}>
                 <div className="flex items-center gap-1.5 text-xs font-bold">

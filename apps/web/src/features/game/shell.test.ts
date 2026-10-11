@@ -8,7 +8,7 @@ import {
   type GameSpeed,
 } from '../../store/settingsStore';
 import { availableModes, effectiveMode } from '../map/mapModes';
-import { LAYOUT, panelWidthPx } from './layout';
+import { clusterWidth, dockHeight, LAYOUT, panelWidthPx, planDock } from './layout';
 import {
   alertRoute,
   isNavItemVisible,
@@ -68,7 +68,7 @@ describe('largura dos painéis', () => {
   it('nunca invade o bloco de tempo quando há espaço', () => {
     for (const viewport of [1024, 1100, 1280, 1600, 1920, 2560]) {
       const room =
-        viewport - LAYOUT.dock - LAYOUT.gap * 2 - LAYOUT.cluster - LAYOUT.edge * 2;
+        viewport - LAYOUT.dock - LAYOUT.gap * 2 - clusterWidth(viewport) - LAYOUT.edge * 2;
       for (const kind of ['narrow', 'normal', 'wide'] as const) {
         const w = panelWidthPx(kind, viewport);
         expect(w).toBeGreaterThanOrEqual(LAYOUT.panelMin);
@@ -81,6 +81,29 @@ describe('largura dos painéis', () => {
   it('painel largo é maior que o normal em telas grandes', () => {
     expect(panelWidthPx('wide', 2560)).toBeGreaterThan(panelWidthPx('normal', 2560));
     expect(panelWidthPx('narrow', 2560)).toBeLessThan(panelWidthPx('normal', 2560));
+  });
+});
+
+describe('dock em telas baixas', () => {
+  const groups = NAV_GROUPS.map((g) => ({ id: g.id, size: g.items.length }));
+
+  it('não recolhe nada quando cabe', () => {
+    expect(planDock(groups, 2000, 'campanha').size).toBe(0);
+  });
+
+  it('recolhe grupos até caber, deixando o da fase aberto por último', () => {
+    for (const height of [900, 760, 640, 560, 480]) {
+      const collapsed = planDock(groups, height - LAYOUT.topBar, 'campanha');
+      const fits = dockHeight(groups, collapsed) <= height - LAYOUT.topBar;
+      const allCollapsed = groups.filter((g) => g.size > 1).every((g) => collapsed.has(g.id));
+      expect(fits || allCollapsed).toBe(true);
+      if (collapsed.has('campanha'))
+        expect(groups.filter((g) => g.size > 1 && g.id !== 'campanha').every((g) => collapsed.has(g.id))).toBe(true);
+    }
+  });
+
+  it('grupos de um item só nunca viram menu', () => {
+    expect(planDock(groups, 100, null).has('ajuda')).toBe(false);
   });
 });
 

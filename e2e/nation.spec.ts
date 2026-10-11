@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openNav } from './helpers';
 
 /** Pasta para capturas de tela opcionais (SHOTS=<pasta>). */
 const SHOTS = process.env.SHOTS;
@@ -51,14 +52,14 @@ test.describe('Nação: economia, leis e Congresso', () => {
       ['orcamento', '08-orcamento'],
       ['candidato', '08b-candidato'],
     ] as const) {
-      await page.getByTestId(`nav-${path}`).click();
+      await openNav(page, path);
       await expect(page.getByTestId('panel-close')).toBeVisible();
       await page.waitForTimeout(300);
       await shot(page, name);
     }
 
     // Leis: escolhe uma opção, vê a prévia e apresenta o projeto.
-    await page.getByTestId('nav-leis').click();
+    await openNav(page, 'leis');
     await page.getByTestId('law-cat-trade').click();
     await page.getByText('Substituição de importações').first().click();
     await shot(page, '09-leis');
@@ -71,7 +72,7 @@ test.describe('Nação: economia, leis e Congresso', () => {
     await expect(page.getByTestId('bill').first()).toBeVisible();
 
     // Congresso: a proposição aparece no rastreador; abas abrem.
-    await page.getByTestId('nav-congresso').click();
+    await openNav(page, 'congresso');
     await expect(page.getByText('Substituição de importações').first()).toBeVisible();
     await shot(page, '10-congresso');
     for (const tab of ['parties', 'caucuses', 'house'] as const) {

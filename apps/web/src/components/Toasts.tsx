@@ -11,19 +11,17 @@ const TONES = {
 };
 
 /**
- * Notificações. `game`: embaixo, à esquerda do bloco de tempo (a posição vem da variável CSS
- * `--outliner-space` da tela de jogo); `page`: canto inferior direito.
+ * Notificações. `hud`: na coluna direita da tela de jogo, logo acima do bloco de tempo (o
+ * contêiner pai posiciona), para nunca cobrir o painel aberto; `page`: canto inferior direito.
  */
-export function Toasts({ placement = 'page' }: { placement?: 'page' | 'game' }) {
+export function Toasts({ placement = 'page' }: { placement?: 'page' | 'hud' }) {
   const toasts = useGame((s) => s.toasts);
   const dismiss = useGame((s) => s.dismiss);
   return (
     <div
       className={cn(
-        'pointer-events-none fixed z-[200] flex w-full max-w-sm flex-col items-end gap-2',
-        placement === 'game'
-          ? 'bottom-4 right-[calc(var(--outliner-space,0px)+16px)]'
-          : 'bottom-4 right-4',
+        'pointer-events-none z-[200] flex w-full flex-col items-end gap-2',
+        placement === 'hud' ? 'absolute bottom-0 right-0' : 'fixed bottom-4 right-4 max-w-sm',
       )}
       aria-live="polite"
     >

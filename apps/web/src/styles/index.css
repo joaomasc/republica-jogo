@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @source '../../../../packages/ui/src';
 
+/* Telas baixas (notebooks, monitores pequenos com a barra do navegador): layouts compactos. */
+@custom-variant short (@media (max-height: 800px));
+
 /*
  * Tema "República" — ardósia/azul-petróleo profundo, filetes de latão, pergaminho nos destaques.
  * Os tokens antigos (ink-*, gold-*, paper, muted, good/bad/warn/info, sombras e raios) foram

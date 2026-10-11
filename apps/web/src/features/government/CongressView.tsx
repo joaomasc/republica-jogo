@@ -227,7 +227,7 @@ function BillsTab() {
   const list = showClosed ? ov.closed : ov.active;
   const current = sel && [...ov.active, ...ov.closed].some((b) => b.id === sel) ? sel : (ov.active[0]?.id ?? ov.closed[0]?.id ?? null);
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
+    <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
       <div className="space-y-3">
         <Panel
           title="Proposições"
@@ -288,7 +288,7 @@ function CaucusesTab() {
         Bancadas cruzam partidos: um deputado do agro vota com o agro mesmo contra o partido. Elas apresentam projetos,
         cobram fidelidade e vendem caro o apoio.
       </p>
-      <div className="grid gap-2 lg:grid-cols-2">
+      <div className="grid gap-2 @2xl:grid-cols-2">
         {list.map((c) => (
           <div key={c.id} className="rounded-xl border-2 border-ink-600 bg-ink-900 p-2.5">
             <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ function HouseTab() {
   const gov = game.government;
   const leg = game.legislature;
   return (
-    <div className="grid gap-3 xl:grid-cols-2">
+    <div className="grid gap-3 @3xl:grid-cols-2">
       <div className="space-y-3">
         {game.congress.chambers.map((c) => {
           const v = chamberView(game, c.id);

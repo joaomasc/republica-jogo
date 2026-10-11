@@ -1392,8 +1392,8 @@ export function ManualContent({ game }: { game: GameState | null }) {
     document.getElementById(`manual-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="lg:sticky lg:top-0 lg:self-start">
+    <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="@2xl:sticky @2xl:top-0 @2xl:self-start">
         <input
           type="search"
           value={query}
@@ -1403,7 +1403,7 @@ export function ManualContent({ game }: { game: GameState | null }) {
           aria-label="Buscar no manual"
         />
         <nav
-          className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible"
+          className="flex gap-1 overflow-x-auto pb-1 @2xl:flex-col @2xl:overflow-visible"
           aria-label="Seções do manual"
         >
           {visible.map((s) => (

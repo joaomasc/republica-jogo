@@ -30,7 +30,7 @@ export function HistoryView() {
     filter === 'major' ? h.importance >= 2 : filter === 'bad' ? h.sentiment < 0 : true,
   );
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <Panel
         title="Linha do tempo"
         icon="scroll"

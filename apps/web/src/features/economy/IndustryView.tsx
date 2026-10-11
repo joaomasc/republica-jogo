@@ -54,7 +54,7 @@ function PlanEditor() {
         Diga ao fundo estatal onde investir. Sob desenvolvimentismo, economia planificada ou plano nacional, as
         estatais constroem conforme estes pesos; sem essas leis o plano é só indicativo.
       </p>
-      <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+      <div className="grid gap-x-4 gap-y-1.5 @sm:grid-cols-2">
         {plan.sectors
           .filter((s) => s.plannable)
           .map((s) => (
@@ -105,14 +105,14 @@ export function IndustryView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Indústria de transformação" icon="factory" value={pct(dash.manufacturingShare)} sub="do valor adicionado" />
         <StatTile label="Capacidade de construção" icon="hard-hat" value={`${Math.round(usage * 100)}%`} sub={`${num(dash.constructionCapacity, 0)} pontos/mês`} />
         <StatTile label="Obras na fila" icon="brick-wall" value={game.industry.queue.length} />
         <StatTile label="Tecnologia" icon="flask-conical" value={num(dash.techLevel, 2)} sub={`${Math.round(dash.techProgress * 100)}% rumo ao próximo nível`} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 @6xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Panel
           title="Edifícios do país"
           icon="factory"
@@ -135,8 +135,8 @@ export function IndustryView() {
               </span>
             ))}
           </div>
-          <div className="max-h-[60vh] overflow-y-auto pr-1">
-            <table className="w-full text-sm">
+          <div className="max-h-[60vh] overflow-auto pr-1">
+            <table className="w-full min-w-[620px] text-sm [&_td]:px-1.5 [&_th]:px-1.5">
               <thead className="sticky top-0 bg-ink-900 text-[11px] uppercase tracking-wider text-muted">
                 <tr>
                   <th className="py-1.5 text-left">Edifício</th>

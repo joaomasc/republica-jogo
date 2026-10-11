@@ -84,7 +84,7 @@ export function GovernmentView() {
   return (
     <div className="space-y-3">
       <StreetPanel />
-      <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 @3xl:grid-cols-[300px_minmax(0,1fr)]">
         <Panel title={`${office.name} — ${gov.jurisdiction.label}`} icon={office.icon}>
           <div className="flex flex-col items-center">
             <ApprovalGauge value={gov.approval} />
@@ -130,7 +130,7 @@ export function GovernmentView() {
         </Panel>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
+      <div className="grid gap-3 @3xl:grid-cols-3">
         {gov.branch === 'executive' ? (
           <Panel
             title="Equipe de governo"

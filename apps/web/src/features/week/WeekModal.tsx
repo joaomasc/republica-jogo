@@ -106,6 +106,17 @@ export function WeekModal() {
       icon="calendar-check"
       title={`Semana ${week.index} — reunião de campanha`}
       onClose={() => setSnoozed(week.index)}
+      // Rodapé fixo: em telas baixas o conteúdo rola, mas as saídas continuam à vista.
+      footer={
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setSnoozed(week.index)}>
+            Ver o resto do jogo antes (o tempo fica parado)
+          </Button>
+          <Button size="sm" onClick={() => choose(null)} data-testid="week-skip">
+            Seguir sem jogada especial
+          </Button>
+        </div>
+      }
     >
       <div className="space-y-4" data-testid="week-modal">
         <div className="grid gap-3 md:grid-cols-3">
@@ -177,15 +188,6 @@ export function WeekModal() {
               <Card key={c.id} card={c} moneyScale={moneyScale} onPick={() => choose(c.id)} />
             ))}
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setSnoozed(week.index)}>
-            Ver o resto do jogo antes (o tempo fica parado)
-          </Button>
-          <Button size="sm" onClick={() => choose(null)} data-testid="week-skip">
-            Seguir sem jogada especial
-          </Button>
         </div>
       </div>
     </Modal>

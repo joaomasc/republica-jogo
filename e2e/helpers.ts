@@ -77,3 +77,16 @@ export async function advanceUntilElection(page: Page) {
   }
   throw new Error('Não chegou ao dia da eleição');
 }
+
+/** Abre um painel pelo dock; em telas baixas o item pode estar dentro de um grupo recolhido. */
+export async function openNav(page: Page, path: string) {
+  const link = page.getByTestId(`nav-${path}`);
+  if (!(await link.isVisible())) {
+    for (const group of await page.locator('[data-testid^="nav-group-"]').all()) {
+      await group.click();
+      if (await link.isVisible()) break;
+      await page.keyboard.press('Escape');
+    }
+  }
+  await link.click();
+}

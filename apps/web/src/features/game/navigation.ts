@@ -18,6 +18,8 @@ export interface NavItem {
 export interface NavGroup {
   id: string;
   title: string;
+  /** Ícone do grupo quando ele vira um botão único no dock (telas baixas). */
+  icon: string;
   items: NavItem[];
 }
 
@@ -31,6 +33,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'mandato',
     title: 'Mandato',
+    icon: 'landmark',
     items: [
       { path: 'governo', label: 'Gabinete', icon: 'landmark', phases: OFFICE },
       { path: 'leis', label: 'Leis', icon: 'scale', phases: OFFICE },
@@ -55,6 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'economia',
     title: 'Economia',
+    icon: 'chart-line',
     items: [
       { path: 'economia', label: 'Economia', icon: 'chart-line' },
       { path: 'mercado', label: 'Mercado nacional', icon: 'store', width: 'wide', levels: ['estadual', 'federal'] },
@@ -66,6 +70,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'sociedade',
     title: 'Sociedade',
+    icon: 'users',
     items: [
       { path: 'eleitores', label: 'População e eleitores', icon: 'users' },
       { path: 'grupos', label: 'Grupos de interesse', icon: 'handshake' },
@@ -74,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'campanha',
     title: 'Campanha',
+    icon: 'megaphone',
     items: [
       { path: 'campanha', label: 'Campanha', icon: 'megaphone', phases: CAMPAIGN },
       { path: 'agenda', label: 'Agenda', icon: 'calendar-check', phases: ['campaign'] },
@@ -87,6 +93,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'politico',
     title: 'Político',
+    icon: 'briefcase',
     items: [
       { path: 'candidato', label: 'Candidato', icon: 'smile' },
       { path: 'partido', label: 'Partido', icon: 'flag' },
@@ -99,9 +106,17 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'ajuda',
     title: 'Ajuda',
+    icon: 'book-marked',
     items: [{ path: 'manual', label: 'Manual', icon: 'book-marked', width: 'wide' }],
   },
 ];
+
+/** Grupo que fica sempre aberto no dock durante a fase (o que o jogador mais usa). */
+export function primaryGroupId(phase: GamePhase): string | null {
+  if (CAMPAIGN.includes(phase)) return 'campanha';
+  if (OFFICE.includes(phase)) return 'mandato';
+  return null;
+}
 
 /** Rotas de painel que não aparecem no dock. */
 const EXTRA_ROUTES: NavItem[] = [

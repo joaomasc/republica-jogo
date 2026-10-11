@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createCandidate } from './helpers';
+import { createCandidate, openNav } from './helpers';
 
 /** Começa o cenário "Presidência" (já no poder) para exercitar o shell do jogo. */
 async function startInOffice(page: Page) {
@@ -22,7 +22,7 @@ test.describe('Shell do jogo', () => {
     await startInOffice(page);
     await expect(page.getByTestId('map')).toBeVisible();
 
-    await page.getByTestId('nav-leis').click();
+    await openNav(page, 'leis');
     await expect(page.getByTestId('panel-close')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('panel-close')).toBeHidden();

@@ -64,7 +64,7 @@ export function FinanceView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-5">
         <StatTile label="Caixa" icon="piggy-bank" value={formatMoney(campaign.money)} />
         <StatTile
           label="Arrecadação/dia"
@@ -99,7 +99,7 @@ export function FinanceView() {
           yFormatter={(v) => formatMoney(v)}
         />
       </Panel>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 @2xl:grid-cols-2">
         <Panel title="Para onde foi o dinheiro" icon="receipt">
           <div className="space-y-2">
             {spending.length === 0 && <p className="text-sm text-muted">Nenhum gasto ainda.</p>}

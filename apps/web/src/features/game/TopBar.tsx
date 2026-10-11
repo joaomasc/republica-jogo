@@ -11,7 +11,16 @@ import {
   streetView,
 } from '@republica/game-engine';
 import { Badge, cn, Icon, Tooltip, type Tone } from '@republica/ui';
-import type { ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { NationEmblem } from '../../components/NationEmblem';
 import { num, PHASE_LABELS, pct } from '../../lib/format';
@@ -165,6 +174,130 @@ function SpeedIndicator({ game }: { game: GameState }) {
 }
 
 /** Barra superior estilo Victoria 3: país, leituras da nação, data e velocidade, menu. */
+/** Largura reservada para o botão "+N" quando nem tudo cabe. */
+const MORE_BUTTON = 48;
+const FIT_GAP = 2;
+
+/**
+ * Linha de leituras que mostra só o que cabe, na ordem (as primeiras são as mais importantes);
+ * o resto vai para um botão "+N" com a lista completa. Nada fica cortado pela metade.
+ */
+function FitRow({ children }: { children: ReactNode }) {
+  const items = Children.toArray(children);
+  const row = useRef<HTMLDivElement>(null);
+  const more = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const widths = useRef(new Map<string, number>());
+  const [visible, setVisible] = useState(items.length);
+  /** Posição do botão "+N" quando a lista está aberta (null = fechada). */
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const open = anchor !== null;
+  const setOpen = (value: boolean) =>
+    setAnchor(value && more.current ? more.current.getBoundingClientRect() : null);
+  const keys = items.map((item, i) =>
+    isValidElement(item) && item.key !== null ? String(item.key) : String(i),
+  );
+  const isDivider = (item: ReactNode) => isValidElement(item) && item.type === Divider;
+
+  const measure = useRef(() => {});
+  // Mede a cada renderização (valores mudam de largura) e quando a janela muda.
+  useLayoutEffect(() => {
+    measure.current = () => {
+      const el = row.current;
+      if (!el) return;
+      el.querySelectorAll<HTMLElement>(':scope > [data-fit]').forEach((cell) => {
+        if (cell.offsetWidth > 0)
+          widths.current.set(cell.dataset.fit ?? '', cell.offsetWidth + FIT_GAP);
+      });
+      const width = (k: string) => widths.current.get(k) ?? 0;
+      const available = el.clientWidth;
+      if (keys.reduce((sum, k) => sum + width(k), 0) <= available) {
+        setVisible(items.length);
+        return;
+      }
+      let used = MORE_BUTTON;
+      let n = 0;
+      for (const k of keys) {
+        if (used + width(k) > available) break;
+        used += width(k);
+        n += 1;
+      }
+      setVisible(n);
+    };
+    measure.current();
+  });
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => measure.current());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!menu.current?.contains(target) && !more.current?.contains(target)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const close = () => setOpen(false);
+    window.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+
+  // Um divisor sozinho no fim da parte visível também some.
+  let shown = visible;
+  while (shown > 0 && isDivider(items[shown - 1])) shown -= 1;
+  const hidden = items.slice(visible).filter((item) => !isDivider(item));
+
+  return (
+    <div ref={row} className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-1">
+      {items.map((item, i) => (
+        <div key={keys[i]} data-fit={keys[i]} className={cn('shrink-0', i >= shown && 'hidden')}>
+          {item}
+        </div>
+      ))}
+      {hidden.length > 0 && (
+        <Tooltip side="bottom" content={open ? null : 'Mais indicadores'}>
+          <button
+            ref={more}
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-haspopup="true"
+            aria-expanded={open}
+            data-testid="metrics-more"
+            className="flex h-9 shrink-0 items-center gap-0.5 rounded-[4px] border border-gold-500/30 px-2 text-[12px] font-semibold text-gold-300 transition hover:border-gold-400/70 hover:bg-ink-700"
+          >
+            +{hidden.length}
+            <Icon name="chevron-down" size={13} />
+          </button>
+        </Tooltip>
+      )}
+      {anchor &&
+        createPortal(
+          <div
+            ref={menu}
+            className="hud-surface fixed z-[90] flex flex-col gap-0.5 rounded-[6px] p-1.5 animate-fade-in"
+            style={{
+              top: anchor.bottom + 6,
+              left: Math.max(8, Math.min(anchor.left, window.innerWidth - 248)),
+            }}
+          >
+            {hidden}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
 export function TopBar() {
   const game = useGameState();
   const save = useGame((s) => s.save);
@@ -258,8 +391,9 @@ export function TopBar() {
       </div>
 
       {/* Leituras */}
-      <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-1 [mask-image:linear-gradient(to_right,#000_calc(100%-14px),transparent)]">
+      <FitRow>
         <Reading
+          key="pib"
           icon="landmark"
           label={local ? `PIB ${scope.ofName}` : 'PIB'}
           value={local ? `R$ ${num(scope.gdp, 0)} bi` : `R$ ${num(e.gdp / 1000)} tri`}
@@ -296,6 +430,7 @@ export function TopBar() {
           }
         />
         <Reading
+          key="inflacao"
           icon="thermometer"
           label="Inflação"
           value={`${num(e.inflation)}%`}
@@ -304,6 +439,7 @@ export function TopBar() {
           details={prev && <DeltaLine label="Variação no mês" delta={e.inflation - prev.inflation} unit=" p.p." invert />}
         />
         <Reading
+          key="desemprego"
           icon="user-x"
           label={local ? `Desemprego ${scope.ofName}` : 'Desemprego'}
           value={`${num(local ? scope.unemployment : e.unemployment)}%`}
@@ -333,6 +469,7 @@ export function TopBar() {
         />
         {street.active && (
           <Reading
+            key="ruas"
             icon="flame"
             label="Ruas"
             value={street.stageName}
@@ -350,9 +487,10 @@ export function TopBar() {
             }
           />
         )}
-        <Divider />
+        <Divider key="divisor" />
         {m.money !== null && (
           <Reading
+            key="caixa"
             icon={budget ? 'banknote' : 'piggy-bank'}
             label={budget ? 'Tesouro' : 'Caixa'}
             value={formatMoney(m.money)}
@@ -390,6 +528,7 @@ export function TopBar() {
         )}
         {m.intention !== null && (
           <Reading
+            key="intencao"
             icon="vote"
             label="Intenção"
             value={`${pct(m.intention)}${m.intentionRank ? ` · ${m.intentionRank}º` : ''}`}
@@ -400,50 +539,50 @@ export function TopBar() {
         )}
         {m.approval !== null && (
           <Reading
+            key="aprovacao"
             icon="badge-check"
             label="Aprovação"
             value={`${m.approval}%`}
             tone={m.approval >= 50 ? 'good' : m.approval >= 35 ? 'warn' : 'bad'}
             hint="Aprovação do seu mandato."
-            className="max-[1099px]:hidden"
           />
         )}
         {legitimacy !== null && (
           <Reading
+            key="legitimidade"
             icon="scale"
             label="Legitimidade"
             value={`${Math.round(legitimacy)}`}
             tone={legitimacy < 35 ? 'bad' : legitimacy < 50 ? 'warn' : 'neutral'}
             hint="Legitimidade do regime e das instituições (0–100). Baixa → greves, crises e impeachment."
-            className="max-[1499px]:hidden"
           />
         )}
         {gov && (
           <Reading
+            key="capital"
             icon="hand-coins"
             label="Capital"
             value={`${Math.round(gov.politicalCapital)}`}
             tone="gold"
             hint="Capital político: moeda das negociações, decretos e reformas."
-            className="max-[1499px]:hidden"
           />
         )}
         <Reading
+          key="estabilidade"
           icon="gauge"
           label={gov ? 'Estabilidade' : 'Unidade'}
           value={`${m.stability}`}
           tone={m.stability < 40 ? 'bad' : 'neutral'}
           hint={gov ? 'Estabilidade política do mandato (0–100).' : 'Coesão interna do seu partido (0–100).'}
-          className="max-[1559px]:hidden"
         />
         <Reading
+          key="popularidade"
           icon="star"
           label="Popularidade"
           value={`${m.popularity}`}
           hint="Popularidade pessoal (0–100)."
-          className="max-[1799px]:hidden"
         />
-      </div>
+      </FitRow>
 
       {/* Data e velocidade */}
       <div className="flex shrink-0 items-center gap-2">

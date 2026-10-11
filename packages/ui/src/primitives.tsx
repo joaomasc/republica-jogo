@@ -558,7 +558,7 @@ export function Modal({
           )}
           <Ornament className="absolute inset-x-4 -bottom-1" />
         </header>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="@container overflow-y-auto px-5 py-4">{children}</div>
         {footer && (
           <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-gold-500/20 bg-ink-900/50 px-5 py-3">
             {footer}

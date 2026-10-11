@@ -31,7 +31,7 @@ export function EconomyView() {
         Modelo econômico SIMPLIFICADO para fins de jogo: as relações entre leis, orçamento e
         indicadores são do modelo, não previsões sobre a economia real.
       </p>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4 @3xl:grid-cols-8">
         <StatTile
           label="Crescimento"
           icon="trending-up"
@@ -76,7 +76,7 @@ export function EconomyView() {
           <div className="text-xs text-muted">{economySummary(e)}</div>
         </Panel>
       )}
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title="Crescimento, inflação e desemprego" icon="trending-up">
           <LineChartBox
             data={data}
@@ -99,7 +99,7 @@ export function EconomyView() {
           />
         </Panel>
       </div>
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title="Choques ativos" icon="flame">
           {e.shocks.length === 0 ? (
             <p className="text-sm text-muted">Nenhum choque externo no momento.</p>
@@ -117,7 +117,7 @@ export function EconomyView() {
           )}
         </Panel>
         <Panel title="Desemprego por estado" icon="map">
-          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 @sm:grid-cols-2">
             {states.map(({ s, u }) => (
               <HBar
                 key={s.id}

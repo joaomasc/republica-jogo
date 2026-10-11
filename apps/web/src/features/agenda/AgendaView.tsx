@@ -155,7 +155,7 @@ export function AgendaView() {
       </div>
 
       <Panel title="Começar de um modelo" icon="sparkles">
-        <div className="grid gap-2 md:grid-cols-3">
+        <div className="grid gap-2 @lg:grid-cols-3">
           {AGENDA_PRESETS.map((p) => (
             <button
               key={p.id}
@@ -176,7 +176,7 @@ export function AgendaView() {
         </p>
       </Panel>
 
-      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel
           title="Compromissos (em ordem de prioridade)"
           icon="clipboard-list"

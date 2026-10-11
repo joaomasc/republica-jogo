@@ -18,7 +18,7 @@ export function ManeuversPanel({ billId, only, compact = false }: { billId: stri
   const [party, setParty] = useState(parties[0]?.[0] ?? '');
   if (list.length === 0) return null;
   return (
-    <div className={cn('grid gap-1.5', compact ? 'sm:grid-cols-2' : 'md:grid-cols-2')}>
+    <div className={cn('grid gap-1.5', compact ? '@sm:grid-cols-2' : '@lg:grid-cols-2')}>
       {list.map((m) => (
         <div key={m.id} className={cn('rounded-lg border border-ink-600 bg-ink-900 p-2', !m.available && 'opacity-55')}>
           <div className="flex items-center gap-1.5">

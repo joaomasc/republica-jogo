@@ -31,7 +31,7 @@ export function MarketView() {
   const detail = current ? goodDetail(game, current) : null;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-3 @6xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       <Panel
         title="Mercado nacional"
         icon="store"
@@ -50,8 +50,8 @@ export function MarketView() {
           Preço 1,00 = preço-base. Escassez encarece o bem e trava quem depende dele; excedente derruba o preço e o
           lucro de quem produz. Tarifas e câmbio decidem o que vem de fora.
         </p>
-        <div className="max-h-[68vh] overflow-y-auto pr-1">
-          <table className="w-full text-sm">
+        <div className="max-h-[68vh] overflow-auto pr-1">
+          <table className="w-full min-w-[620px] text-sm [&_td]:px-1.5 [&_th]:px-1.5">
             <thead className="sticky top-0 bg-ink-900 text-[11px] uppercase tracking-wider text-muted">
               <tr>
                 <th className="py-1.5 text-left">Bem</th>
@@ -138,7 +138,7 @@ export function MarketView() {
               series={[{ key: 'preco', name: 'Preço relativo', color: detail.row.color }]}
             />
           </Panel>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-3">
+          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-1 @4xl:grid-cols-3">
             <Panel title="Quem consome" icon="users">
               <div className="space-y-1.5">
                 {detail.demandBreakdown.map((d) => (

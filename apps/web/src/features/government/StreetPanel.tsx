@@ -26,7 +26,7 @@ export function StreetPanel() {
             </li>
           ))}
         </ol>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 @lg:grid-cols-2">
           <div>
             <div className="label mb-1">
               Temperatura {v.heat}/100 <span className="font-normal normal-case text-muted">(tendência: {v.target})</span>

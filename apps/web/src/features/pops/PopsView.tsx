@@ -34,7 +34,7 @@ export function PopsView() {
         prioridades, renda e identidade partidária próprias. O apoio por grupo vem das pesquisas.
       </p>
       <div
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+        className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-3 @4xl:grid-cols-4"
         data-testid="pops-grid"
       >
         {summaries.map((s) => (
@@ -102,7 +102,7 @@ export function PopsView() {
           size="lg"
           onClose={() => setOpen(null)}
         >
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <div className="space-y-3">
               <Panel title="Posições médias" icon="compass">
                 <IdeologyBars

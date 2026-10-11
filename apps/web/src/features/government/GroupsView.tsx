@@ -20,7 +20,7 @@ export function GroupsView() {
         economia e minam a legitimidade. O peso de cada grupo muda com a economia: industrializar o país
         fortalece sindicatos e industriais.
       </p>
-      <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-3">
         {groups.map((g) => {
           const target = groupApprovalTarget(game, g);
           const v = viewOf[g.id]!;

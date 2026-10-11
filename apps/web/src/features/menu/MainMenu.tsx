@@ -111,13 +111,13 @@ export function MainMenu() {
   ];
 
   return (
-    <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10">
+    <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10 short:py-4">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-end opacity-35 [mask-image:linear-gradient(to_left,black_30%,transparent_85%)]">
         <div className="h-[115%] w-[70%] max-w-[900px] translate-x-[8%]">
           <BrazilMap fills={fills} showLabels={false} />
         </div>
       </div>
-      <div className="relative z-10 grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+      <div className="relative z-10 grid w-full max-w-6xl items-center gap-10 short:gap-6 lg:grid-cols-[1.1fr_1fr]">
         <div className="space-y-5">
           <Logo size="xl" />
           <p className="max-w-lg text-lg text-muted">
@@ -132,11 +132,11 @@ export function MainMenu() {
               7 cargos · {LAW_CATEGORIES.length} áreas de leis
             </span>
             <span className="rounded-full border-2 border-ink-600 bg-ink-900 px-3 py-1">
-              Partidos e políticos fictícios
+              30 partidos reais do TSE
             </span>
           </div>
         </div>
-        <nav className="grid gap-3" aria-label="Menu principal">
+        <nav className="grid gap-3 short:gap-2" aria-label="Menu principal">
           {entries.map((e) => (
             <button
               key={e.id}
@@ -145,7 +145,7 @@ export function MainMenu() {
               disabled={e.disabled}
               data-testid={`menu-${e.id}`}
               className={cn(
-                'group flex items-center gap-4 rounded-2xl border-[3px] px-5 py-3.5 text-left shadow-cartoon transition-all duration-150',
+                'group flex items-center gap-4 rounded-2xl border-[3px] px-5 py-3.5 text-left shadow-cartoon transition-all duration-150 short:py-2',
                 'hover:-translate-y-1 hover:shadow-cartoon-lg active:translate-y-0.5 disabled:pointer-events-none disabled:opacity-40',
                 e.primary
                   ? 'border-gold-300 bg-gold-500 text-ink-950'
@@ -154,7 +154,7 @@ export function MainMenu() {
             >
               <span
                 className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2',
+                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 short:h-9 short:w-9',
                   e.primary
                     ? 'border-ink-950/30 bg-ink-950/10'
                     : 'border-ink-500 bg-ink-900 text-gold-400',
@@ -163,10 +163,12 @@ export function MainMenu() {
                 <Icon name={e.icon} size={22} />
               </span>
               <span className="min-w-0">
-                <span className="block font-display text-xl font-semibold">{e.label}</span>
+                <span className="block font-display text-xl font-semibold short:text-lg">
+                  {e.label}
+                </span>
                 <span
                   className={cn(
-                    'block truncate text-sm',
+                    'block truncate text-sm short:hidden',
                     e.primary ? 'text-ink-900/80' : 'text-muted',
                   )}
                 >
@@ -176,7 +178,8 @@ export function MainMenu() {
             </button>
           ))}
           <div className="pt-1 text-center text-[11px] text-muted">
-            Versão 0.1 · Malha territorial: IBGE · Partidos, candidatos e institutos são fictícios
+            Versão 0.1 · Malha territorial: IBGE · Partidos: TSE · Candidatos e institutos são
+            fictícios
           </div>
         </nav>
       </div>

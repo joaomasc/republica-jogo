@@ -24,7 +24,7 @@ export function EconomyDashboard() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4 @3xl:grid-cols-6">
         <StatTile label="PIB" icon="landmark" value={billions(d.gdp)} sub="por ano" />
         <StatTile
           label="Indústria de transformação"
@@ -49,7 +49,7 @@ export function EconomyDashboard() {
         />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title="Valor adicionado por setor" icon="chart-pie">
           <div className="space-y-1.5">
             {d.sectors.map((s, i) => (
@@ -76,8 +76,8 @@ export function EconomyDashboard() {
         </Panel>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
-        <Panel title="Exportações e importações" icon="ship" className="xl:col-span-2">
+      <div className="grid gap-3 @3xl:grid-cols-3">
+        <Panel title="Exportações e importações" icon="ship" className="@3xl:col-span-2">
           <LineChartBox
             data={history}
             series={[
@@ -100,7 +100,7 @@ export function EconomyDashboard() {
       </div>
 
       <Panel title={`Arrecadação federal estimada · ${billions(totalTax)} por ano`} icon="receipt">
-        <div className="grid gap-1.5 sm:grid-cols-2">
+        <div className="grid gap-1.5 @sm:grid-cols-2">
           {d.taxes.map((t) => (
             <HBar key={t.label} label={t.label} value={t.value} max={maxTax} color="#c084fc" right={billions(t.value)} />
           ))}

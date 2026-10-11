@@ -11,7 +11,14 @@ import { EventModal } from '../events/EventModal';
 import { InterviewModal } from '../media/InterviewModal';
 import { WeekModal } from '../week/WeekModal';
 import { Dock } from './Dock';
-import { LAYOUT, panelWidthPx, useViewportWidth } from './layout';
+import {
+  clusterWidth,
+  isCompactHud,
+  LAYOUT,
+  panelWidthPx,
+  useViewportHeight,
+  useViewportWidth,
+} from './layout';
 import { panelSegment, routeMeta, scopedItem } from './navigation';
 import { Outliner } from './Outliner';
 import { PanelHost } from './PanelHost';
@@ -65,13 +72,13 @@ function ActivePanel({ viewport }: { viewport: number }) {
 export function GameLayout() {
   const hasGame = useGame((s) => s.game !== null);
   const viewport = useViewportWidth();
+  const height = useViewportHeight();
   if (!hasGame) return <Navigate to="/" replace />;
   const narrow = viewport < LAYOUT.outlinerMinViewport;
+  const cluster = clusterWidth(viewport);
+  const compact = isCompactHud(viewport, height);
   return (
-    <div
-      className="relative h-full overflow-hidden"
-      style={{ '--outliner-space': `${LAYOUT.cluster + LAYOUT.edge}px` } as CSSProperties}
-    >
+    <div className="relative h-full overflow-hidden">
       <MapStage
         style={{ left: LAYOUT.dock, top: LAYOUT.topBar, right: 0, bottom: 0 }}
       />
@@ -84,15 +91,16 @@ export function GameLayout() {
           right: LAYOUT.edge,
           top: LAYOUT.topBar + LAYOUT.gap,
           bottom: LAYOUT.edge,
-          width: LAYOUT.cluster,
+          width: cluster,
         }}
       >
         <div className="relative min-h-0 flex-1">
           <div className="absolute right-0 top-0 flex max-h-full">
             <Outliner forceCollapsed={narrow} />
           </div>
+          <Toasts placement="hud" />
         </div>
-        <TimeControls />
+        <TimeControls compact={compact} />
       </div>
       <PhaseRouter />
       <EventModal />
@@ -100,7 +108,6 @@ export function GameLayout() {
       <DebateModal />
       <WeekModal />
       <DecisionCenter />
-      <Toasts placement="game" />
     </div>
   );
 }

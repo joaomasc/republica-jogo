@@ -20,7 +20,7 @@ export function PageShell({
 }) {
   const navigate = useNavigate();
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 py-6">
+    <div className="@container mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-4 py-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <Button

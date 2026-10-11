@@ -213,7 +213,7 @@ export function CareerView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Idade" icon="calendar-check" value={player.age} />
         <StatTile label="Reputação" icon="star" value={Math.round(game.career.reputation)} />
         <StatTile label="Conhecimento público" icon="globe" value={Math.round(player.fame)} />
@@ -221,7 +221,7 @@ export function CareerView() {
       </div>
       {evaluation && (
         <Panel title="Avaliação do último mandato" icon="clipboard-check">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 @lg:grid-cols-5">
             <StatTile
               label="Aprovação final"
               icon="badge-check"
@@ -277,7 +277,7 @@ export function CareerView() {
               </select>
             }
           >
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-4">
               {options.map((o) => {
                 const office = OFFICES[o.officeId];
                 return (
@@ -319,7 +319,7 @@ export function CareerView() {
               anos.
             </p>
           </Panel>
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid gap-3 @2xl:grid-cols-2">
             <Panel title="Partido" icon="flag">
               <div className="mb-2 text-sm">
                 Atual:{' '}

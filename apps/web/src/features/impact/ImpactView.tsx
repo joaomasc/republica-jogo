@@ -245,7 +245,7 @@ export function ImpactView() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
             <StatTile
               label="Variação total"
               icon="activity"
@@ -272,7 +272,7 @@ export function ImpactView() {
             />
           </div>
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+          <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
             <Panel title="Por fonte" icon="bar-chart-3">
               <ul className="space-y-2.5">
                 {SOURCES.map((s) => (
@@ -400,7 +400,7 @@ export function ImpactView() {
                           <span className="min-w-0 flex-1 truncate" title={e.label}>
                             {e.label}
                           </span>
-                          <span className="hidden text-muted sm:inline">
+                          <span className="hidden text-muted @sm:inline">
                             {IMPACT_SOURCE_LABEL[e.source]}
                           </span>
                           <DeltaText value={e[metric]} metric={metric} />

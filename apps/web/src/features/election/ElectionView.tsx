@@ -83,7 +83,7 @@ function Results({
   const units = [...election.units].sort((a, b) => b.voters - a.voters);
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <Panel title={`${result.round}º turno — ${formatDateLong(result.date)}`} icon="vote">
           <div className="mb-2 text-xs text-muted">
             Apuração: {Math.round(progress * 100)}% das urnas
@@ -153,7 +153,7 @@ function Results({
           title={`Distribuição de cadeiras (${p.seats}) — ${office.legislatureName}`}
           icon="building-2"
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 @2xl:grid-cols-2">
             <div className="space-y-1.5">
               {Object.entries(p.partySeats)
                 .filter(([, s]) => s > 0)
@@ -222,7 +222,7 @@ function Results({
       )}
 
       {progress >= 1 && (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid gap-3 @3xl:grid-cols-2">
           <Panel title="Resultado por região" icon="map-pin">
             <div className="max-h-80 overflow-y-auto">
               <table className="w-full text-sm">
@@ -371,7 +371,7 @@ export function ElectionView() {
       </Panel>
 
       {game.phase === 'campaign' && (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 @2xl:grid-cols-2">
           <Panel title="Debates" icon="mic-vocal">
             {election.debates.length === 0 ? (
               <p className="text-sm text-muted">

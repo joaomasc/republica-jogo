@@ -53,12 +53,12 @@ export function AdsView() {
   const units = [...election.units].sort((a, b) => b.voters - a.voters);
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <Panel title="Nova campanha publicitária" icon="tv">
         <div className="space-y-4">
           <div>
             <div className="label mb-1.5">Canal</div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 @sm:grid-cols-3">
               {MEDIA_CHANNELS.map((c) => {
                 const ch = CHANNELS[c];
                 return (
@@ -149,7 +149,7 @@ export function AdsView() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <div>
               <div className="label mb-1.5">Tom</div>
               <Segmented
@@ -191,7 +191,7 @@ export function AdsView() {
               </select>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @lg:grid-cols-2">
             <Slider
               label="Duração"
               value={Math.min(days, daysLeft)}

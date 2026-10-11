@@ -21,7 +21,7 @@ export function TradeView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-5">
         <StatTile label="Exportações" icon="ship" value={billions(totalExp)} sub="por ano" tone="good" />
         <StatTile label="Importações" icon="container" value={billions(totalImp)} sub="por ano" />
         <StatTile label="Saldo" icon="scale" value={billions(t.balance)} tone={t.balance >= 0 ? 'good' : 'bad'} />
@@ -35,7 +35,7 @@ export function TradeView() {
         <StatTile label="Política comercial" icon="landmark" value={<span className="text-base">{lawName}</span>} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title="Pauta de exportação" icon="ship">
           {t.exports.length === 0 ? (
             <p className="text-sm text-muted">O país não exporta nada.</p>
@@ -60,7 +60,7 @@ export function TradeView() {
         </Panel>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title="Câmbio (R$ por dólar)" icon="arrow-left-right">
           {fx.length > 1 ? (
             <LineChartBox data={fx} series={[{ key: 'cambio', name: 'R$/US$', color: '#f2b51e' }]} height={200} />
@@ -81,7 +81,7 @@ export function TradeView() {
             </button>
           }
         >
-          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 @sm:grid-cols-2">
             {tariffs.map((r) => (
               <HBar key={r.id} label={r.name} value={r.tariff} max={0.6} color={r.tariff > 0.3 ? '#ff6b6b' : r.tariff > 0.15 ? '#f2b51e' : '#3ddc97'} right={`${Math.round(r.tariff * 100)}%`} />
             ))}

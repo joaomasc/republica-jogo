@@ -16,7 +16,7 @@ export function LocalEconomy() {
   const du = scope.unemployment - scope.unemployment0;
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-5">
         <StatTile label="População" icon="users" value={people(scope.population)} />
         <StatTile label={scope.estimated ? 'PIB (estimado)' : 'PIB'} icon="landmark" value={billions(scope.gdp)} sub={`${num(scope.growth)}% ao ano`} />
         <StatTile

@@ -20,24 +20,32 @@ export function DecisionCenter() {
   if (decision.kind === 'impeachment_vote') {
     const imp = impeachmentView(game);
     return (
-      <Modal open title={decision.title} icon="gavel" dismissable={false} size="md">
+      <Modal
+        open
+        title={decision.title}
+        icon="gavel"
+        dismissable={false}
+        size="md"
+        footer={
+          <div className="flex w-full flex-wrap gap-2">
+            <Button variant="danger" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'yes' })}>
+              Votar SIM (afastar)
+            </Button>
+            <Button variant="success" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'no' })}>
+              Votar NÃO
+            </Button>
+            <Button variant="ghost" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'abstain' })}>
+              Abster-se
+            </Button>
+          </div>
+        }
+      >
         <p className="text-sm">{decision.description}</p>
         {imp && (
           <p className="mt-2 text-sm text-muted">
             {imp.stage}: cerca de {imp.expectedYes} votos pelo afastamento; são necessários {imp.required} de {imp.total}.
           </p>
         )}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="danger" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'yes' })}>
-            Votar SIM (afastar)
-          </Button>
-          <Button variant="success" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'no' })}>
-            Votar NÃO
-          </Button>
-          <Button variant="ghost" onClick={() => act({ type: 'leg/impeachment', op: 'vote', vote: 'abstain' })}>
-            Abster-se
-          </Button>
-        </div>
       </Modal>
     );
   }
@@ -47,7 +55,30 @@ export function DecisionCenter() {
   const billId = decision.billId;
   const veto = decision.kind === 'veto_vote';
   return (
-    <Modal open title={decision.title} icon="vote" dismissable={false} size="lg">
+    <Modal
+      open
+      title={decision.title}
+      icon="vote"
+      dismissable={false}
+      size="lg"
+      // Os votos ficam no rodapé fixo: projetos longos rolam sem esconder a decisão.
+      footer={
+        <div className="flex w-full flex-wrap gap-2">
+          <Button variant="success" onClick={() => act({ type: 'leg/vote', billId, vote: 'yes' })}>
+            {veto ? 'Derrubar o veto' : 'Votar SIM'}
+          </Button>
+          <Button variant="danger" onClick={() => act({ type: 'leg/vote', billId, vote: 'no' })}>
+            {veto ? 'Manter o veto' : 'Votar NÃO'}
+          </Button>
+          <Button variant="ghost" onClick={() => act({ type: 'leg/vote', billId, vote: 'abstain' })}>
+            Abster-se
+          </Button>
+          <Button variant="ghost" className="ml-auto" onClick={() => navigate('/jogo/congresso')}>
+            Ver no Congresso
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -87,20 +118,6 @@ export function DecisionCenter() {
             </div>
           </details>
         )}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="success" onClick={() => act({ type: 'leg/vote', billId, vote: 'yes' })}>
-          {veto ? 'Derrubar o veto' : 'Votar SIM'}
-        </Button>
-        <Button variant="danger" onClick={() => act({ type: 'leg/vote', billId, vote: 'no' })}>
-          {veto ? 'Manter o veto' : 'Votar NÃO'}
-        </Button>
-        <Button variant="ghost" onClick={() => act({ type: 'leg/vote', billId, vote: 'abstain' })}>
-          Abster-se
-        </Button>
-        <Button variant="ghost" className="ml-auto" onClick={() => navigate('/jogo/congresso')}>
-          Ver no Congresso
-        </Button>
       </div>
     </Modal>
   );

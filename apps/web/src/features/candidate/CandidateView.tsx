@@ -95,7 +95,7 @@ export function CandidateView() {
   const office = player.currentOffice ? OFFICES[player.currentOffice] : null;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-3 @3xl:grid-cols-[360px_minmax(0,1fr)]">
       <div className="space-y-3">
         <Panel>
           <div className="flex flex-col items-center gap-2 text-center">
@@ -145,7 +145,7 @@ export function CandidateView() {
       </div>
       <div className="space-y-3">
         <Panel title="Atributos" icon="award">
-          <div className="grid gap-x-6 gap-y-2 md:grid-cols-2">
+          <div className="grid gap-x-6 gap-y-2 @lg:grid-cols-2">
             {ATTRIBUTE_IDS.map((id) => (
               <div key={id} title={ATTRIBUTES[id].description}>
                 <div className="flex items-center justify-between text-sm">

@@ -78,7 +78,7 @@ export function PanelHost({
       </header>
       <div
         key={location.pathname}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
+        className="@container min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
         id="game-main"
       >
         {children}

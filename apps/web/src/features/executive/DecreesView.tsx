@@ -115,7 +115,7 @@ export function DecreesView() {
         {active.length === 0 ? (
           <p className="text-sm text-muted">Nenhum decreto ativo.</p>
         ) : (
-          <div className="grid gap-2 lg:grid-cols-2">
+          <div className="grid gap-2 @2xl:grid-cols-2">
             {active.map((d) => (
               <div key={d.id} className="flex items-center gap-2 rounded-lg bg-ink-900 px-2.5 py-1.5">
                 <Icon name={d.icon} size={18} className="text-gold-400" />
@@ -139,7 +139,7 @@ export function DecreesView() {
         )}
       </Panel>
       <Panel title="Editar decreto" icon="file-signature">
-        <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid gap-2 @lg:grid-cols-2 @4xl:grid-cols-3">
           {options.map((d) => (
             <DecreeCard key={d.kind} d={d} />
           ))}

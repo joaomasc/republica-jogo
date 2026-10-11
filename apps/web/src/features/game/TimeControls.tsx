@@ -224,7 +224,8 @@ function useCta(game: GameState): Cta | null {
 }
 
 /** Controles de tempo, CTA do bloqueio atual, progresso e modos de mapa (canto inferior direito). */
-export function TimeControls() {
+/** Bloco de tempo. `compact`: telas pequenas — barras mais finas e modos de mapa num menu. */
+export function TimeControls({ compact = false }: { compact?: boolean }) {
   useGameClock();
   const game = useGameState();
   const act = useGame((s) => s.act);
@@ -288,7 +289,10 @@ export function TimeControls() {
                   aria-label={`Velocidade ${s}`}
                   onClick={() => update({ gameSpeed: s })}
                   data-testid={`speed-${s}`}
-                  className="flex h-8 w-[18px] items-end justify-center rounded-[2px] pb-1 transition hover:bg-ink-700"
+                  className={cn(
+                    'flex h-8 items-end justify-center rounded-[2px] pb-1 transition hover:bg-ink-700',
+                    compact ? 'w-[14px]' : 'w-[18px]',
+                  )}
                 >
                   <span
                     className={cn(
@@ -332,26 +336,41 @@ export function TimeControls() {
           </div>
         </div>
         <Timeline game={game} />
-        {game.phase === 'campaign' && (
-          <button
-            type="button"
-            onClick={() => navigate('/jogo/agenda')}
-            data-testid="agenda-status"
-            title="Agenda automática: o que a equipe faz sozinha a cada dia"
-            className={cn(
-              'flex w-full items-center gap-1.5 rounded-[4px] border px-2 py-1 text-left text-[11px] transition',
-              game.campaign?.agenda?.enabled
-                ? 'border-good/50 bg-good/10 text-good hover:bg-good/15'
-                : 'border-gold-500/20 text-muted hover:border-gold-500/40 hover:text-paper',
+        {(game.phase === 'campaign' || compact) && (
+          <div className="flex items-center gap-1.5">
+            {game.phase === 'campaign' && (
+              <button
+                type="button"
+                onClick={() => navigate('/jogo/agenda')}
+                data-testid="agenda-status"
+                title="Agenda automática: o que a equipe faz sozinha a cada dia"
+                className={cn(
+                  'flex min-w-0 flex-1 items-center gap-1.5 rounded-[4px] border px-2 py-1 text-left text-[11px] transition',
+                  game.campaign?.agenda?.enabled
+                    ? 'border-good/50 bg-good/10 text-good hover:bg-good/15'
+                    : 'border-gold-500/20 text-muted hover:border-gold-500/40 hover:text-paper',
+                )}
+              >
+                <Icon name="calendar-check" size={13} className="shrink-0" />
+                <span className="truncate">
+                  {game.campaign?.agenda?.enabled
+                    ? compact
+                      ? 'Agenda ativa'
+                      : 'Agenda automática ativa'
+                    : compact
+                      ? 'Agenda desligada'
+                      : 'Agenda automática desligada'}
+                </span>
+              </button>
             )}
-          >
-            <Icon name="calendar-check" size={13} />
-            {game.campaign?.agenda?.enabled ? 'Agenda automática ativa' : 'Agenda automática desligada'}
-          </button>
+            {compact && (
+              <MapModeSelector compact className={game.phase === 'campaign' ? 'max-w-[55%]' : 'flex-1'} />
+            )}
+          </div>
         )}
       </div>
 
-      <MapModeSelector className="flex-wrap" />
+      {!compact && <MapModeSelector className="flex-wrap" />}
     </div>
   );
 }

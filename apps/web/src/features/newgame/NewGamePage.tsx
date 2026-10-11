@@ -369,7 +369,8 @@ export function NewGamePage() {
           {error}
         </p>
       )}
-      <div className="flex justify-between">
+      {/* Sempre visível: listas longas (como a dos 30 partidos) não escondem o "Próximo". */}
+      <div className="sticky bottom-0 z-20 -mx-4 -mb-6 flex items-center justify-between gap-3 border-t border-gold-500/25 bg-ink-950/90 px-4 py-3 backdrop-blur-sm">
         <Button
           icon={<ArrowLeft size={16} />}
           onClick={() => setStep((s) => Math.max(0, s - 1))}
@@ -377,6 +378,9 @@ export function NewGamePage() {
         >
           Anterior
         </Button>
+        <span className="min-w-0 truncate text-center text-xs text-muted">
+          Etapa {step + 1} de {STEPS.length} · {current.label}
+        </span>
         {current.id === 'review' ? (
           <Button
             variant="primary"

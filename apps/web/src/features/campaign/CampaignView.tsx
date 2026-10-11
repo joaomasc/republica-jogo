@@ -197,7 +197,7 @@ export function CampaignView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-3 @3xl:grid-cols-6">
         <StatTile label="Caixa" icon="piggy-bank" value={formatMoney(campaign.money)} />
         <StatTile
           label="Energia"
@@ -246,13 +246,13 @@ export function CampaignView() {
         )}
       </Link>
 
-      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel title="Ações de campanha" icon="megaphone">
           <div className="space-y-4">
             {(Object.keys(CATEGORY_LABEL) as (keyof typeof CATEGORY_LABEL)[]).map((cat) => (
               <div key={cat}>
                 <div className="label mb-1.5">{CATEGORY_LABEL[cat]}</div>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-2 @sm:grid-cols-2 @3xl:grid-cols-3">
                   {CAMPAIGN_ACTIONS.filter((a) => a.category === cat).map((a) => {
                     const cost = actionCost(game, a);
                     const affordable = campaign.money >= cost && campaign.energy >= a.energy;

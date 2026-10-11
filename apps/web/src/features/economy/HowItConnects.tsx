@@ -81,13 +81,13 @@ export function HowItConnects() {
       </button>
       {open && (
         <>
-          <div className="mt-2 flex flex-col items-stretch gap-1.5 xl:flex-row">
+          <div className="mt-2 flex flex-col items-stretch gap-1.5 @3xl:flex-row">
             {STEPS.map((s, i) => (
               <Fragment key={s.title}>
                 {i > 0 && (
                   <div className="flex items-center justify-center text-gold-500">
-                    <Icon name="chevron-right" size={16} className="hidden xl:block" />
-                    <Icon name="chevron-down" size={16} className="xl:hidden" />
+                    <Icon name="chevron-right" size={16} className="hidden @3xl:block" />
+                    <Icon name="chevron-down" size={16} className="@3xl:hidden" />
                   </div>
                 )}
                 <div className="flex-1 rounded-lg border border-ink-600 bg-ink-900 p-2">

@@ -108,7 +108,7 @@ export function ImpactReportView({ report }: { report: ImpactReport }) {
         )}
       </div>
       <Section title="País" icon="landmark" rows={report.economy} />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 @lg:grid-cols-2">
         <Section title="Setores da economia (produção)" icon="factory" rows={report.sectors} showValues={false} />
         <Section title="Preços" icon="store" rows={report.prices} showValues={false} hint="Variação do preço de cada bem no mercado nacional." />
         <Section title="Satisfação da população" icon="users" rows={report.pops} showValues={false} />

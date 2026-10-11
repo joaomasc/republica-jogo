@@ -25,7 +25,7 @@ export function WeekPanel() {
 
   return (
     <Panel title={`Semana ${week.index}`} icon="calendar-check">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div className="space-y-2">
           <div className="rounded-xl border-2 border-gold-500/40 bg-gold-500/10 p-2.5">
             <div className="label">Pauta da semana</div>
@@ -50,7 +50,7 @@ export function WeekPanel() {
             )}
           </div>
         </div>
-        <ul className="grid gap-1.5 sm:grid-cols-2">
+        <ul className="grid gap-1.5 @sm:grid-cols-2">
           {rivals.slice(0, 6).map((id) => {
             const st = election.participants[id];
             return (

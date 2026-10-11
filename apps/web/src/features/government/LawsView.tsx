@@ -252,13 +252,13 @@ export function LawsView() {
   return (
     <div className="space-y-3">
       <HowItConnects />
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Capital político" icon="star" value={Math.round(gov.politicalCapital)} />
         <StatTile label="Esfera" icon="landmark" value={level === 'federal' ? 'Federal' : level === 'estadual' ? 'Estadual' : 'Municipal'} />
         <StatTile label="Proposições tramitando" icon="file-text" value={activeBills.length} />
         <StatTile label="Leis em implementação" icon="construction" value={game.laws.implementing.length} />
       </div>
-      <div className="grid gap-3 xl:grid-cols-[250px_minmax(0,1fr)_minmax(0,0.85fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[250px_minmax(0,1fr)_minmax(0,0.85fr)]">
         <Panel title="Leis" icon="scale" bodyClassName="p-2">
           <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
             {branches.map(({ b, list }) => (

@@ -34,7 +34,7 @@ export function PartyView() {
   const president = game.parties[game.landscape.presidentPartyId];
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="space-y-3">
         <Panel>
           <div className="flex flex-wrap items-center gap-4">
@@ -50,7 +50,7 @@ export function PartyView() {
               <div className="label">compatibilidade com você</div>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 @lg:grid-cols-5">
             {(
               [
                 ['Popularidade', party.popularity],
@@ -110,7 +110,7 @@ export function PartyView() {
             <div className="label mb-1">Bandeiras {Object.keys(party.lawPositions ?? {}).length > 0 ? 'oficiais' : '(pela ideologia)'}</div>
             <PlatformChips platform={partyPlatformView(party)} color={party.color} />
           </div>
-          <div className="grid gap-1.5 md:grid-cols-2">
+          <div className="grid gap-1.5 @lg:grid-cols-2">
             {LAW_CATEGORIES.map((c) => {
               const opt = getLawOption(c.id, partyPreferredOption(party, c.id) ?? '');
               return (

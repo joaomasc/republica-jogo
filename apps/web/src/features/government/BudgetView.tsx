@@ -23,7 +23,7 @@ export function BudgetView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-5">
         <StatTile
           label="Receita anual"
           icon="trending-up"
@@ -64,7 +64,7 @@ export function BudgetView() {
           serviço para quem prioriza aquele tema; cortes economizam mas desagradam. Sua Gestão e a
           competência dos ministros afetam a eficiência.
         </p>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 @2xl:grid-cols-2">
           {BUDGET_CATEGORIES.map((c) => {
             const info = BUDGET_INFO[c];
             const value = budget.spending[c];

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { advanceUntilElection, clearBlockers, createCandidate } from './helpers';
+import { advanceUntilElection, clearBlockers, createCandidate, openNav } from './helpers';
 
 test.describe('República — fluxo principal', () => {
   test('criar candidato, fazer campanha, realizar eleição, salvar e carregar', async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe('República — fluxo principal', () => {
     const moneyBefore = await page.getByTestId('metric-money').innerText();
 
     // Ações de campanha: rápida (redes) e com alvo (comício numa zona)
-    await page.getByTestId('nav-campanha').click();
+    await openNav(page, 'campanha');
     await page.getByTestId('action-social_media').click();
     await expect(page.getByTestId('toast').first()).toBeVisible();
     await page.getByTestId('action-rally').click();
@@ -19,18 +19,18 @@ test.describe('República — fluxo principal', () => {
     await expect(page.getByTestId('metric-money')).not.toHaveText(moneyBefore);
 
     // Propaganda nas redes
-    await page.getByTestId('nav-propaganda').click();
+    await openNav(page, 'propaganda');
     await page.getByTestId('channel-social').click();
     await page.getByTestId('ad-launch').click();
     await expect(page.getByText(/no ar por \d+ dia/)).toBeVisible();
 
     // Pesquisa interna
-    await page.getByTestId('nav-pesquisas').click();
+    await openNav(page, 'pesquisas');
     await page.getByTestId('btn-internal-poll').click();
     await expect(page.getByTestId('poll-results')).toBeVisible();
 
     // Eleitores (Pops)
-    await page.getByTestId('nav-eleitores').click();
+    await openNav(page, 'eleitores');
     await expect(page.getByTestId('pops-grid')).toBeVisible();
 
     // Avançar o tempo até a eleição e votar

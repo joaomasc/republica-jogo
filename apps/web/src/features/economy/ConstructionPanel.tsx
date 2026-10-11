@@ -27,7 +27,7 @@ export function ConstructionPicker({ stateId, compact = false }: { stateId: Stat
         </select>
         <span className="text-[11px] text-muted">Obras do governo saem do orçamento de investimento.</span>
       </div>
-      <div className={cn('grid gap-1.5 overflow-y-auto pr-1', compact ? 'max-h-64' : 'max-h-[52vh] md:grid-cols-2')}>
+      <div className={cn('grid gap-1.5 overflow-y-auto pr-1', compact ? 'max-h-64' : 'max-h-[52vh] @lg:grid-cols-2')}>
         {shown.map((o) => (
           <div
             key={o.id}

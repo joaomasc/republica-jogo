@@ -86,7 +86,7 @@ function Catalog() {
         </div>
       }
     >
-      <div className="grid max-h-[46vh] gap-1.5 overflow-y-auto pr-1 md:grid-cols-2">
+      <div className="grid max-h-[46vh] gap-1.5 overflow-y-auto pr-1 @lg:grid-cols-2">
         {options.map((o) => {
           const sz = o.sizes.find((x) => x.size === size)!;
           return (
@@ -144,7 +144,7 @@ export function WorksView() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <StatTile label="Suas obras em andamento" icon="hard-hat" value={o.mine.length} />
         <StatTile
           label="Investimento em obras"
@@ -159,7 +159,7 @@ export function WorksView() {
         Cada obra emprega gente enquanto anda (e gera empregos indiretos no comércio e serviços), deixa empregos permanentes,
         melhora o serviço público da sua esfera e rende inauguração. Obras sem verba param: cuide do saldo do orçamento.
       </p>
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <Panel
           title="Obras"
           icon="construction"

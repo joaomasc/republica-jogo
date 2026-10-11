@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openNav } from './helpers';
 
 const SHOTS = process.env.SHOTS;
 async function shot(page: Page, name: string) {
@@ -28,16 +29,16 @@ test.describe('Prefeito: tudo no escopo da cidade', () => {
     await expect(page.getByTestId('nav-comercio')).toHaveCount(0);
     await expect(page.getByText(/Desemprego de Salvador/).first()).toBeVisible();
 
-    await page.getByTestId('nav-economia').click();
+    await openNav(page, 'economia');
     await expect(page.getByText('Contexto nacional (Brasil)', { exact: false })).toBeVisible();
     await shot(page, '31-prefeito-economia');
 
-    await page.getByTestId('nav-obras').click();
+    await openNav(page, 'obras');
     await page.getByTestId('work-start-ubs').click();
     await expect(page.getByText('Minhas obras (1)')).toBeVisible();
     await shot(page, '32-prefeito-obras');
 
-    await page.getByTestId('nav-governo').click();
+    await openNav(page, 'governo');
     await expect(page.getByTestId('street-panel')).toBeVisible();
     await shot(page, '33-prefeito-gabinete');
 

@@ -29,7 +29,7 @@ export function PartiesTab() {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid gap-3 @3xl:grid-cols-2">
         {game.congress.chambers.map((c) => {
           const ordered = Object.entries(c.seats)
             .filter(([, s]) => s > 0)
@@ -98,7 +98,7 @@ export function PartiesTab() {
             </span>
           </div>
         )}
-        <div className="grid gap-2 lg:grid-cols-2">
+        <div className="grid gap-2 @2xl:grid-cols-2">
           {parties.map(({ p, seats: s }) => {
             const rel = game.congress.relations[p.id] ?? 0;
             const inCoalition = game.congress.coalition.includes(p.id);
