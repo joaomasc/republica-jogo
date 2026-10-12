@@ -9,7 +9,7 @@ type PromiseView = ReturnType<typeof promiseOverview>[number];
  * Uma promessa com o status ao vivo: cumprida assim que a lei passa (seja quem for o autor);
  * pendente mostra "se o mandato acabasse hoje" e o último fato que mexeu nela.
  */
-export function PromiseRow({ p }: { p: PromiseView }) {
+export function PromiseRow({ p, monthsLeft }: { p: PromiseView; monthsLeft?: number }) {
   const live = p.status === 'pending' ? p.projected : p.status;
   const tone = TONE[live as keyof typeof TONE] ?? 'info';
   return (
@@ -19,6 +19,11 @@ export function PromiseRow({ p }: { p: PromiseView }) {
         <span className="flex shrink-0 items-center gap-1">
           {p.otherSphere && <Badge tone="neutral">outra esfera</Badge>}
           {p.reverted && <Badge tone="bad">recuo</Badge>}
+          {p.status === 'pending' && monthsLeft !== undefined && (
+            <Badge tone={monthsLeft <= 6 ? 'warn' : 'neutral'}>
+              {monthsLeft <= 0 ? 'prazo: agora' : `faltam ${monthsLeft} ${monthsLeft === 1 ? 'mês' : 'meses'}`}
+            </Badge>
+          )}
           <Badge tone={tone}>
             {p.status === 'pending' && live !== 'pending' ? `hoje: ${promiseStatusLabel(live as 'pending').toLowerCase()}` : promiseStatusLabel(live as 'pending')}
           </Badge>

@@ -72,10 +72,11 @@ function initialState(
     party: { kind: 'existing', partyId: partyIdForWorld(preset?.partyId, world) },
     officeId: preset?.officeId ?? 'presidente',
     stateId: preset?.stateId ?? 'SP',
-    cityId: null,
+    cityId: preset?.cityId ?? null,
     difficulty: preset?.difficulty ?? defaultDifficulty,
     world,
     weekly: true,
+    cabinet: true,
   };
 }
 
@@ -152,6 +153,7 @@ export function NewGamePage() {
       difficulty: state.difficulty,
       world: state.world,
       weekly: state.weekly,
+      cabinet: state.cabinet,
       mode: preset?.mode ?? 'career',
       scenarioId: preset?.scenarioId ?? null,
       candidate: {
@@ -186,6 +188,7 @@ export function NewGamePage() {
           ? { cityId: state.cityId }
           : {}),
       },
+      ...(preset?.seed ? { seed: preset.seed } : {}),
       ...(preset?.year ? { year: preset.year } : {}),
       ...(preset?.economy ? { economy: preset.economy } : {}),
       ...(preset?.sandbox ? { sandbox: preset.sandbox } : {}),
@@ -218,7 +221,9 @@ export function NewGamePage() {
           ? `Cenário: ${getScenario(preset.scenarioId ?? '')?.name ?? ''}`
           : preset?.mode === 'sandbox'
             ? 'Sandbox — novo personagem'
-            : 'Novo jogo'
+            : preset?.challenge
+              ? `Desafio da semana — ${preset.challenge}`
+              : 'Novo jogo'
       }
       subtitle="Crie seu político. Tudo pode mudar ao longo da carreira."
     >

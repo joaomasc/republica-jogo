@@ -21,6 +21,8 @@ import {
   partyIdForWorld,
   partyPlatformView,
   partySeeds,
+  partySize,
+  PARTY_SIZE_INFO,
   partyPlatformMatch,
   PARODY_DISCLAIMER,
   PARODY_POLITICIANS,
@@ -484,6 +486,17 @@ export function PartyStep({ state, update }: StepProps) {
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-1">
+                  {(() => {
+                    const size = partySize(p);
+                    return (
+                      <Badge
+                        tone={size === 'grande' ? 'gold' : size === 'medio' ? 'info' : 'warn'}
+                        data-testid={`party-size-${size}`}
+                      >
+                        {PARTY_SIZE_INFO[size].label}
+                      </Badge>
+                    );
+                  })()}
                   {p.strongRegions.map((r) => (
                     <Badge key={r} tone="good">
                       Forte: {REGIONS[r].name}
@@ -669,8 +682,25 @@ export function PartyStep({ state, update }: StepProps) {
 
 export function OfficeStep({ state, update, locked }: StepProps & { locked?: boolean }) {
   const office = OFFICES[state.officeId];
+  const party =
+    state.party.kind === 'existing'
+      ? (partySeeds(state.world).find((s) => state.party.kind === 'existing' && s.id === state.party.partyId) ?? null)
+      : null;
+  const smallParty = partySize(party) === 'pequeno';
   return (
     <div className="space-y-4">
+      {smallParty && office.system === 'majoritarian' && (
+        <div
+          className="rounded-xl border-2 border-warn/50 bg-warn/10 p-2.5 text-sm"
+          data-testid="small-party-warning"
+        >
+          <b className="text-warn">Partido pequeno: modo difícil.</b>{' '}
+          <span className="text-muted">
+            {PARTY_SIZE_INFO.pequeno.hint} Vereador e deputado são portas de entrada mais
+            realistas — ou aceite o desafio.
+          </span>
+        </div>
+      )}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {OFFICE_LIST.map((o) => {
           const tooYoung = state.age < o.minAge;
@@ -780,6 +810,22 @@ export function OfficeStep({ state, update, locked }: StepProps & { locked?: boo
               <span className="block text-xs text-muted">
                 Toda semana: pauta em alta, rivais que reagem às pesquisas e 3 cartas de jogada para
                 escolher.
+              </span>
+            </span>
+          </label>
+          <label className="mt-2 flex items-start gap-2 rounded-xl border-2 border-ink-600 bg-ink-900 p-2.5 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={state.cabinet}
+              onChange={(e) => update({ cabinet: e.target.checked })}
+              data-testid="toggle-cabinet"
+            />
+            <span>
+              <b>Gabinete mensal</b> <span className="text-xs text-gold-400">(recomendado)</span>
+              <span className="block text-xs text-muted">
+                No governo, todo mês: balanço, pauta do mês, o que a oposição vai fazer e 3 cartas
+                de decisão. Governar desgasta — a reunião é onde você reage.
               </span>
             </span>
           </label>

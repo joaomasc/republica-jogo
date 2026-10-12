@@ -32,6 +32,8 @@ export interface Settings {
   /** Velocidade do avanço automático (1 = lenta, 5 = muito rápida). */
   gameSpeed: GameSpeed;
   showTips: boolean;
+  /** Dicas da primeira partida já vistas (ids). */
+  seenTips: string[];
 }
 
 interface SettingsStore extends Settings {
@@ -48,6 +50,7 @@ const DEFAULTS: Settings = {
   autoPlaySpeedMs: 1000,
   gameSpeed: 2,
   showTips: true,
+  seenTips: [],
 };
 
 export const useSettings = create<SettingsStore>()(

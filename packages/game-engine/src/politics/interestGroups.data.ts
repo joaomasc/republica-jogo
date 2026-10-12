@@ -338,6 +338,88 @@ export const INTEREST_GROUP_SEEDS: Seed[] = [
   },
 ];
 
+/** Grupos acrescentados na versão 3 do save (forças de segurança, igrejas, ambientalistas). */
+export const LATE_INTEREST_GROUP_SEEDS: Seed[] = [
+  {
+    id: 'security',
+    name: 'Forças de segurança',
+    icon: 'shield',
+    size: 0.015,
+    influence: 60,
+    power: 70,
+    priorities: ['security', 'pensions', 'corruption'],
+    ideology: {
+      economy: 58,
+      social: 74,
+      fiscal: 55,
+      security: 92,
+      federalism: 45,
+      environment: 60,
+      trade: 50,
+      institutions: 38,
+      foreign: 78,
+    },
+    relatedPopTypes: ['civil_servants', 'middle_class'],
+    preferredLaws: {
+      security: 'sec_punitive',
+      pensions: 'pen_current',
+      administration: 'adm_expanded',
+    },
+    leaderName: 'Associação Nacional de Policiais',
+  },
+  {
+    id: 'religious',
+    name: 'Lideranças religiosas',
+    icon: 'book',
+    size: 0.05,
+    influence: 62,
+    power: 60,
+    priorities: ['security', 'education', 'welfare'],
+    ideology: {
+      economy: 55,
+      social: 85,
+      fiscal: 55,
+      security: 72,
+      federalism: 55,
+      environment: 58,
+      trade: 50,
+      institutions: 45,
+      foreign: 60,
+    },
+    relatedPopTypes: ['retirees', 'workers', 'merchants'],
+    preferredLaws: { education: 'edu_vouchers', media: 'media_free', welfare: 'wel_targeted' },
+    leaderName: 'Conselho Nacional de Igrejas',
+  },
+  {
+    id: 'environmental',
+    name: 'Ambientalistas',
+    icon: 'leaf',
+    size: 0.02,
+    influence: 45,
+    power: 50,
+    priorities: ['environment', 'healthcare', 'education'],
+    ideology: {
+      economy: 38,
+      social: 25,
+      fiscal: 40,
+      security: 30,
+      federalism: 45,
+      environment: 8,
+      trade: 45,
+      institutions: 62,
+      foreign: 25,
+    },
+    relatedPopTypes: ['students', 'tech_workers', 'middle_class'],
+    preferredLaws: {
+      environment: 'env_strict',
+      science: 'sci_innovation_state',
+      institutions: 'inst_transparency',
+    },
+    leaderName: 'Rede Brasileira de Ambientalistas',
+  },
+];
+INTEREST_GROUP_SEEDS.push(...LATE_INTEREST_GROUP_SEEDS);
+
 export function initInterestGroups(): Record<InterestGroupId, InterestGroup> {
   const out = {} as Record<InterestGroupId, InterestGroup>;
   for (const seed of INTEREST_GROUP_SEEDS) out[seed.id] = { ...deepClone(seed), approval: 50 };

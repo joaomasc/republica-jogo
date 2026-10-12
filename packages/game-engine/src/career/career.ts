@@ -21,6 +21,7 @@ import {
 import { refreshPartyAffinities } from '../population/population';
 import { updatePopulationMonthly } from '../population/satisfaction';
 import { getPlayer, getPlayerParty } from '../simulation/access';
+import { applyOccupationMonth } from './occupations';
 import type { GameState } from '../simulation/state';
 
 const K = GameConstants.career;
@@ -45,6 +46,12 @@ export function nextAvailableElection(state: GameState, officeId: OfficeId): num
   return year;
 }
 
+/** Motivo de inelegibilidade (Ficha Limpa) para uma eleição no ano dado, ou null. */
+export function ineligibilityReason(state: GameState, year: number): string | null {
+  const until = state.career.ineligibleUntil;
+  return until && year <= until ? `Inelegível pela Lei da Ficha Limpa até ${until}` : null;
+}
+
 export function careerOptions(state: GameState): CareerOption[] {
   const player = getPlayer(state);
   const evaluation = state.career.lastEvaluation;
@@ -57,6 +64,7 @@ export function careerOptions(state: GameState): CareerOption[] {
     if (ageThen < office.minAge) reason = `Idade mínima: ${office.minAge} anos`;
     if (reelection && !evaluation.canRunForReelection)
       reason = 'Limite de mandatos consecutivos atingido';
+    reason ??= ineligibilityReason(state, year) ?? undefined;
     return {
       officeId: office.id,
       year,
@@ -106,6 +114,7 @@ export function fastForward(state: GameState, toDate: string): void {
       updatePopulationMonthly(state);
       driftParties(state.parties, rng, 30);
       player.scandal = clamp(player.scandal * 0.92, 0, 100);
+      applyOccupationMonth(state);
       const y = yearOf(state.date);
       const generalDate = firstSundayOfOctober(y);
       if (before < generalDate && state.date >= generalDate)

@@ -9,6 +9,8 @@ import { MapStage } from '../map/MapStage';
 import { DebateModal } from '../media/DebateModal';
 import { EventModal } from '../events/EventModal';
 import { InterviewModal } from '../media/InterviewModal';
+import { useAchievementTracker } from '../achievements/useAchievementTracker';
+import { CabinetModal } from '../cabinet/CabinetModal';
 import { WeekModal } from '../week/WeekModal';
 import { Dock } from './Dock';
 import {
@@ -70,6 +72,7 @@ function ActivePanel({ viewport }: { viewport: number }) {
 }
 
 export function GameLayout() {
+  useAchievementTracker();
   const hasGame = useGame((s) => s.game !== null);
   const viewport = useViewportWidth();
   const height = useViewportHeight();
@@ -107,6 +110,7 @@ export function GameLayout() {
       <InterviewModal />
       <DebateModal />
       <WeekModal />
+      <CabinetModal />
       <DecisionCenter />
     </div>
   );

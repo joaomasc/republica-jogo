@@ -1,3 +1,4 @@
+import { TutorialTip } from '../../components/TutorialTip';
 import {
   formatMoney,
   internalPollCost,
@@ -96,6 +97,10 @@ export function PollsView() {
 
   return (
     <div className="space-y-3">
+      <TutorialTip id="polls" title="Lendo as pesquisas">
+        Pesquisa tem margem de erro: diferenças pequenas são empate técnico. Olhe a tendência entre
+        pesquisas e a rejeição — rejeição alta é teto difícil de romper.
+      </TutorialTip>
       <div className="flex flex-wrap items-center gap-2">
         <select
           className="game-select"

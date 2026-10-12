@@ -1,5 +1,9 @@
 import { beginWeek } from '../campaign/weekly';
+import { openRunoffDeals } from './runoff';
+import { archiveRivals } from '../world/rivals';
+import { addDays } from '../core/date';
 import { clamp100, formatPct } from '../core/math';
+import { withRng } from '../core/rng';
 import type { ActionResult } from '../core/types';
 import { assumeOffice } from '../government/government';
 import { addHistory } from '../history/history';
@@ -75,7 +79,26 @@ export function holdElection(state: GameState): ActionResult {
       sentiment: won ? 1 : -1,
     });
   }
+  if (election.status === 'finished') {
+    archiveRivals(state);
+    scheduleAccountsAudit(state);
+  }
   return { ok: true, message: message ?? 'Eleição concluída.' };
+}
+
+/** Caixa 2 deixa rastro: a prestação de contas pode ser rejeitada meses depois. */
+function scheduleAccountsAudit(state: GameState): void {
+  const campaign = state.campaign;
+  const undeclared = campaign?.undeclared ?? 0;
+  if (!campaign || undeclared <= 0) return;
+  const chance = Math.min(0.85, Math.max(0.15, undeclared / (campaign.moneyScale * 600_000)));
+  const hit = withRng(state, (rng) => rng.chance(chance));
+  if (!hit) return;
+  state.events.scheduled.push({
+    eventId: 'jus_contas',
+    date: addDays(state.date, 75),
+    context: {},
+  });
 }
 
 function setLandscapeWinner(state: GameState, winnerId: string): void {
@@ -122,6 +145,7 @@ export function continueAfterResults(state: GameState): ActionResult {
   const last = election.results[election.results.length - 1];
   if (election.status === 'campaign' && last?.runoff && last.runoff.includes(state.playerId)) {
     setupRunoff(state, last.runoff);
+    openRunoffDeals(state);
     addPoll(state, createPoll(state, { kind: 'public', pollster: pickPollster(state) }));
     beginWeek(state);
     publishNews(state, {

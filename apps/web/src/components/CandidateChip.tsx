@@ -1,4 +1,4 @@
-import type { GameState } from '@republica/game-engine';
+import { nemesisOf, type GameState } from '@republica/game-engine';
 import { Avatar, cn } from '@republica/ui';
 
 export function CandidateChip({
@@ -31,6 +31,9 @@ export function CandidateChip({
           {c.ballotName}
           {c.isPlayer && (
             <span className="ml-1 text-[10px] font-bold uppercase text-gold-400">você</span>
+          )}
+          {c.rivalId && c.rivalId === nemesisOf(state)?.id && (
+            <span className="ml-1 text-[10px] font-bold uppercase text-bad">nêmesis</span>
           )}
         </div>
         <div className="truncate text-xs text-muted">{subtitle ?? party?.acronym}</div>

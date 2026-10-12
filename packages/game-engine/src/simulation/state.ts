@@ -1,3 +1,4 @@
+import type { RivalRecord } from '../world/rivals';
 import type { WorldId } from '../world/parody';
 import type { CampaignState, PlayerPromise } from '../campaign/types';
 import type { Candidate } from '../candidate/types';
@@ -34,6 +35,8 @@ export interface GameSettings {
   world?: WorldId;
   /** Campanha dinâmica: reunião semanal com cartas, pauta da semana e rivais que reagem. */
   weekly?: boolean;
+  /** Gabinete mensal: no governo executivo, reunião com pauta do mês e 3 cartas de decisão. */
+  cabinet?: boolean;
 }
 
 export interface GameMeta {
@@ -75,6 +78,8 @@ export interface GameState {
   phase: GamePhase;
   playerId: CandidateId;
   candidates: Record<CandidateId, Candidate>;
+  /** Rivais recorrentes: adversários que persistem entre eleições (com memória). */
+  rivals?: Record<string, RivalRecord>;
   parties: Record<PartyId, Party>;
   election: Election | null;
   population: PopulationState;

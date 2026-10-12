@@ -78,6 +78,37 @@ test.describe('República — fluxo principal', () => {
     await expect(page.getByTestId('time-day')).toBeEnabled();
   });
 
+  test('gabinete mensal: no governo, a reunião do mês trava e libera o tempo', async ({ page }) => {
+    await page.goto('/novo?cenario=prefeitura_salvador');
+    await page.getByTestId('input-first-name').fill('Teste');
+    await page.getByTestId('input-last-name').fill('Gabinete');
+    await page.getByTestId('input-age').fill('45');
+    for (let i = 0; i < 9; i++) {
+      if (await page.getByTestId('start-game').isVisible()) break;
+      if (await page.getByTestId('bg-teacher').isVisible())
+        await page.getByTestId('bg-teacher').click();
+      if (await page.getByTestId('party-mdb').isVisible())
+        await page.getByTestId('party-mdb').click();
+      await page.getByTestId('wizard-next').click();
+    }
+    await page.getByTestId('start-game').click();
+    await expect(page.getByTestId('game-date')).toBeVisible();
+    for (let i = 0; i < 20; i++) {
+      if (await page.getByTestId('cabinet-modal').isVisible()) break;
+      const option = page.getByTestId('event-option').first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      else if (await page.getByTestId('time-month').isEnabled())
+        await page.getByTestId('time-month').click();
+      await page.waitForTimeout(300);
+    }
+    await expect(page.getByTestId('cabinet-modal')).toBeVisible();
+    await expect(page.getByTestId('cabinet-card')).toHaveCount(3);
+    await expect(page.getByTestId('time-day')).toBeDisabled();
+    await page.getByTestId('cabinet-card').first().click();
+    await expect(page.getByTestId('cabinet-modal')).toBeHidden();
+    await expect(page.getByTestId('time-day')).toBeEnabled();
+  });
+
   test('cenários, sandbox e configurações abrem', async ({ page }) => {
     await page.goto('/cenarios');
     await page.getByTestId('scenario-outsider').getByRole('button').click();

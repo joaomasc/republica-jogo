@@ -25,11 +25,13 @@ import type {
 } from './interactions';
 import { fillTemplate, publishNews } from './news';
 import { INTERVIEW_HOSTS } from './outlets';
+import { EXTRA_ISSUE_QUESTIONS } from './questions.data';
 import {
   EMPATHETIC_ANSWERS,
   EVASIVE_ANSWERS,
   HOSTILE_ANSWERS,
   HOSTILE_QUESTIONS,
+  type HostileKind,
   ISSUE_QUESTIONS,
   TECHNICAL_ANSWERS,
 } from './textBank';
@@ -111,7 +113,10 @@ function issueQuestion(state: GameState, rng: Rng, issue: IssueId, qid: string):
     unemployment: regionUnemployment(state),
     inflation: round(state.economy.inflation, 1),
   };
-  const text = fillTemplate(rng.pick(ISSUE_QUESTIONS[issue]), vars);
+  const text = fillTemplate(
+    rng.pick([...ISSUE_QUESTIONS[issue], ...EXTRA_ISSUE_QUESTIONS[issue]]),
+    vars,
+  );
   const proposals = PROPOSALS.filter((p) => p.issue === issue && p.levels.includes(level));
   const answers: InterviewAnswer[] = [];
   const shuffled = rng.shuffle(proposals).slice(0, 2);
@@ -144,19 +149,21 @@ function hostileQuestion(state: GameState, rng: Rng, qid: string): InterviewQues
   const poll = latestPoll(state);
   const share = poll?.total.shares[state.playerId] ?? null;
   const player = getPlayer(state);
-  const options: { key: keyof typeof HOSTILE_QUESTIONS; vars: Record<string, string> }[] = [];
+  const options: { key: HostileKind; vars: Record<string, string> }[] = [];
   if (memory) options.push({ key: 'scandal', vars: { memory: memory.title } });
   if (broken) options.push({ key: 'promise', vars: { memory: broken.title } });
   if (party.unity < 55) options.push({ key: 'party', vars: { party: party.acronym } });
   if (share !== null && share < 0.1)
     options.push({ key: 'polls', vars: { share: formatPct(share) } });
   if (player.attributes.experience < 40) options.push({ key: 'experience', vars: {} });
+  if (player.scandal >= 15) options.push({ key: 'integrity', vars: {} });
+  if (options.length === 0 && rng.chance(0.5)) options.push({ key: 'general', vars: {} });
   if (options.length === 0) return null;
   const pick = rng.pick(options);
   return {
     id: qid,
     topic: 'Pergunta difícil',
-    text: fillTemplate(HOSTILE_QUESTIONS[pick.key], pick.vars),
+    text: fillTemplate(rng.pick(HOSTILE_QUESTIONS[pick.key]), pick.vars),
     hostile: true,
     answers: [
       { id: `${qid}_em`, text: HOSTILE_ANSWERS.empathetic, style: 'empathetic' },

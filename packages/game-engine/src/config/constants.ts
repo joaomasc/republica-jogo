@@ -11,7 +11,7 @@ import { NationConstants } from '../nation/constants';
  */
 export const GameConstants = {
   save: {
-    version: 2,
+    version: 3,
     format: 'republica-save',
   },
 
@@ -178,6 +178,8 @@ export const GameConstants = {
   },
 
   ads: {
+    /** Bolha das redes: persuasão digital vai de (1 − bolha) entre opostos a (1 + bolha) entre afins. */
+    digitalBubble: 0.45,
     /** Custo diário por canal para alcançar 100% do eleitorado (antes da escala de dinheiro). */
     targetingCostMultiplier: 1.25,
     targetingEfficiency: 1.8,
@@ -225,10 +227,19 @@ export const GameConstants = {
   events: {
     dailyChanceCampaign: 0.2,
     monthlyChanceGovernment: 0.85,
-    monthlyChanceLegislature: 0.6,
+    monthlyChanceLegislature: 0.8,
     maxPending: 1,
     defaultCooldownDays: 45,
     expireDays: 7,
+    /** Cada repetição divide o peso por (1 + penalidade × vezes), até `repeatCap` vezes. */
+    repeatPenalty: 1.5,
+    /** No mandato, nenhum evento sorteável volta antes disso (exceto calendário e anuais). */
+    minRepeatDaysOffice: 540,
+    repeatCap: 4,
+    /** Recarga por categoria (dias) e o peso que sobra dentro dela. */
+    categoryCooldownCampaign: 5,
+    categoryCooldownGovernment: 50,
+    categoryPenalty: 0.35,
   },
 
   news: {
@@ -299,8 +310,93 @@ export const GameConstants = {
     deficitWarning: -0.03,
   },
 
+  ministers: {
+    approvalPull: 1.2,
+    relationPull: 0.8,
+    ambitionDrag: 0.9,
+    scandalGrowth: 1.6,
+    scandalThreshold: 22,
+    scandalChance: 0.25,
+    leakLoyalty: 22,
+    leakChance: 0.15,
+    resignMonthsLeft: 14,
+    resignAmbition: 70,
+    resignLoyalty: 38,
+    resignChance: 0.12,
+  },
+  objectives: {
+    offered: 6,
+    max: 3,
+    /** Até que mês do mandato dá para escolher. */
+    chooseUntilMonth: 6,
+    reputationPerObjective: 3,
+    credibilityPerObjective: 1,
+  },
+  federative: {
+    /** Repasses voluntários por mês, como fração da receita mensal, por esfera alinhada. */
+    transferRate: 0.03,
+    allyRelation: 30,
+    rivalRelation: -30,
+    rivalIdeologyGap: 60,
+  },
+  runningMate: {
+    minAffinity: 0.55,
+    maxAllies: 4,
+    /** Fração da afinidade partidária do aliado que migra para a chapa. */
+    allyTransfer: 0.4,
+    allyUnityCost: 4,
+    ownUnityGain: 4,
+    relationGain: 10,
+    ownLoyalty: 85,
+    allyLoyalty: 60,
+  },
+  rivals: {
+    /** Entram no elenco os N primeiros do 1º turno e quem tem fama alta. */
+    archiveTop: 3,
+    archiveFame: 55,
+    maxRoster: 60,
+    maxAge: 80,
+    /** Chance de o partido relançar o rival (o nêmesis quase sempre volta). */
+    returnChance: 0.55,
+    nemesisReturnChance: 0.9,
+    nemesisMinConfrontations: 2,
+    nemesisMinScore: 6,
+  },
+  runoff: {
+    /** Votação mínima no 1º turno para virar negociação. */
+    minShare: 0.02,
+    /** Acima disso o derrotado pede cargo; abaixo, pauta. */
+    cargoShare: 0.08,
+    maxDeals: 6,
+    /** Fração da afinidade partidária que migra com o apoio. */
+    transfer: 0.7,
+    cargoBase: 0.55,
+    pautaBase: 0.4,
+    priceMatchBonus: 0.15,
+    /** Quanto a diferença de afinidade (jogador − rival) pesa na chance. */
+    leanFactor: 1.6,
+    cargoUnityCost: 4,
+    /** Fração do caminho até a posição do aliado (compromisso de pauta). */
+    pautaShift: 0.15,
+    relationGain: 15,
+    /** Chance de o rival fechar um apoio a cada semana. */
+    rivalChance: 0.6,
+  },
+  cabinet: {
+    /** Cartas por reunião (a primeira é sempre a da pauta do mês). */
+    cards: 3,
+  },
   government: {
     honeymoonMonths: 6,
+    /** Desgaste mensal depois da lua de mel (pontos de aprovação-alvo). */
+    wearPerMonth: 0.55,
+    /** Desgaste extra por mês em crise econômica (recessão, desemprego ou inflação altos). */
+    wearCrisisExtra: 0.35,
+    wearMax: 26,
+    /** Cargos maiores sofrem mais escrutínio: multiplicador do desgaste por esfera. */
+    wearLevelFactor: { municipal: 1, estadual: 1.15, federal: 1.3 } as Record<string, number>,
+    /** Desgaste removido por inauguração (multiplicado pelo porte da obra). */
+    wearPerInauguration: 1.2,
     honeymoonBonus: 8,
     approvalAdjustRate: 0.3,
     politicalCapitalStart: 60,

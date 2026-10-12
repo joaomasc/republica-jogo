@@ -10,6 +10,17 @@ import {
   playerPollShare,
 } from './conditions';
 import { NATION_EVENT_DEFINITIONS } from './economy.events.data';
+import { MUNICIPAL_EVENTS } from './packs/municipal';
+import { STATE_EVENTS } from './packs/state';
+import { FEDERAL_EVENTS } from './packs/federal';
+import { LEGISLATIVE_EVENTS } from './packs/legislative';
+import { CAMPAIGN_EVENTS } from './packs/campaign';
+import { REGIONAL_EVENTS } from './packs/regional';
+import { CITY_EVENTS } from './packs/cities';
+import { ARC_EVENTS } from './packs/arcs';
+import { CAREER_EVENTS } from './packs/career';
+import { JUSTICE_EVENTS } from './packs/justice';
+import { EVENT_MONTHS } from './seasons';
 
 /**
  * Catálogo de eventos. Placeholders disponíveis no texto:
@@ -1496,8 +1507,28 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   },
   // Expansão Nação: economia, greves, capitais, energia, Congresso.
   ...NATION_EVENT_DEFINITIONS,
+  // Pacotes de conteúdo (docs/BANCO_DE_CONTEUDO.md).
+  ...MUNICIPAL_EVENTS,
+  ...STATE_EVENTS,
+  ...FEDERAL_EVENTS,
+  ...LEGISLATIVE_EVENTS,
+  ...CAMPAIGN_EVENTS,
+  ...REGIONAL_EVENTS,
+  ...CITY_EVENTS,
+  ...ARC_EVENTS,
+  ...CAREER_EVENTS,
+  ...JUSTICE_EVENTS,
 ];
 
+// Calendário: estações e festas (bloco 9).
+for (const def of EVENT_DEFINITIONS) {
+  const months = EVENT_MONTHS[def.id];
+  if (months) def.months = months;
+}
+
+let index: Map<string, EventDefinition> | null = null;
+
 export function getEventDefinition(id: string): EventDefinition | undefined {
-  return EVENT_DEFINITIONS.find((e) => e.id === id);
+  index ??= new Map(EVENT_DEFINITIONS.map((e) => [e.id, e]));
+  return index.get(id);
 }

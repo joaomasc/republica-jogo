@@ -1,4 +1,5 @@
 import { GameConstants } from '../config/constants';
+import { deepClone } from '../core/clone';
 import { hashSeed, Rng } from '../core/rng';
 import {
   bootstrapEconomy,
@@ -14,6 +15,7 @@ import {
   upgradeBill,
 } from '../legislature/legislature';
 import { createNationState } from '../nation/nation';
+import { LATE_INTEREST_GROUP_SEEDS } from '../politics/interestGroups.data';
 import { formatDateShort } from '../core/date';
 import { OFFICES } from '../election/offices';
 import type { GameState } from '../simulation/state';
@@ -103,6 +105,15 @@ const MIGRATIONS: Record<number, Migration> = {
       }
     initLegislature(state, new Rng(hashSeed(state.meta.seed, 'legislature')));
     bootstrapEconomy(state, new Rng(hashSeed(state.meta.seed, 'industry')));
+    return state as unknown as Record<string, unknown>;
+  },
+  /** v2 → v3: grupos de interesse novos (segurança, igrejas, ambientalistas) e memória de eventos. */
+  2: (raw) => {
+    const state = raw as unknown as GameState;
+    for (const seed of LATE_INTEREST_GROUP_SEEDS)
+      state.interestGroups[seed.id] ??= { ...deepClone(seed), approval: 50 };
+    state.events.flags ??= {};
+    state.events.lastCategory ??= {};
     return state as unknown as Record<string, unknown>;
   },
 };

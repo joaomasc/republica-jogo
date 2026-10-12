@@ -11,6 +11,7 @@ import { POP_TYPE_IDS, POP_TYPES, type PopTypeId } from '../population/popTypes'
 import type { Pop } from '../population/types';
 import type { GameState } from '../simulation/state';
 import { OFFICES } from './offices';
+import { endorsementPull } from './runoff';
 import type { CampaignStatus, Election, ElectoralUnit, VoterSegments } from './types';
 import { candidatePlatform, platformPopAppeal } from '../laws/platform';
 
@@ -204,6 +205,7 @@ export function popIntention(
     const utility =
       W.ideology * (1 - 2 * dist) +
       W.party * (pop.partyAffinity[c.partyId] ?? 0) +
+      W.party * endorsementPull(election.endorsements, c.id, pop.partyAffinity) +
       W.appeal * c.appeal +
       W.issues * issueMatch(pop, c.issueFocus) +
       W.platform * (c.platformAppeal?.[pop.typeId] ?? 0) * k +

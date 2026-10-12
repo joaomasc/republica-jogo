@@ -62,6 +62,8 @@ export interface CampaignStatus {
   tactic?: RivalTactic | null;
   /** Candidaturas proporcionais: nome de urna para exibição. */
   eliminated: boolean;
+  /** Semanas em que mirou o jogador (memória dos rivais recorrentes). */
+  attacksOnPlayer?: number;
 }
 
 export interface PollResultSet {
@@ -185,4 +187,26 @@ export interface Election {
   outcome: { won: boolean; pct: number; round: 1 | 2 } | null;
   /** Ideologia agregada do eleitorado (útil para IA e notícias). */
   electorateIdeology: IdeologyVector;
+  /** 2º turno: negociações com os derrotados. */
+  runoffDeals?: RunoffDeal[];
+  /** 2º turno: partidos que apoiam cada finalista (peso = fração dos eleitores que segue). */
+  endorsements?: Record<CandidateId, { partyId: PartyId; weight: number }[]>;
+}
+
+export type RunoffOffer = 'cargo' | 'pauta';
+
+/** Negociação de apoio com um candidato eliminado no 1º turno. */
+export interface RunoffDeal {
+  candidateId: CandidateId;
+  partyId: PartyId;
+  name: string;
+  /** Votação no 1º turno (0..1). */
+  share: number;
+  /** Afinidade (0..1) com o jogador e com o rival. */
+  affinityPlayer: number;
+  affinityRival: number;
+  /** O que ele quer em troca. */
+  asks: RunoffOffer;
+  status: 'open' | 'player' | 'rival' | 'neutral';
+  offer?: RunoffOffer;
 }

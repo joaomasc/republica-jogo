@@ -1,3 +1,7 @@
+import type { RunningMate } from '../campaign/runningMate';
+import type { ObjectivesState } from './objectives';
+import type { Effect } from '../events/types';
+import type { IssueId } from '../ideology/issues';
 import type { IsoDate } from '../core/types';
 import type { BudgetState } from '../economy/types';
 import type { Jurisdiction, OfficeId } from '../election/offices';
@@ -23,6 +27,54 @@ export interface GovernmentState {
   /** Votações do jogador como legislador. */
   votesCast: number;
   partyLoyalty: number;
+  /** Desgaste acumulado do governo (pontos tirados da aprovação-alvo). Ausente em saves antigos. */
+  wear?: number;
+  /** Objetivos do mandato (oferecidos e escolhidos). */
+  objectives?: ObjectivesState;
+  /** Cartas do gabinete já escolhidas (chaves). */
+  decisions?: string[];
+  /** Houve greve de servidores neste mandato. */
+  hadServantsStrike?: boolean;
+  /** Cassação decidida: o mandato acaba no próximo dia (motivo). */
+  removal?: string | null;
+  /** Vice eleito na chapa (governo executivo). */
+  vice?: RunningMate | null;
+  /** Reunião de gabinete do mês (governo executivo). */
+  cabinet?: CabinetMeeting | null;
+}
+
+export interface CabinetCard {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  icon: string;
+  /** Probabilidade de dar certo (1 = garantido). */
+  chance: number;
+  effects: Effect[];
+  failure?: Effect[];
+}
+
+/** Reunião mensal de gabinete: balanço, pauta do mês, oposição e 3 cartas de decisão. */
+export interface CabinetMeeting {
+  date: IsoDate;
+  /** Mês de mandato (1, 2, ...). */
+  index: number;
+  trend: IssueId;
+  opposition: string;
+  briefing: {
+    approval: number;
+    approvalDelta: number;
+    balance: number;
+    wear: number;
+    worksActive: number;
+    monthsLeft: number;
+    /** Repasses voluntários do mês (governador/presidente). */
+    transfers?: number;
+  };
+  cards: CabinetCard[];
+  pending: boolean;
+  outcome: { cardId: string | null; success: boolean; details: string[] } | null;
 }
 
 export interface TermEvaluation {
@@ -37,4 +89,6 @@ export interface TermEvaluation {
   economySummary: string;
   reputationDelta: number;
   canRunForReelection: boolean;
+  /** Objetivos do mandato e se foram cumpridos. */
+  objectives?: { id: string; title: string; done: boolean }[];
 }

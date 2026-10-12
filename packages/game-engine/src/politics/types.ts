@@ -15,6 +15,9 @@ export const INTEREST_GROUP_IDS = [
   'industry',
   'tech',
   'commerce',
+  'security',
+  'religious',
+  'environmental',
 ] as const;
 export type InterestGroupId = (typeof INTEREST_GROUP_IDS)[number];
 
@@ -61,6 +64,12 @@ export interface Minister {
   name: string;
   partyId: PartyId;
   competence: number;
+  /** Lealdade ao titular (0..100). Ausente em saves antigos. */
+  loyalty?: number;
+  /** Ambição própria (0..100): os ambiciosos podem sair para disputar contra você. */
+  ambition?: number;
+  /** Escândalo latente (0..100): estoura como evento. */
+  hiddenScandal?: number;
 }
 
 export interface CongressState {

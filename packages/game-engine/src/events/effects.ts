@@ -6,6 +6,9 @@ import {
   addRegionalMomentum,
 } from '../campaign/statusOps';
 import { ATTRIBUTES } from '../candidate/attributes';
+import { GameConstants } from '../config/constants';
+import { INTEREST_GROUP_SEEDS } from '../politics/interestGroups.data';
+import type { InterestGroupId } from '../politics/types';
 import { addDays } from '../core/date';
 import { clamp, clamp100, formatMoney } from '../core/math';
 import { withRng } from '../core/rng';
@@ -32,6 +35,11 @@ const MARKET_BOUNDS = {
   exchangeRate: { min: 0.3, max: 5 },
 } as const;
 
+/** Nome do grupo de interesse para as prévias ("quem gosta / quem não gosta"). */
+function groupName(id: InterestGroupId): string {
+  return INTEREST_GROUP_SEEDS.find((g) => g.id === id)?.name ?? 'Grupo de interesse';
+}
+
 const BUDGET_NAMES: Record<string, string> = {
   health: 'Saúde',
   education: 'Educação',
@@ -40,6 +48,8 @@ const BUDGET_NAMES: Record<string, string> = {
   pensions: 'Previdência',
   administration: 'Administração',
   social: 'Programas sociais',
+  industry: 'Indústria e emprego',
+  science: 'Ciência e tecnologia',
 };
 
 function scopeUnits(state: GameState, scope: UnitScope | undefined, ctx: EventContext): UnitId[] {
@@ -321,8 +331,46 @@ export function applyEffects(
           state.events.scheduled.push({
             eventId: e.eventId,
             date: addDays(state.date, e.inDays),
-            context: { ...ctx },
+            context: e.vars ? { ...ctx, extra: { ...ctx.extra, ...e.vars } } : { ...ctx },
           });
+        break;
+      }
+      case 'undeclaredMoney': {
+        if (!campaign) break;
+        const amount = Math.round(e.amount * campaign.moneyScale);
+        earn(state, amount, 'other', 'Recursos não declarados');
+        campaign.undeclared = (campaign.undeclared ?? 0) + amount;
+        out.push(`+${formatMoney(amount)} (por fora)`);
+        break;
+      }
+      case 'ineligible': {
+        // Anos negativos = decisão que devolve a elegibilidade.
+        if (e.years <= 0) state.career.ineligibleUntil = 0;
+        else {
+          const until = Number(state.date.slice(0, 4)) + e.years;
+          state.career.ineligibleUntil = Math.max(state.career.ineligibleUntil ?? 0, until);
+        }
+        break;
+      }
+      case 'dismissMinister':
+        if (gov && ctx.extra?.pasta) gov.ministers = gov.ministers.filter((m) => m.portfolio !== ctx.extra?.pasta);
+        break;
+      case 'removeFromOffice':
+        if (gov) gov.removal = e.reason;
+        break;
+      case 'reputation':
+        state.career.reputation = clamp100(state.career.reputation + e.delta);
+        break;
+      case 'wear':
+        if (gov) gov.wear = clamp((gov.wear ?? 0) + e.delta, 0, GameConstants.government.wearMax);
+        break;
+      case 'partyLoyalty':
+        if (gov) gov.partyLoyalty = clamp(gov.partyLoyalty + e.delta, 0, 100);
+        break;
+      case 'flag': {
+        const flags = { ...state.events.flags };
+        flags[e.id] = (flags[e.id] ?? 0) + (e.delta ?? 1);
+        state.events.flags = flags;
         break;
       }
       case 'modifier':
@@ -411,7 +459,9 @@ export function describeEffect(e: Effect, moneyScale: number): string | null {
     case 'unrest':
       return `Inquietação social ${sign(e.delta)}`;
     case 'radicalism':
-      return `Radicalismo do grupo ${sign(e.delta)}`;
+      return e.groupId === 'context'
+        ? `Radicalismo do grupo ${sign(e.delta)}`
+        : `Radicalismo: ${groupName(e.groupId)} ${sign(e.delta)}`;
     case 'capitalFlow':
       return e.privateFactor < 1 || e.foreignFactor < 1
         ? 'Fuga de capitais: fundos de investimento encolhem'
@@ -423,7 +473,9 @@ export function describeEffect(e: Effect, moneyScale: number): string | null {
     case 'politicalCapital':
       return `Capital político ${sign(e.delta)}`;
     case 'interestGroup':
-      return `Grupo de interesse ${sign(e.delta)}`;
+      return e.groupId === 'context'
+        ? `Grupo de interesse ${sign(e.delta)}`
+        : `${groupName(e.groupId)} ${sign(e.delta)}`;
     case 'popSatisfaction':
       return e.popTypes === 'all'
         ? `Satisfação geral ${sign(e.delta)}`
@@ -435,9 +487,23 @@ export function describeEffect(e: Effect, moneyScale: number): string | null {
     case 'relation':
       return `Relação com partidos ${sign(e.delta)}`;
     case 'budgetSpend':
-      return `Gasto extra: ${BUDGET_NAMES[e.category] ?? e.category}`;
+      return `${e.share < 0 ? 'Economia' : 'Gasto extra'}: ${BUDGET_NAMES[e.category] ?? e.category}`;
     case 'chain':
       return 'Pode ter desdobramentos';
+    case 'undeclaredMoney':
+      return `+${formatMoney(Math.abs(e.amount * moneyScale))} por fora (não declarado)`;
+    case 'ineligible':
+      return e.years > 0 ? `Inelegível por ${e.years} anos` : 'Volta a ser elegível';
+    case 'removeFromOffice':
+      return 'Perde o mandato';
+    case 'dismissMinister':
+      return 'Exonera o auxiliar';
+    case 'reputation':
+      return `Reputação ${sign(e.delta)}`;
+    case 'wear':
+      return e.delta < 0 ? 'Renova o governo (menos desgaste)' : 'Desgaste do governo';
+    case 'partyLoyalty':
+      return `Relação com a liderança ${sign(e.delta)}`;
     case 'removeStaff':
       return 'Perde um membro da equipe';
     case 'interview':

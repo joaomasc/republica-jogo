@@ -26,6 +26,12 @@ export interface WizardPreset {
   sandbox?: SandboxOptions;
   lockOffice?: boolean;
   world?: WorldId;
+  /** Cidade da disputa municipal (código IBGE). */
+  cityId?: string;
+  /** Semente fixa (desafio da semana). */
+  seed?: number;
+  /** Rótulo do desafio (ex.: "Semana 42/2026"). */
+  challenge?: string;
 }
 
 export interface WizardState {
@@ -49,4 +55,5 @@ export interface WizardState {
   difficulty: DifficultyId;
   world: WorldId;
   weekly: boolean;
+  cabinet: boolean;
 }

@@ -14,11 +14,12 @@ Simulador político e eleitoral jogável no navegador. Você cria um político c
 - [Testes](#testes)
 - [Arquitetura](#arquitetura)
 - [Economia, leis e Congresso](#economia-leis-e-congresso)
+- [Dinamismo: eventos, gabinete, rivais e carreira](#dinamismo-eventos-gabinete-rivais-e-carreira)
 - [Estrutura de pastas](#estrutura-de-pastas)
 - [Como estender o jogo](#como-estender-o-jogo)
 - [IA generativa](#ia-generativa)
 - [Banco de dados e saves](#banco-de-dados-e-saves)
-- [Documentação de game design](docs/GAME_DESIGN.md) · [Nação: economia, leis e Legislativo](docs/DESIGN_NACAO.md)
+- [Documentação de game design](docs/GAME_DESIGN.md) · [Nação: economia, leis e Legislativo](docs/DESIGN_NACAO.md) · [Roteiro de dinamismo](docs/ROADMAP_DINAMISMO.md) · [Banco de conteúdo](docs/BANCO_DE_CONTEUDO.md)
 
 ## Stack
 
@@ -115,6 +116,19 @@ O desenho completo (ids, unidades, fórmulas) está em [docs/DESIGN_NACAO.md](do
 - **Interface**: telas Economia, Mercado nacional, Indústria e obras, Comércio exterior, Leis, Congresso (proposições, plenário, bancadas, mesa e impeachment), Decretos, Nação e a seção econômica no painel de cada estado. O Centro de Decisões abre as votações obrigatórias.
 - **Balanceamento**: `npx tsx packages/game-engine/scripts/governance-sim.ts` simula quatro anos sob seis pacotes de leis (padrão, liberal, desenvolvimentista, social-democrata, socialista e planificado) e imprime crescimento, inflação, industrialização, comércio, peso dos grupos e satisfação dos Pops.
 
+## Dinamismo: eventos, gabinete, rivais e carreira
+
+Implementação do [roteiro de dinamismo](docs/ROADMAP_DINAMISMO.md) com o conteúdo do [banco](docs/BANCO_DE_CONTEUDO.md):
+
+- **Cerca de 1.100 eventos** em pacotes por esfera (`src/events/packs/`): prefeitura, governo estadual, Presidência, mandato legislativo, campanha, 6 por estado, um gancho por cidade-polo, arcos narrativos em etapas, entressafra e Justiça Eleitoral. Cada evento declara esfera, estados, regiões ou cidades, e o calendário (`events/seasons.ts`: chuvas de verão, seca e queimadas, frio no Sul, Carnaval, São João, Círio...). Anti-repetição: peso cai a cada repetição, recarga por categoria e nenhum evento sorteável volta em menos de 18 meses de mandato.
+- **Gabinete mensal** (`government/cabinet.ts`): todo mês, balanço, pauta do mês, oposição e 3 cartas de decisão. **Desgaste**: a aprovação-alvo cai depois da lua de mel (mais rápido em crise e em cargos maiores); pauta, inaugurações e renovação da equipe reduzem o desgaste. **Repasses federativos** dependem do alinhamento com governador e presidente. **Ministros** têm lealdade, ambição e escândalo latente. **Objetivos de mandato**: até 3, avaliados no fim.
+- **Campanha**: 60 cartas extras na reunião semanal, 255 perguntas novas de entrevista, **vice** na chapa (próprio partido ou aliado), **2º turno negociado** (apoios dos derrotados com preço e afinidade; o rival também negocia), **bolha das redes** na propaganda digital, convenção partidária, memes de gafes com ciclo de vida.
+- **Rivais recorrentes** (`world/rivals.ts`): adversários persistem entre eleições com memória e carreira; o **nêmesis** volta e tem eventos próprios.
+- **Entressafra** (`career/occupations.ts`): 10 ocupações fora do cargo, com efeitos mensais e eventos a cada bloco de 6 meses.
+- **Justiça e dinheiro**: caixa 2 registrado, auditoria da prestação de contas, cassação, Ficha Limpa (inelegibilidade de 8 anos), fundo partidário ligado à unidade do partido.
+- **Qualidade de vida**: "Por que perdi?" no resultado, dicas da primeira partida (desligáveis), selo de porte do partido, prazos das promessas, 60 conquistas com perfil local, placar de legado e desafio da semana (mesma semente para todos).
+- **Balanceamento automatizado** (`tests/balance.test.ts`): o CI falha se o bot passivo terminar o mandato de prefeito acima de 50% de aprovação média ou se um evento repetir em menos de 18 meses. O teste `event-content.test.ts` garante integridade do catálogo e que nenhuma opção ativa seja só ganho.
+
 ## Estrutura de pastas
 
 ```
@@ -164,6 +178,8 @@ scripts/fetch-cities.mjs  Baixa do IBGE os dados e contornos das cidades (npm ru
 scripts/generate-map.mjs  Converte as malhas em paths SVG e gera o cadastro de cidades do motor
 e2e/                      Testes Playwright
 docs/GAME_DESIGN.md       Mecânicas e fórmulas
+docs/ROADMAP_DINAMISMO.md Diagnóstico e blocos de melhoria (eventos, tensão, mundo vivo, modos)
+docs/BANCO_DE_CONTEUDO.md 2.805 ideias de conteúdo: cenários, arcos, eventos, cartas, perguntas
 ```
 
 ## Como estender o jogo
@@ -178,7 +194,7 @@ Em `packages/game-engine/src/laws/laws.data.ts`, adicione uma opção a uma cate
 
 ### Adicionar um evento
 
-Em `packages/game-engine/src/events/events.data.ts`, crie um `EventDefinition`: categoria, fases em que pode ocorrer, peso (probabilidade relativa), gatilho (`condition`), recarga (`cooldownDays`), contexto (`unit`, `opponent`, `party`, `group`) e opções com efeitos declarativos (`money`, `popMomentum`, `rejection`, `economyShock`, `approval`, `chain` para encadear eventos, `modifier` para efeitos com duração...). O texto aceita `{playerName}`, `{unitName}`, `{opponentName}` etc.
+Eventos novos vão nos pacotes de `packages/game-engine/src/events/packs/`, escritos com a linguagem compacta de `events/dsl.ts` (`ev({ id, cat, title, text, phases, scope, opts: [[rótulo, [efeitos]], ...] })`, com atalhos como `apr`, `cap`, `gasto`, `gi`, `cred`, `chain`, `flag`). Filtros de território: `scope` (municipal/estadual/federal), `states`, `regions`, `cities`; calendário em `events/seasons.ts`. Toda opção ativa precisa de algum custo (o teste de conteúdo cobra). O formato completo de um `EventDefinition` tem: categoria, fases em que pode ocorrer, peso (probabilidade relativa), gatilho (`condition`), recarga (`cooldownDays`), contexto (`unit`, `opponent`, `party`, `group`) e opções com efeitos declarativos (`money`, `popMomentum`, `rejection`, `economyShock`, `approval`, `chain` para encadear eventos, `modifier` para efeitos com duração...). O texto aceita `{playerName}`, `{unitName}`, `{opponentName}` etc.
 
 ### Adicionar um cargo
 

@@ -1,6 +1,7 @@
 import type { IsoDate, PartyId } from '../core/types';
 import type { OfficeId } from '../election/offices';
 import type { TermEvaluation } from '../government/types';
+import type { OccupationId } from './occupations';
 
 export interface OfficeRecord {
   officeId: OfficeId;
@@ -31,4 +32,8 @@ export interface CareerState {
   reputation: number;
   lastEvaluation: TermEvaluation | null;
   retired: boolean;
+  /** Inelegível (Ficha Limpa) até este ano, inclusive. */
+  ineligibleUntil?: number;
+  /** Ocupação fora do cargo (entressafra). */
+  occupation?: OccupationId | null;
 }

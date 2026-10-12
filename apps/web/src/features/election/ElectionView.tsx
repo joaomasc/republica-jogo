@@ -34,6 +34,7 @@ import { HBar } from '../../components/charts';
 import { pct } from '../../lib/format';
 import { layerFills } from '../../lib/mapColors';
 import { useGame, useGameState } from '../../store/gameStore';
+import { PostMortemPanel } from './PostMortemPanel';
 
 function ResultMap({ game }: { game: GameState }) {
   const layer = useMemo(() => mapLayer(game, 'results'), [game]);
@@ -525,6 +526,7 @@ export function ElectionView() {
               </Button>
             )}
           </div>
+          {progress >= 1 && <PostMortemPanel />}
           {results.length > 1 && progress >= 1 && (
             <div className="flex gap-2">
               {results.map((r, i) => (
