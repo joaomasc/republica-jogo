@@ -1,8 +1,10 @@
 import { latestPoll } from '../election/polls';
-import { OFFICES } from '../election/offices';
+import { OFFICES, type OfficeId } from '../election/offices';
 import type { GoodId } from '../economy/industry/types';
 import { NationConstants as NC } from '../nation/constants';
 import type { InterestGroupId } from '../politics/types';
+import type { StateId } from '../core/types';
+import { cityOf } from '../map/cities';
 import type { GameState } from '../simulation/state';
 
 /** Predicados reutilizáveis para gatilhos de eventos. */
@@ -70,4 +72,45 @@ export function goodPrice(s: GameState, id: GoodId): number {
 
 export function scandalLevel(s: GameState): number {
   return s.candidates[s.playerId]?.scandal ?? 0;
+}
+
+/** Esfera e território do jogador: a eleição em curso ou o cargo que ocupa. */
+export interface PlayerSphere {
+  level: 'municipal' | 'estadual' | 'federal';
+  stateId: StateId | null;
+  cityId: string | null;
+}
+
+export function sphereOf(s: GameState): PlayerSphere | null {
+  const j =
+    s.phase === 'campaign' || s.phase === 'election_day' || s.phase === 'results'
+      ? (s.election?.jurisdiction ?? s.government?.jurisdiction)
+      : (s.government?.jurisdiction ?? s.election?.jurisdiction);
+  if (!j) return null;
+  const stateId = (j.stateId as StateId | null) ?? null;
+  const level =
+    j.level === 'municipal' ? 'municipal' : j.level === 'estadual' ? 'estadual' : 'federal';
+  const city = level === 'municipal' && stateId ? cityOf(stateId, j.cityId) : null;
+  return { level, stateId, cityId: city?.id ?? null };
+}
+
+export const isMunicipal = (s: GameState): boolean => sphereOf(s)?.level === 'municipal';
+export const isStateLevel = (s: GameState): boolean => sphereOf(s)?.level === 'estadual';
+export const isFederal = (s: GameState): boolean => sphereOf(s)?.level === 'federal';
+
+/** Valor de uma marca de memória (0 se nunca marcada). */
+export function flagValue(s: GameState, id: string): number {
+  return s.events.flags?.[id] ?? 0;
+}
+
+export const hasFlag = (s: GameState, id: string): boolean => flagValue(s, id) > 0;
+
+/** O cargo atual do jogador é um destes? */
+export const officeIs =
+  (...ids: OfficeId[]) =>
+  (s: GameState): boolean =>
+    !!s.government && ids.includes(s.government.officeId);
+
+export function approvalOf(s: GameState): number {
+  return s.government?.approval ?? 50;
 }

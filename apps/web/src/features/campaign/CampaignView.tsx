@@ -38,6 +38,9 @@ import { pp } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 import { ProposalPreview } from './ProposalPreview';
 import { WeekPanel } from '../week/WeekPanel';
+import { RunningMatePanel } from './RunningMatePanel';
+import { RunoffDealsPanel } from './RunoffDealsPanel';
+import { TutorialTip } from '../../components/TutorialTip';
 
 const CATEGORY_LABEL = {
   ground: 'Rua e regiões',
@@ -197,6 +200,11 @@ export function CampaignView() {
 
   return (
     <div className="space-y-3">
+      <TutorialTip id="campaign" title="Como se ganha uma campanha">
+        Conhecimento (quantos sabem quem você é), presença nas regiões e temas certos viram votos.
+        Use a agenda para andar pelas regiões, propaganda para ser conhecido e propostas para os
+        temas que o eleitor prioriza. Energia e dinheiro são finitos.
+      </TutorialTip>
       <div className="grid grid-cols-2 gap-2 @lg:grid-cols-3 @3xl:grid-cols-6">
         <StatTile label="Caixa" icon="piggy-bank" value={formatMoney(campaign.money)} />
         <StatTile
@@ -226,6 +234,8 @@ export function CampaignView() {
         />
       </div>
 
+      <RunningMatePanel />
+      <RunoffDealsPanel />
       <WeekPanel />
 
       <Link

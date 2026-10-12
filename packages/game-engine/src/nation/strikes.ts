@@ -78,6 +78,12 @@ function startStrike(
   }
 }
 
+/** Grupos sem greve econômica (igrejas, ambientalistas) protestam nas ruas. */
+function protest(state: GameState, headline: string): void {
+  state.nation.unrest = clamp100(state.nation.unrest + NC.strikeUnrestBump / 2);
+  publishNews(state, { headline, category: 'party', sentiment: -1, importance: 2 });
+}
+
 /** Fuga de capitais: os empresários tiram dinheiro do país. */
 function capitalFlight(state: GameState): void {
   const ind = state.industry;
@@ -169,6 +175,26 @@ function launchFor(state: GameState, rng: Rng, groupId: InterestGroupId): void {
       return;
     case 'business':
       capitalFlight(state);
+      return;
+    case 'security':
+      startStrike(
+        state,
+        rng,
+        groupId,
+        'public',
+        NC.publicStrikeIntensity * 0.5,
+        'Aquartelamento policial',
+        'Policiais se aquartelam e a sensação de insegurança dispara',
+      );
+      return;
+    case 'religious':
+    case 'environmental':
+      protest(
+        state,
+        groupId === 'religious'
+          ? 'Marcha de lideranças religiosas toma as ruas contra o governo'
+          : 'Ambientalistas fazem atos em várias capitais contra o governo',
+      );
       return;
     default:
       return;

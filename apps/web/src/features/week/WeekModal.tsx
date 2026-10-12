@@ -10,6 +10,7 @@ import {
 import { Badge, Button, cn, Icon, Modal } from '@republica/ui';
 import { useEffect, useState } from 'react';
 import { CandidateChip } from '../../components/CandidateChip';
+import { TutorialTip } from '../../components/TutorialTip';
 import { pct, pp } from '../../lib/format';
 import { useGame } from '../../store/gameStore';
 
@@ -27,14 +28,23 @@ function tone(text: string): string {
   return 'border-ink-500 text-muted';
 }
 
-function Card({
+/** Campos comuns às cartas da reunião semanal (campanha) e do gabinete mensal (governo). */
+export type DecisionCardData = Pick<
+  WeekCard,
+  'title' | 'description' | 'icon' | 'chance' | 'effects' | 'failure'
+>;
+
+/** Carta de decisão com prévia de efeitos e risco. */
+export function DecisionCard({
   card,
   moneyScale,
   onPick,
+  testId = 'week-card',
 }: {
-  card: WeekCard;
+  card: DecisionCardData;
   moneyScale: number;
   onPick: () => void;
+  testId?: string;
 }) {
   const risky = card.chance < 1;
   return (
@@ -42,7 +52,7 @@ function Card({
       type="button"
       onClick={onPick}
       className="group flex h-full flex-col gap-2 rounded-2xl border-[3px] border-ink-500 bg-ink-900 p-3 text-left transition hover:-translate-y-1 hover:border-gold-400"
-      data-testid="week-card"
+      data-testid={testId}
     >
       <div className="flex items-start justify-between gap-2">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold-500/15">
@@ -119,6 +129,10 @@ export function WeekModal() {
       }
     >
       <div className="space-y-4" data-testid="week-modal">
+        <TutorialTip id="week" title="A reunião da semana">
+          Toda semana o tempo para aqui. Veja a pauta em alta e o que os rivais vão fazer, e escolha
+          uma carta. Cartas com porcentagem podem dar errado — leia o "se der errado".
+        </TutorialTip>
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border-2 border-ink-600 bg-ink-900 p-3">
             <div className="label">Balanço</div>
@@ -185,7 +199,12 @@ export function WeekModal() {
           <div className="label mb-1.5">Sua jogada da semana (escolha uma)</div>
           <div className="grid gap-3 md:grid-cols-3">
             {week.cards.map((c) => (
-              <Card key={c.id} card={c} moneyScale={moneyScale} onPick={() => choose(c.id)} />
+              <DecisionCard
+                key={c.id}
+                card={c}
+                moneyScale={moneyScale}
+                onPick={() => choose(c.id)}
+              />
             ))}
           </div>
         </div>

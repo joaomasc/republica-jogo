@@ -292,8 +292,8 @@ describe('Nação: regime e identidade', () => {
     const s = president();
     months(s, 3);
     const groups = interestGroupsOverview(s);
-    expect(groups).toHaveLength(11);
-    expect(groups[0]!.clout).toBeGreaterThanOrEqual(groups[10]!.clout);
+    expect(groups).toHaveLength(14);
+    expect(groups[0]!.clout).toBeGreaterThanOrEqual(groups[13]!.clout);
     const agro = groups.find((g) => g.id === 'agribusiness')!;
     expect(agro.preferredLaws.length).toBeGreaterThan(0);
     expect(agro.preferredLaws.every((l) => l.categoryName && l.optionName)).toBe(true);

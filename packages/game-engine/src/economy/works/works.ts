@@ -1,3 +1,4 @@
+import { GameConstants } from '../../config/constants';
 import { addHistory } from '../../history/history';
 import { clamp, round } from '../../core/math';
 import { hashSeed, Rng } from '../../core/rng';
@@ -242,6 +243,7 @@ function inaugurate(state: GameState, w: PublicWork, rng: Rng): void {
   if (w.player) {
     const gov = state.government;
     if (gov) gov.approval = clamp(gov.approval + 1 + impact, 0, 100);
+    if (gov) gov.wear = Math.max(0, (gov.wear ?? 0) - GameConstants.government.wearPerInauguration * (1 + impact));
     addHistory(state, { kind: 'reform', title: `Inaugurou: ${name}`, description: `${STATES[w.stateId].name} — R$ ${w.cost.toLocaleString('pt-BR')} bi, ${w.permanentJobs.toLocaleString('pt-BR')} empregos permanentes.`, importance: impact >= 2 ? 2 : 1, sentiment: 1, tags: [type.issue] });
     pushAlert(state, { kind: 'work_done', severity: 'info', title: 'Obra inaugurada', message: `${name} em ${STATES[w.stateId].name}.${attract > 0 ? ` ${attract} empresa(s) começam a se instalar.` : ''}`, link: 'industria' });
   }

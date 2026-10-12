@@ -1,6 +1,9 @@
 import type { IssueId } from '../ideology/issues';
 import type { DebateStrategy } from './interactions';
 
+export type HostileKind =
+  'scandal' | 'promise' | 'party' | 'polls' | 'experience' | 'integrity' | 'general';
+
 /** Perguntas procedurais por tema. Variáveis: {place} {unemployment} {inflation} {office} {player}. */
 export const ISSUE_QUESTIONS: Record<IssueId, string[]> = {
   jobs: [
@@ -61,12 +64,46 @@ export const EMPATHETIC_ANSWERS = [
   'Contar a história de uma família que sofre com o problema e prometer cuidado.',
 ];
 
-export const HOSTILE_QUESTIONS = {
-  scandal: 'Vamos falar de "{memory}". Os eleitores merecem uma explicação.',
-  promise: 'Você prometeu "{memory}" e não cumpriu. Por que acreditar agora?',
-  party: 'Seu partido está rachado. Como governar se nem o {party} se entende?',
-  polls: 'As pesquisas mostram você com apenas {share}. Sua candidatura não decolou?',
-  experience: 'Críticos dizem que falta experiência a você. O que responde?',
+/** Perguntas difíceis por motivo (banco: seção 12.18). Variáveis: {memory} {party} {share}. */
+export const HOSTILE_QUESTIONS: Record<HostileKind, string[]> = {
+  scandal: [
+    'Vamos falar de "{memory}". Os eleitores merecem uma explicação.',
+    'Você é investigado por "{memory}". É inocente?',
+    'Sobre "{memory}": você sabia de tudo ou foi enganado?',
+  ],
+  promise: [
+    'Você prometeu "{memory}" e não cumpriu. Por que acreditar agora?',
+    '"{memory}" ficou no papel. Vai prometer de novo?',
+    'Você prometeu "{memory}". De onde ia sair o dinheiro?',
+  ],
+  party: [
+    'Seu partido está rachado. Como governar se nem o {party} se entende?',
+    'O {party} está dividido. Como unir o eleitor se não une nem o partido?',
+    'O {party} votou pelo aumento do fundo eleitoral. Você concorda?',
+  ],
+  polls: [
+    'As pesquisas mostram você com apenas {share}. Sua candidatura não decolou?',
+    'Você tem {share} nas pesquisas. Por que não desiste?',
+    'Você desistiria da candidatura para unir o seu campo?',
+  ],
+  experience: [
+    'Críticos dizem que falta experiência a você. O que responde?',
+    'Seu adversário diz que você nunca administrou nada. Ele tem razão?',
+  ],
+  integrity: [
+    'Sua campanha recebeu doação de empresa investigada. Vai devolver?',
+    'Você já mentiu em entrevista?',
+    'Sua família tem negócios com o governo?',
+    'Você recebeu apoio de alguém condenado. Aceita esse apoio?',
+  ],
+  general: [
+    'Qual foi o maior erro da sua vida pública?',
+    'Se perder, você reconhece o resultado?',
+    'Você terminaria o mandato ou largaria para disputar outro cargo?',
+    'Moradores da periferia dizem que você só aparece em eleição. O que responde?',
+    'Por que você não divulga sua agenda completa?',
+    'Você usa o transporte público? Sabe quanto custa a passagem?',
+  ],
 };
 
 export const HOSTILE_ANSWERS = {

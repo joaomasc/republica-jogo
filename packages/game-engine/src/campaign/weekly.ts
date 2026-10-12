@@ -8,6 +8,7 @@
 import { diffDays } from '../core/date';
 import { withRng, type Rng } from '../core/rng';
 import type { ActionResult, CandidateId, UnitId } from '../core/types';
+import { OFFICES } from '../election/offices';
 import { computeIntentions } from '../election/voterModel';
 import type { RivalStyle } from '../election/types';
 import { applyEffects } from '../events/effects';
@@ -18,6 +19,7 @@ import { POP_TYPES, type PopTypeId } from '../population/popTypes';
 import { getPlayer, getPlayerStatus } from '../simulation/access';
 import type { GameState } from '../simulation/state';
 import { ImpactMeter } from './impact';
+import { EXTRA_WEEK_CARDS, type CardSituation } from './weeklyCards.data';
 import type { RivalMove, WeekCard, WeekState } from './types';
 
 export const RIVAL_STYLE_INFO: Record<RivalStyle, { name: string; description: string }> = {
@@ -146,6 +148,7 @@ function rivalReactions(
     if ((delta < -0.006 || st.style === 'attacker') && rank <= 2 && rng.chance(0.75)) {
       const target = myDelta > 0.008 || leader === me ? me : leader !== id ? leader : me;
       st.tactic = { kind: 'attack', targetId: target };
+      if (target === me) st.attacksOnPlayer = (st.attacksOnPlayer ?? 0) + 1;
       const targetName = state.candidates[target ?? '']?.ballotName ?? 'o líder';
       text =
         delta < -0.006
@@ -459,7 +462,63 @@ function cardTemplates(
         ctx,
       }),
     },
+    ...extraCardTemplates(state, { rivals, attackedMe, daysLeft, debateSoon, shares }, ctx),
   ];
+}
+
+/** Cartas do baralho extra (weeklyCards.data.ts), com peso conforme a situação da campanha. */
+function extraCardTemplates(
+  state: GameState,
+  info: {
+    rivals: CandidateId[];
+    attackedMe: boolean;
+    daysLeft: number;
+    debateSoon: boolean;
+    shares: Record<CandidateId, number>;
+  },
+  ctx: EventContext,
+): CardTemplate[] {
+  const election = state.election!;
+  const campaign = state.campaign!;
+  const player = getPlayer(state);
+  const office = OFFICES[election.officeId];
+  const myShare = info.shares[state.playerId] ?? 0;
+  const rank = 1 + election.candidateIds.filter((id) => (info.shares[id] ?? 0) > myShare).length;
+  const situation: CardSituation = {
+    week: Math.floor(diffDays(election.roundStartDate, state.date) / 7) + 1,
+    daysLeft: info.daysLeft,
+    debateSoon: info.debateSoon,
+    attackedMe: info.attackedMe,
+    hasRival: info.rivals.length > 0,
+    rank,
+    share: myShare,
+    majoritarian: office.system === 'majoritarian',
+    president: office.id === 'presidente',
+    statewide: office.level === 'estadual',
+    municipal: office.level === 'municipal',
+    money: campaign.money,
+    moneyScale: campaign.moneyScale,
+    energy: campaign.energy,
+    enthusiasm: campaign.enthusiasm,
+    militantsHigh: campaign.enthusiasm >= 60,
+    unity: state.parties[player.partyId]?.unity ?? 70,
+    fame: player.fame,
+    scandal: player.scandal,
+    credibility: player.attributes.credibility,
+    promises: state.promises.length,
+  };
+  return EXTRA_WEEK_CARDS.map((card) => ({
+    weight: card.weight(situation),
+    build: () => ({
+      title: card.title,
+      description: card.description,
+      icon: card.icon,
+      chance: card.chance,
+      effects: card.effects,
+      ...(card.failure ? { failure: card.failure } : {}),
+      ctx,
+    }),
+  }));
 }
 
 function drawCards(

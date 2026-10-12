@@ -1,3 +1,5 @@
+import { weeklyChallenge } from '../../lib/weeklyChallenge';
+import { APP_VERSION } from '../changelog/changelog.data';
 import { LAW_CATEGORIES, loadGame, type SaveSlotInfo } from '@republica/game-engine';
 import { BrazilMap, cn, Icon } from '@republica/ui';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,7 +19,11 @@ interface MenuEntry {
   primary?: boolean;
 }
 
+/** Itens secundários: botões compactos numa linha (o menu cabe em telas baixas). */
+const SECONDARY = new Set(['conquistas', 'diario', 'manual', 'config']);
+
 export function MainMenu() {
+  const challenge = weeklyChallenge();
   const navigate = useNavigate();
   const load = useGame((s) => s.load);
   const current = useGame((s) => s.game);
@@ -95,6 +101,27 @@ export function MainMenu() {
       onClick: () => navigate('/cenarios'),
     },
     {
+      id: 'desafio',
+      label: challenge.label,
+      icon: 'award',
+      description: challenge.description,
+      onClick: () => navigate('/novo', { state: challenge.preset }),
+    },
+    {
+      id: 'conquistas',
+      label: 'Conquistas',
+      icon: 'award',
+      description: 'Marcos da sua trajetória em todas as partidas',
+      onClick: () => navigate('/conquistas'),
+    },
+    {
+      id: 'diario',
+      label: 'Diário',
+      icon: 'scroll-text',
+      description: `Novidades de cada versão · atual ${APP_VERSION}`,
+      onClick: () => navigate('/diario'),
+    },
+    {
       id: 'manual',
       label: 'Manual',
       icon: 'book-marked',
@@ -137,49 +164,68 @@ export function MainMenu() {
           </div>
         </div>
         <nav className="grid gap-3 short:gap-2" aria-label="Menu principal">
-          {entries.map((e) => (
-            <button
-              key={e.id}
-              type="button"
-              onClick={e.onClick}
-              disabled={e.disabled}
-              data-testid={`menu-${e.id}`}
-              className={cn(
-                'group flex items-center gap-4 rounded-2xl border-[3px] px-5 py-3.5 text-left shadow-cartoon transition-all duration-150 short:py-2',
-                'hover:-translate-y-1 hover:shadow-cartoon-lg active:translate-y-0.5 disabled:pointer-events-none disabled:opacity-40',
-                e.primary
-                  ? 'border-gold-300 bg-gold-500 text-ink-950'
-                  : 'border-ink-500 bg-ink-800 text-paper hover:border-gold-500/70',
-              )}
-            >
-              <span
+          {entries
+            .filter((e) => !SECONDARY.has(e.id))
+            .map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                onClick={e.onClick}
+                disabled={e.disabled}
+                data-testid={`menu-${e.id}`}
                 className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 short:h-9 short:w-9',
+                  'group flex items-center gap-4 rounded-2xl border-[3px] px-5 py-3.5 text-left shadow-cartoon transition-all duration-150 short:py-2',
+                  'hover:-translate-y-1 hover:shadow-cartoon-lg active:translate-y-0.5 disabled:pointer-events-none disabled:opacity-40',
                   e.primary
-                    ? 'border-ink-950/30 bg-ink-950/10'
-                    : 'border-ink-500 bg-ink-900 text-gold-400',
+                    ? 'border-gold-300 bg-gold-500 text-ink-950'
+                    : 'border-ink-500 bg-ink-800 text-paper hover:border-gold-500/70',
                 )}
               >
-                <Icon name={e.icon} size={22} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-display text-xl font-semibold short:text-lg">
-                  {e.label}
-                </span>
                 <span
                   className={cn(
-                    'block truncate text-sm short:hidden',
-                    e.primary ? 'text-ink-900/80' : 'text-muted',
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 short:h-9 short:w-9',
+                    e.primary
+                      ? 'border-ink-950/30 bg-ink-950/10'
+                      : 'border-ink-500 bg-ink-900 text-gold-400',
                   )}
                 >
-                  {e.description}
+                  <Icon name={e.icon} size={22} />
                 </span>
-              </span>
-            </button>
-          ))}
+                <span className="min-w-0">
+                  <span className="block font-display text-xl font-semibold short:text-lg">
+                    {e.label}
+                  </span>
+                  <span
+                    className={cn(
+                      'block truncate text-sm short:hidden',
+                      e.primary ? 'text-ink-900/80' : 'text-muted',
+                    )}
+                  >
+                    {e.description}
+                  </span>
+                </span>
+              </button>
+            ))}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {entries
+              .filter((e) => SECONDARY.has(e.id))
+              .map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={e.onClick}
+                  title={e.description}
+                  data-testid={`menu-${e.id}`}
+                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-ink-500 bg-ink-800 px-3 py-2 text-sm font-bold text-paper shadow-cartoon transition hover:-translate-y-0.5 hover:border-gold-500/70"
+                >
+                  <Icon name={e.icon} size={16} className="shrink-0 text-gold-400" />
+                  {e.label}
+                </button>
+              ))}
+          </div>
           <div className="pt-1 text-center text-[11px] text-muted">
-            Versão 0.1 · Malha territorial: IBGE · Partidos: TSE · Candidatos e institutos são
-            fictícios
+            Versão {APP_VERSION} · Malha territorial: IBGE · Partidos: TSE · Candidatos e institutos
+            são fictícios
           </div>
         </nav>
       </div>

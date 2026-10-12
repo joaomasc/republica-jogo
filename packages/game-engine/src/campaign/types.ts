@@ -1,3 +1,4 @@
+import type { RunningMate } from './runningMate';
 import type { CandidateId, IsoDate, UnitId } from '../core/types';
 import type { IssueId } from '../ideology/issues';
 import type { MediaChannel } from '../media/channels';
@@ -205,6 +206,10 @@ export interface CampaignState {
   lastDayIncome: number;
   lastDayExpenses: number;
   moneyHistory: { date: IsoDate; money: number }[];
+  /** Dinheiro recebido por fora (caixa 2) nesta campanha. */
+  undeclared?: number;
+  /** Vice da chapa (eleições majoritárias do Executivo). */
+  runningMate?: RunningMate;
 }
 
 export type PromiseStatus = 'pending' | 'fulfilled' | 'partial' | 'broken';

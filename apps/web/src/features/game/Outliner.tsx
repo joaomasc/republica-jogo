@@ -17,6 +17,7 @@ import { useGame, useGameState } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
 import { CATEGORY_INFO } from '../events/categories';
 import { RaceOverview } from '../map/RaceOverview';
+import { OPEN_CABINET_EVENT } from '../cabinet/CabinetModal';
 import { OPEN_WEEK_EVENT } from '../week/WeekModal';
 import { alertRoute } from './navigation';
 
@@ -194,6 +195,15 @@ function useDecisionItems(game: GameState) {
       title: `Reunião da semana ${game.campaign.week.index}`,
       sub: 'Escolha a jogada da semana',
       onClick: () => window.dispatchEvent(new Event(OPEN_WEEK_EVENT)),
+      highlight: true,
+    });
+  if (game.phase === 'governing' && game.government?.cabinet?.pending)
+    items.push({
+      key: 'cabinet',
+      icon: 'landmark',
+      title: 'Reunião de gabinete',
+      sub: 'Escolha a decisão do mês',
+      onClick: () => window.dispatchEvent(new Event(OPEN_CABINET_EVENT)),
       highlight: true,
     });
   const debate = game.election?.debates.find(

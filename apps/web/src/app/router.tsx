@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { AchievementsPage } from '../features/achievements/AchievementsPage';
 import { CampaignView } from '../features/campaign/CampaignView';
+import { DevDiaryPage } from '../features/changelog/DevDiaryPage';
 import { AdsView } from '../features/campaign/AdsView';
 import { AgendaView } from '../features/agenda/AgendaView';
 import { FinanceView } from '../features/campaign/FinanceView';
@@ -47,6 +49,8 @@ export const router = createBrowserRouter([
       { path: '/cenarios', element: <ScenariosPage /> },
       { path: '/config', element: <SettingsPage /> },
       { path: '/manual', element: <ManualPage /> },
+      { path: '/conquistas', element: <AchievementsPage /> },
+      { path: '/diario', element: <DevDiaryPage /> },
       {
         path: '/jogo',
         element: <GameLayout />,

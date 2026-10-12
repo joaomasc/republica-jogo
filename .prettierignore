@@ -10,3 +10,5 @@ packages/ui/src/map/cityGeometry.generated.ts
 packages/game-engine/src/map/cities.generated.ts
 data/cidades-ibge.json
 apps/server/src/generated
+packages/game-engine/src/events/packs
+packages/game-engine/src/media/questions.data.ts

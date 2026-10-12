@@ -6,6 +6,12 @@ import { cancelAdCampaign, createAdCampaign, type AdCampaignInput } from '../cam
 import { performCampaignAction, type CampaignActionInput } from '../campaign/actions';
 import { summarizeAgenda, updateAgenda } from '../campaign/agenda';
 import { chooseWeekCard } from '../campaign/weekly';
+import { chooseCabinetCard } from '../government/cabinet';
+import { chooseObjectives } from '../government/objectives';
+import { advanceCareer, chooseOccupation, type OccupationId } from '../career/occupations';
+import { offerRunoffDeal } from '../election/runoff';
+import { chooseRunningMate } from '../campaign/runningMate';
+import type { RunoffOffer } from '../election/types';
 import { describeImpact, ImpactMeter } from '../campaign/impact';
 import type { AgendaConfig, ImpactSource } from '../campaign/types';
 import { getCampaignAction } from '../campaign/actions.data';
@@ -15,7 +21,7 @@ import type { StaffRoleId } from '../campaign/types';
 import { foundParty, retire, runForOffice, switchParty, takeBreak } from '../career/career';
 import { setPlayerPlatform } from '../laws/platform';
 import { performManeuver, type ManeuverId } from '../legislature/maneuvers';
-import type { ActionResult, EngineOutput, PartyId, StateId } from '../core/types';
+import type { ActionResult, CandidateId, EngineOutput, PartyId, StateId } from '../core/types';
 import {
   cancelConstruction,
   orderConstruction,
@@ -78,6 +84,10 @@ export type GameAction =
   | { type: 'campaign/poll' }
   | { type: 'agenda/update'; agenda: AgendaConfig }
   | { type: 'week/choose'; cardId: string | null }
+  | { type: 'gov/cabinet'; cardId: string | null }
+  | { type: 'gov/objectives'; ids: string[] }
+  | { type: 'election/deal'; candidateId: CandidateId; offer: RunoffOffer }
+  | { type: 'campaign/vice'; partyId: PartyId }
   | { type: 'event/resolve'; instanceId: string; optionId: string }
   | { type: 'interview/start'; interviewType: InterviewType }
   | { type: 'interview/answer'; answerId: string }
@@ -107,6 +117,8 @@ export type GameAction =
   | { type: 'career/platform'; platform: Record<string, string> }
   | { type: 'career/retire' }
   | { type: 'career/break' }
+  | { type: 'career/occupation'; occupationId: OccupationId | null }
+  | { type: 'career/advance' }
   // Economia industrial
   | { type: 'industry/build'; stateId: StateId; buildingId: BuildingId; levels: number }
   | { type: 'works/start'; typeId: string; size: WorkSize; stateId?: StateId }
@@ -189,6 +201,14 @@ function apply(state: GameState, action: GameAction): ActionResult {
       return runInternalPoll(state);
     case 'agenda/update':
       return updateAgenda(state, action.agenda);
+    case 'campaign/vice':
+      return chooseRunningMate(state, action.partyId);
+    case 'election/deal':
+      return offerRunoffDeal(state, action.candidateId, action.offer);
+    case 'gov/objectives':
+      return chooseObjectives(state, action.ids);
+    case 'gov/cabinet':
+      return chooseCabinetCard(state, action.cardId);
     case 'week/choose':
       return chooseWeekCard(state, action.cardId);
     case 'event/resolve':
@@ -248,6 +268,10 @@ function apply(state: GameState, action: GameAction): ActionResult {
       return makeConcession(state, action.billId);
     case 'gov/publicCampaign':
       return publicCampaignForBill(state, action.billId);
+    case 'career/occupation':
+      return chooseOccupation(state, action.occupationId);
+    case 'career/advance':
+      return advanceCareer(state);
     case 'career/run':
       return runForOffice(state, action.officeId, action.stateId, action.cityId);
     case 'career/switchParty':

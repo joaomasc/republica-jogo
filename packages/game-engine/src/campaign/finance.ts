@@ -136,8 +136,15 @@ export function estimateDailyIncome(
   const diff = getDifficulty(state).resources;
   const capacity = 0.5 + player.attributes.campaignCapacity / 100;
   const fundraisingBonus = 1 + staffBonus(campaign.staff, 'fundraising');
+  // A direção repassa mais a quem está em sintonia com o partido (unidade alta).
+  const standing = 0.6 + (0.8 * party.unity) / 100;
   const partyDaily =
-    C.partyFundDaily * campaign.moneyScale * (party.money / 50) * (0.5 + 0.5 * compat) * diff;
+    C.partyFundDaily *
+    campaign.moneyScale *
+    (party.money / 50) *
+    (0.5 + 0.5 * compat) *
+    standing *
+    diff;
   const donors =
     C.smallDonorDaily *
     campaign.moneyScale *

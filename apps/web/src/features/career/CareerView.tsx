@@ -27,6 +27,9 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { CitySelect } from '../../components/CitySelect';
+import { LegacyPanel } from './LegacyPanel';
+import { OccupationPanel } from './OccupationPanel';
+import { RivalsPanel } from './RivalsPanel';
 import { pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 
@@ -259,6 +262,8 @@ export function CareerView() {
           </p>
         </Panel>
       )}
+      <LegacyPanel />
+      <RivalsPanel />
       {!inCareerPhase ? (
         <Panel title="Carreira" icon="award">
           <p className="text-sm text-muted">
@@ -268,6 +273,7 @@ export function CareerView() {
         </Panel>
       ) : (
         <>
+          <OccupationPanel />
           <Panel
             title="Próxima candidatura"
             icon="vote"

@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router';
 import { LineChartBox } from '../../components/charts';
 import { billions, num } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
+import { ObjectivesPanel } from './ObjectivesPanel';
 import { PromiseRow } from './PromiseRow';
 import { StreetPanel } from './StreetPanel';
 
@@ -159,6 +160,8 @@ export function GovernmentView() {
                         <div className="font-bold">{m.portfolio}</div>
                         <div className="text-xs text-muted">
                           {m.name} · competência {m.competence}
+                          {m.loyalty !== undefined && ` · lealdade ${Math.round(m.loyalty)}`}
+                          {m.ambition !== undefined && m.ambition >= 70 && ' · ambicioso'}
                         </div>
                       </div>
                       <Button
@@ -225,13 +228,18 @@ export function GovernmentView() {
             </div>
           </Panel>
         )}
+        <ObjectivesPanel />
         <Panel title="Promessas de campanha" icon="file-text">
           {promises.length === 0 ? (
             <p className="text-sm text-muted">Nenhuma promessa registrada.</p>
           ) : (
             <ul className="space-y-1.5">
               {promises.map((p) => (
-                <PromiseRow key={p.id} p={p} />
+                <PromiseRow
+                  key={p.id}
+                  p={p}
+                  {...(gov ? { monthsLeft: diffMonths(game.date, gov.endDate) } : {})}
+                />
               ))}
             </ul>
           )}

@@ -5,6 +5,8 @@ import type { Rng } from '../core/rng';
 import type { ActionResult, CandidateId, UnitId } from '../core/types';
 import type { ElectoralUnit } from '../election/types';
 import { addHistory } from '../history/history';
+import type { IdeologyVector } from '../ideology/axes';
+import { ideologyAffinity } from '../ideology/ideology';
 import type { IssueId } from '../ideology/issues';
 import { CHANNELS, type MediaChannel } from '../media/channels';
 import { publishNews } from '../media/news';
@@ -205,6 +207,34 @@ function adLabel(state: GameState, ad: AdCampaign): string {
 }
 
 /** Processa um dia de propaganda no ar. Com `meter`, mede o efeito de cada peça. */
+/** Bolha do algoritmo: fator por grupo conforme a afinidade ideológica média com o candidato. */
+function bubbleFactors(
+  state: GameState,
+  ideology: IdeologyVector,
+): Partial<Record<PopTypeId, number>> {
+  const sumAff: Partial<Record<PopTypeId, number>> = {};
+  const sumSize: Partial<Record<PopTypeId, number>> = {};
+  for (const pop of Object.values(state.population.pops)) {
+    sumAff[pop.typeId] =
+      (sumAff[pop.typeId] ?? 0) + ideologyAffinity(pop.ideology, ideology) * pop.size;
+    sumSize[pop.typeId] = (sumSize[pop.typeId] ?? 0) + pop.size;
+  }
+  const aff: Partial<Record<PopTypeId, number>> = {};
+  for (const t of POP_TYPE_IDS) aff[t] = (sumAff[t] ?? 0) / Math.max(1, sumSize[t] ?? 0);
+  // Relativo ao candidato: quem está acima da afinidade média ganha, quem está abaixo perde.
+  const values = POP_TYPE_IDS.map((t) => aff[t] ?? 0);
+  const mean = sum(values) / values.length;
+  const half = Math.max(0.02, (Math.max(...values) - Math.min(...values)) / 2);
+  const out: Partial<Record<PopTypeId, number>> = {};
+  for (const t of POP_TYPE_IDS)
+    out[t] = clamp(
+      1 + (A.digitalBubble * ((aff[t] ?? mean) - mean)) / half,
+      1 - A.digitalBubble,
+      1 + A.digitalBubble,
+    );
+  return out;
+}
+
 export function processAdsDaily(state: GameState, rng: Rng, meter?: ImpactMeter): void {
   const campaign = state.campaign;
   const election = state.election;
@@ -265,6 +295,7 @@ export function processAdsDaily(state: GameState, rng: Rng, meter?: ImpactMeter)
         addRegionalMomentum(opponent, unit.id, -persuasion * tone.opponent);
     }
     const types = ad.targetPopTypes.length > 0 ? ad.targetPopTypes : POP_TYPE_IDS;
+    const bubble = digital ? bubbleFactors(state, status.perceivedIdeology) : null;
     for (const t of types) {
       const persuasion =
         A.momentumGain *
@@ -275,7 +306,8 @@ export function processAdsDaily(state: GameState, rng: Rng, meter?: ImpactMeter)
         intensity *
         (1 - A.regionalShare) *
         coverage *
-        targetBoost;
+        targetBoost *
+        (bubble?.[t] ?? 1);
       addPopMomentum(status, t, persuasion * tone.own);
       if (opponent && tone.opponent > 0) addPopMomentum(opponent, t, -persuasion * tone.opponent);
     }

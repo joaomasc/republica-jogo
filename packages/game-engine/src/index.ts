@@ -50,6 +50,9 @@ export {
   partyCompatibility,
   partyIdForWorld,
   partySeeds,
+  partySize,
+  PARTY_SIZE_INFO,
+  type PartySize,
   validatePartyInput,
   type CreatePartyInput,
 } from './parties/parties';
@@ -70,6 +73,9 @@ export {
 // Eleições
 export * from './election/offices';
 export * from './election/types';
+export { dealChance } from './election/runoff';
+export { electionPostMortem, type PostMortem } from './campaign/postMortem';
+export { needsRunningMate, runningMateOptions, type RunningMate } from './campaign/runningMate';
 export { latestPoll, rankByPoll } from './election/polls';
 export {
   computeIntentions,
@@ -208,3 +214,8 @@ export * from './economy/works/works.data';
 export { localScope, type LocalScope } from './simulation/localScope';
 export { stateOfName } from './map/stateNames';
 export { STREET_STAGES, streetView, streetFactors, type StreetResponse, type StreetView, type StreetFactor, type StreetResponseView } from './nation/revolt';
+export { OBJECTIVES, objectiveProgress, objectiveTitle, type ObjectiveDef } from './government/objectives';
+export { federativeLinks, monthlyTransfers, type Alignment, type FederativeLink } from './government/federative';
+export { ACHIEVEMENTS, legacyScore, satisfiedAchievements, type AchievementCategory, type AchievementDef } from './career/achievements';
+export { OCCUPATION_IDS, OCCUPATIONS, type OccupationId } from './career/occupations';
+export { nemesisOf, rivalryScore, type RivalRecord, type RivalMemory } from './world/rivals';

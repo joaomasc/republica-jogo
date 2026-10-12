@@ -30,6 +30,8 @@ export interface Candidate {
   bio: string;
   /** Personagem do mundo paródia (chave do elenco). Nunca alvo de eventos de acusação. */
   parodyKey?: string;
+  /** Rival recorrente (elenco persistente em `state.rivals`). */
+  rivalId?: string;
   /** Bandeiras: leis que o político defende (categoria → opção). Sem isso, valem as do partido. */
   platform?: Record<string, string>;
 }

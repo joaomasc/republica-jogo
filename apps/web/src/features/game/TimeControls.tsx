@@ -12,6 +12,7 @@ import { useGame, useGameState } from '../../store/gameStore';
 import { GAME_SPEEDS, speedIntervalMs, useSettings, type GameSpeed } from '../../store/settingsStore';
 import { useUi } from '../../store/uiStore';
 import { MapModeSelector } from '../map/MapModeSelector';
+import { OPEN_CABINET_EVENT } from '../cabinet/CabinetModal';
 import { OPEN_WEEK_EVENT } from '../week/WeekModal';
 
 function timeFlows(game: GameState): boolean {
@@ -197,6 +198,12 @@ function useCta(game: GameState): Cta | null {
       label: `Reunião da semana ${game.campaign.week.index}`,
       icon: 'calendar-check',
       onClick: () => window.dispatchEvent(new Event(OPEN_WEEK_EVENT)),
+    };
+  if (game.phase === 'governing' && game.government?.cabinet?.pending)
+    return {
+      label: 'Reunião de gabinete',
+      icon: 'landmark',
+      onClick: () => window.dispatchEvent(new Event(OPEN_CABINET_EVENT)),
     };
   if (debateToday && game.phase === 'campaign')
     return {

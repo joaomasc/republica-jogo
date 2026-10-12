@@ -1,3 +1,4 @@
+import { TutorialTip } from '../../components/TutorialTip';
 import {
   DEBATE_STRATEGIES,
   ISSUE_DEFINITIONS,
@@ -43,6 +44,10 @@ export function DebateModal() {
 
   return (
     <Modal open title={`Debate — ${session.host}`} icon="mic-vocal" size="xl" dismissable={false}>
+      <TutorialTip id="debate" title="Seu primeiro debate">
+        Cada resposta tem um estilo. Técnico agrada quem estudou mais; popular fala com a maioria;
+        agressivo anima a base mas sobe a rejeição. A preparação (treinos na agenda) dá bônus.
+      </TutorialTip>
       <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]" data-testid="debate-modal">
         <div className="space-y-3">
           <div className="flex flex-wrap gap-3">

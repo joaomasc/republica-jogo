@@ -1,3 +1,4 @@
+import { announceReturn, candidateFromRival, nemesisOf, pickReturningRival } from '../world/rivals';
 import { createCampaignState, computeMoneyScale } from '../campaign/finance';
 import { generateNpcCandidate, applyParodyPersona } from '../candidate/candidate';
 import { GameConstants } from '../config/constants';
@@ -167,6 +168,19 @@ function scheduleDebates(
     }));
 }
 
+/** Partido do nêmesis, se ele pode disputar esta eleição (o partido o relança). */
+function nemesisParty(
+  state: GameState,
+  setup: ElectionSetup,
+  stateId: StateId | null,
+): PartyId | null {
+  const nem = nemesisOf(state);
+  if (!nem) return null;
+  if (stateId && nem.candidate.homeStateId !== stateId) return null;
+  if (nem.office?.officeId === setup.officeId && nem.office.until > setup.year) return null;
+  return nem.candidate.partyId;
+}
+
 /** Remove candidatos NPC de eleições passadas (mantém o jogador). */
 function pruneCandidates(state: GameState): void {
   for (const [id, cand] of Object.entries(state.candidates)) {
@@ -237,7 +251,9 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
         count,
         [player.partyId],
         jurisdiction.stateId,
-        [incumbentParty, mainOpposition].filter((id): id is PartyId => !!id),
+        [incumbentParty, mainOpposition, nemesisParty(state, setup, jurisdiction.stateId)].filter(
+          (id): id is PartyId => !!id && id !== player.partyId,
+        ),
       );
       for (const p of parties)
         opponentPlan.push({
@@ -257,6 +273,8 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
 
     const participants: Record<CandidateId, CampaignStatus> = {};
     const usedParody = new Set<string>();
+    const usedRivals = new Set<string>();
+    const nemesis = nemesisOf(state);
     for (const plan of opponentPlan) {
       const party = getParty(state, plan.partyId);
       const id = nextId(state, 'cand');
@@ -293,7 +311,25 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
         incumbentOffice: plan.incumbent ? setup.officeId : null,
         fame,
       });
-      const npc = persona ? applyParodyPersona(generated, persona, party) : generated;
+      // Rival recorrente: o partido relança um nome que o jogador já enfrentou.
+      const returning = persona
+        ? null
+        : pickReturningRival(
+            state,
+            rng,
+            { officeId: setup.officeId, year: setup.year, jurisdiction },
+            party.id,
+            usedRivals,
+          );
+      if (returning) {
+        usedRivals.add(returning.id);
+        announceReturn(state, returning, returning.id === nemesis?.id);
+      }
+      const npc = returning
+        ? candidateFromRival(returning, id, setup.year)
+        : persona
+          ? applyParodyPersona(generated, persona, party)
+          : generated;
       state.candidates[id] = npc;
       party.candidateIds.push(id);
       candidateIds.push(id);

@@ -1,3 +1,4 @@
+import { ministerPersonality } from '../government/ministers';
 import { randomName } from '../candidate/names';
 import { GameConstants } from '../config/constants';
 import { clamp, round } from '../core/math';
@@ -95,7 +96,16 @@ export function offerPortfolio(
     const n = randomName(rng, rng.chance(0.5) ? 'male' : 'female');
     return { name: `${n.firstName} ${n.lastName}`, competence: Math.round(rng.range(35, 85)) };
   });
-  gov.ministers.push({ portfolio, name: name.name, partyId, competence: name.competence });
+  const personality = withRng(state, (rng) =>
+    ministerPersonality(rng, partyId === getPlayerParty(state).id),
+  );
+  gov.ministers.push({
+    portfolio,
+    name: name.name,
+    partyId,
+    competence: name.competence,
+    ...personality,
+  });
   const joined = !state.congress.coalition.includes(partyId);
   if (joined) state.congress.coalition.push(partyId);
   state.congress.relations[partyId] = clamp(

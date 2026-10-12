@@ -3,6 +3,10 @@ import { processStreetMonth, setRemovalHandler } from '../nation/revolt';
 import { addMonths, firstSundayOfOctober, makeDate, addDays, yearOf } from '../core/date';
 import { approach, clamp, clamp100, round, sum } from '../core/math';
 import { hashSeed, Rng, withRng } from '../core/rng';
+import { startCabinet } from './cabinet';
+import { monthlyTransfers } from './federative';
+import { processMinisters } from './ministers';
+import { objectiveProgress, offerObjectives } from './objectives';
 import type { PartyId } from '../core/types';
 import { executeBudgetMonthly, initBudget } from '../economy/budget';
 import { economySummary, snapshot, updateEconomy } from '../economy/economy';
@@ -116,9 +120,11 @@ export function assumeOffice(state: GameState): void {
     billsPassed: 0,
     votesCast: 0,
     partyLoyalty: 70,
+    vice: state.campaign?.runningMate ?? null,
   };
   gov.approvalHistory.push({ date: state.date, value: round(gov.approval, 1) });
   state.government = gov;
+  offerObjectives(state);
   state.economy.termBaseline = snapshot(state.economy, state.date);
   setPromiseBaselines(state);
 
@@ -180,6 +186,8 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
     const ratio = revenueBefore > 0 ? state.economy.revenue / revenueBefore : 1 + state.economy.growth / 1200;
     gov.budget.revenueTaxes *= clamp(ratio, 0.9, 1.1);
     executeBudgetMonthly(state, 1 + (law.economy.revenue ?? 0));
+    // Repasses voluntários de governador e presidente conforme o alinhamento político.
+    gov.budget.balance += monthlyTransfers(state);
   }
   updatePopulationMonthly(state);
 
@@ -187,13 +195,30 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
     gov.monthsInOffice <= G.honeymoonMonths
       ? G.honeymoonBonus * (1 - gov.monthsInOffice / G.honeymoonMonths)
       : 0;
+  // Desgaste: depois da lua de mel, governar cansa — mais rápido em crise econômica.
+  if (gov.branch === 'executive' && gov.monthsInOffice > G.honeymoonMonths) {
+    const e = state.economy;
+    const crisis = e.growth < 0 || e.unemployment > 11 || e.inflation > 8;
+    gov.wear = clamp(
+      (gov.wear ?? 0) +
+        (G.wearPerMonth + (crisis ? G.wearCrisisExtra : 0)) *
+          (G.wearLevelFactor[gov.jurisdiction.level] ?? 1),
+      0,
+      G.wearMax,
+    );
+  }
   let target: number;
   if (gov.branch === 'executive') {
     const deficitPenalty =
       gov.budget && gov.budget.balance < 0
         ? Math.min(8, (-gov.budget.balance / Math.max(1, gov.budget.revenueTaxes)) * 40)
         : 0;
-    target = governedPopsApproval(state) + honeymoon - player.scandal * 0.25 - deficitPenalty;
+    target =
+      governedPopsApproval(state) +
+      honeymoon -
+      player.scandal * 0.25 -
+      deficitPenalty -
+      (gov.wear ?? 0);
   } else {
     target =
       40 +
@@ -223,6 +248,8 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
     G.politicalCapitalMax,
   );
   updateInterestGroups(state, rng);
+  if (state.nation.strikes.some((x) => x.groupId === 'civil_servants')) gov.hadServantsStrike = true;
+  processMinisters(state, rng);
   processLawsMonthly(state, rng);
   processLegislatureMonth(state, rng);
   nationalMonthlyTick(state, rng);
@@ -270,6 +297,7 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
       ? GameConstants.events.monthlyChanceGovernment
       : GameConstants.events.monthlyChanceLegislature,
   );
+  startCabinet(state, rng);
 }
 
 /** Encerra o mandato: avalia promessas, atualiza reputação e libera as escolhas de carreira. */
@@ -304,7 +332,20 @@ export function endTerm(state: GameState): TermEvaluation | null {
     reputationDelta,
     canRunForReelection: office.termLimit ? state.career.consecutiveTerms < office.termLimit : true,
   };
-  state.career.reputation = clamp100(state.career.reputation + reputationDelta);
+  // Objetivos do mandato: cada um cumprido vale reputação e credibilidade.
+  const objectives = objectiveProgress(state);
+  const done = objectives.filter((o) => o.done).length;
+  if (objectives.length > 0) evaluation.objectives = objectives;
+  evaluation.reputationDelta = round(
+    reputationDelta + done * GameConstants.objectives.reputationPerObjective,
+    1,
+  );
+  player.attributes.credibility = clamp100(
+    player.attributes.credibility + done * GameConstants.objectives.credibilityPerObjective,
+  );
+  for (const o of objectives.filter((x) => x.done))
+    addHistory(state, { kind: 'reform', title: `Objetivo cumprido: ${o.title}`, importance: 2, sentiment: 1 });
+  state.career.reputation = clamp100(state.career.reputation + evaluation.reputationDelta);
   state.career.lastEvaluation = evaluation;
   const record = state.career.offices.at(-1);
   if (record) record.end = state.date;

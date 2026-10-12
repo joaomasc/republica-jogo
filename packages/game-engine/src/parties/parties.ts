@@ -185,3 +185,21 @@ export function driftParties(parties: Record<PartyId, Party>, rng: Rng, days: nu
     party.unity = computeUnity(party);
   }
 }
+
+export type PartySize = 'grande' | 'medio' | 'pequeno';
+
+export const PARTY_SIZE_INFO: Record<PartySize, { label: string; hint: string }> = {
+  grande: { label: 'Partido grande', hint: 'Estrutura, dinheiro e tempo de TV de sobra.' },
+  medio: { label: 'Partido médio', hint: 'Competitivo com boa campanha e alianças.' },
+  pequeno: {
+    label: 'Partido pequeno',
+    hint: 'Pouco dinheiro e pouco tempo de TV: modo difícil para prefeito, governador e presidente.',
+  },
+};
+
+/** Porte do partido pela popularidade e influência (partido novo = pequeno). */
+export function partySize(p: { popularity: number; influence: number } | null): PartySize {
+  if (!p) return 'pequeno';
+  const strength = (p.popularity + p.influence) / 2;
+  return strength >= 45 ? 'grande' : strength >= 15 ? 'medio' : 'pequeno';
+}

@@ -74,6 +74,8 @@ export interface NewGameConfig {
   world?: WorldId;
   /** Campanha dinâmica (reunião semanal, pauta, rivais reativos). */
   weekly?: boolean;
+  /** Reunião mensal de gabinete no governo (padrão: desligada no motor; a interface liga). */
+  cabinet?: boolean;
   name?: string;
   /** Começa já empossado no cargo (pula a campanha): 'modo nação'. Padrão: o do cenário. */
   startInOffice?: boolean;
@@ -184,6 +186,7 @@ export function startGame(config: NewGameConfig): GameState {
       populationScale: scale,
       world: config.world ?? 'fictional',
       weekly: config.weekly ?? false,
+      cabinet: config.cabinet ?? false,
     },
     rngState: rng.state,
     idCounter: 0,

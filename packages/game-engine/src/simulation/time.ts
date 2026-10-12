@@ -12,12 +12,16 @@ import { approach, clamp, clamp100 } from '../core/math';
 import { withRng, type Rng } from '../core/rng';
 import { updateEconomy } from '../economy/economy';
 import { addPoll, createPoll, pickPollster } from '../election/polls';
+import { rivalMoves } from '../election/runoff';
 import { computeIntentions, OTHERS_KEY } from '../election/voterModel';
 import { processModifiers, processScheduledEvents, rollEvent } from '../events/events';
+import { cabinetBlockingReason } from '../government/cabinet';
 import { endTerm, governmentMonthlyTick } from '../government/government';
 import { legislatureBlockingReason, processLegislatureDay } from '../legislature/legislature';
 import { handleTermEnd } from '../nation/nation';
 import { campaignAlerts, debateInvitationAlerts, pushAlert } from '../media/alerts';
+import { addHistory } from '../history/history';
+import { pollHeadline } from '../media/headlines';
 import { publishNews } from '../media/news';
 import { driftParties, factionReaction } from '../parties/parties';
 import { interestGroupDonations } from '../politics/interestGroups';
@@ -60,6 +64,8 @@ export function blockingReason(state: GameState): string | null {
     return 'Reunião de campanha: escolha a jogada da semana.';
   if (state.phase === 'election_day') return 'É dia de eleição!';
   if (state.phase === 'governing' || state.phase === 'legislating') {
+    const cabinet = cabinetBlockingReason(state);
+    if (cabinet) return cabinet;
     const decision = legislatureBlockingReason(state);
     if (decision) return decision;
   }
@@ -91,8 +97,20 @@ function publishPublicPoll(state: GameState): void {
     .filter(([id]) => id !== OTHERS_KEY)
     .sort((a, b) => b[1] - a[1]);
   const leader = state.candidates[ranked[0]?.[0] ?? ''];
+  const rivalId = ranked.find(([id]) => id !== player.id)?.[0];
   publishNews(state, {
-    headline: `${poll.pollster}: ${leader?.ballotName ?? '—'} lidera com ${Math.round((ranked[0]?.[1] ?? 0) * 100)}%; ${player.ballotName} tem ${Math.round(mine * 100)}%`,
+    headline: pollHeadline({
+      pollster: poll.pollster,
+      place: election.jurisdiction.label,
+      playerName: player.ballotName,
+      playerShare: mine,
+      previousShare: prev ? (prev.total.shares[player.id] ?? 0) : null,
+      leaderName: leader?.ballotName ?? '—',
+      leaderShare: ranked[0]?.[1] ?? 0,
+      playerLeads: leader?.id === player.id,
+      undecided: poll.total.undecided,
+      rivalName: state.candidates[rivalId ?? '']?.ballotName ?? 'o líder',
+    }),
     category: 'poll',
     sentiment: leader?.id === player.id ? 1 : 0,
   });
@@ -213,6 +231,9 @@ function moveCampaignDay(state: GameState, rng: Rng): Interrupt {
   }
   // O que sobrou: menos indecisos com a proximidade da eleição, economia, popularidade, partidos.
   meter.settle('time', 'Passagem do tempo (indecisos, economia, popularidade)');
+  // 2º turno: o rival corteja um derrotado por semana.
+  if (election.round === 2 && diffDays(election.roundStartDate, state.date) % 7 === 3)
+    rivalMoves(state, rng);
   if (
     state.settings.weekly &&
     state.date < election.date &&
@@ -241,6 +262,17 @@ function moveGovernmentDay(state: GameState, rng: Rng): Interrupt {
   const gov = state.government;
   if (!gov) return 'blocked';
   state.date = addDays(state.date, 1);
+  if (gov.removal) {
+    addHistory(state, { kind: 'scandal', title: gov.removal, importance: 3, sentiment: -1 });
+    publishNews(state, {
+      headline: `${getPlayer(state).ballotName} perde o mandato`,
+      category: 'government',
+      importance: 3,
+      sentiment: -1,
+    });
+    endTerm(state);
+    return 'term_end';
+  }
   if (isMonthStart(state.date)) governmentMonthlyTick(state, rng);
   if (!state.government) return 'term_end';
   processLegislatureDay(state, rng);
@@ -250,6 +282,7 @@ function moveGovernmentDay(state: GameState, rng: Rng): Interrupt {
     return 'term_end';
   }
   if (state.events.pending.length > 0) return 'event';
+  if (cabinetBlockingReason(state)) return 'event';
   if (legislatureBlockingReason(state)) return 'decision';
   return null;
 }

@@ -1,3 +1,4 @@
+import { TutorialTip } from '../../components/TutorialTip';
 import {
   AD_TONES,
   CHANNELS,
@@ -56,6 +57,10 @@ export function AdsView() {
     <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <Panel title="Nova campanha publicitária" icon="tv">
         <div className="space-y-4">
+          <TutorialTip id="ads" title="Propaganda">
+            Propaganda espalha seu nome rápido, mas custa caro. TV alcança todos; redes rendem entre
+            jovens; rádio chega ao interior. Mire as regiões onde você é menos conhecido.
+          </TutorialTip>
           <div>
             <div className="label mb-1.5">Canal</div>
             <div className="grid gap-2 @sm:grid-cols-3">

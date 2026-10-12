@@ -91,6 +91,25 @@ export function FinanceView() {
           sub={adsDaily > 0 ? `Propaganda paga até ${formatMoney(adsDaily)}/dia` : undefined}
         />
       </div>
+      {(campaign.undeclared ?? 0) > 0 && (
+        <div
+          className="rounded-xl border-2 border-bad/50 bg-bad/10 p-2.5 text-sm"
+          data-testid="undeclared-warning"
+        >
+          <b className="text-bad">
+            Recursos não declarados: {formatMoney(campaign.undeclared ?? 0)}.
+          </b>{' '}
+          <span className="text-muted">
+            Quanto maior o caixa 2, maior a chance de o TSE rejeitar as contas depois da eleição —
+            com multa, escândalo e, para quem vencer, risco de cassação e inelegibilidade.
+          </span>
+        </div>
+      )}
+      <p className="text-xs text-muted">
+        O repasse do partido depende do caixa do{' '}
+        {game.parties[game.candidates[game.playerId]?.partyId ?? '']?.acronym ?? 'partido'}, da sua
+        afinidade com ele e da unidade interna: partido unido repassa mais.
+      </p>
       <Panel title="Caixa ao longo da campanha" icon="trending-up">
         <AreaChartBox
           data={history}

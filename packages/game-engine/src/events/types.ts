@@ -7,7 +7,8 @@ import type { IssueId } from '../ideology/issues';
 import type { InterviewType } from '../media/interactions';
 import type { NewsCategory } from '../media/types';
 import type { BuildingId, GoodId, OwnerKind } from '../economy/industry/types';
-import type { StateId } from '../core/types';
+import type { RegionId, StateId } from '../core/types';
+import type { Rng } from '../core/rng';
 import type { InterestGroupId } from '../politics/types';
 import type { PopTypeId } from '../population/popTypes';
 import type { GamePhase, GameState } from '../simulation/state';
@@ -79,7 +80,30 @@ export type Effect =
   | { type: 'issueFocus'; issue: IssueId; delta: number }
   | { type: 'relation'; partyId: PartyId | 'context' | 'coalition' | 'all'; delta: number }
   | { type: 'budgetSpend'; category: BudgetCategory; share: number }
-  | { type: 'chain'; eventId: string; inDays: number; chance?: number }
+  | {
+      type: 'chain';
+      eventId: string;
+      inDays: number;
+      chance?: number;
+      /** Variáveis extras passadas à continuação (arcos narrativos). */
+      vars?: Record<string, string>;
+    }
+  /** Memória de escolhas: soma `delta` à marca (cria com 0). Lida por condições de outros eventos. */
+  | { type: 'flag'; id: string; delta?: number }
+  /** Lealdade ao partido no mandato legislativo (relação com a liderança). */
+  | { type: 'partyLoyalty'; delta: number }
+  /** Desgaste do governo (negativo = renovação: obras, boas notícias, mudanças na equipe). */
+  | { type: 'wear'; delta: number }
+  /** Reputação da carreira (0..100), usada fora do cargo e nas avaliações. */
+  | { type: 'reputation'; delta: number }
+  /** Dinheiro de campanha por fora (caixa 2): entra no caixa e fica registrado como não declarado. */
+  | { type: 'undeclaredMoney'; amount: number }
+  /** Inelegibilidade (Lei da Ficha Limpa) por N anos a partir de agora. */
+  | { type: 'ineligible'; years: number }
+  /** Perda do mandato (cassação): o governo termina no dia seguinte. */
+  | { type: 'removeFromOffice'; reason: string }
+  /** Exonera o ministro da pasta do contexto (`extra.pasta`). */
+  | { type: 'dismissMinister' }
   | { type: 'modifier'; id: string; label: string; days: number; daily: Effect[] }
   | { type: 'removeStaff' }
   | { type: 'interview'; interviewType: InterviewType }
@@ -111,7 +135,14 @@ export interface EventContext {
   playerName?: string;
   playerParty?: string;
   issueName?: string;
+  /** Cidade e UF do jogador (ou do evento regional). */
+  cityName?: string;
+  /** Variáveis próprias do evento ou do arco (`{aliado}`, `{empresa}`...), mantidas na continuação. */
+  extra?: Record<string, string>;
 }
+
+/** Esfera de governo em que um evento faz sentido. */
+export type EventScope = 'municipal' | 'estadual' | 'federal';
 
 export interface EventOptionDefinition {
   id: string;
@@ -147,6 +178,20 @@ export interface EventDefinition {
   context?: Array<'unit' | 'opponent' | 'group' | 'party'>;
   /** Acusa o adversário do contexto (escândalo, dossiê): nunca escolhe personagens de paródia. */
   accusesOpponent?: boolean;
+  /** Meses (1–12) em que o evento pode sair: estações e festas (ausente = o ano todo). */
+  months?: number[];
+  /** O adversário do contexto é o nêmesis do jogador (o evento só sai com ele na disputa). */
+  nemesis?: boolean;
+  /** Esferas do jogador em que o evento pode ocorrer (ausente = qualquer). */
+  scope?: EventScope[];
+  /** Só em jurisdições destas UFs (o presidente vê eventos de qualquer UF). */
+  states?: StateId[];
+  /** Só em jurisdições destas regiões. */
+  regions?: RegionId[];
+  /** Só nestas cidades (código IBGE): o prefeito da cidade ou o governador do estado. */
+  cities?: string[];
+  /** Variáveis sorteadas quando o evento começa (nomes de aliados, empresas, bairros...). */
+  vars?: Record<string, (rng: Rng, state: GameState) => string>;
   options: EventOptionDefinition[];
 }
 
@@ -191,5 +236,11 @@ export interface EventsState {
   }[];
   lastFired: Record<string, IsoDate>;
   firedCount: Record<string, number>;
+  /** Última opção escolhida em cada evento (para objetivos e conquistas). */
+  choices?: Record<string, string>;
   modifiers: ActiveModifier[];
+  /** Memória de escolhas (marcas de eventos e arcos). Ausente em saves antigos. */
+  flags?: Record<string, number>;
+  /** Último disparo por categoria (evita dois escândalos seguidos). Ausente em saves antigos. */
+  lastCategory?: Record<string, IsoDate>;
 }
