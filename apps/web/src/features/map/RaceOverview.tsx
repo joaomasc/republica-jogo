@@ -10,6 +10,7 @@ import { CandidateChip } from '../../components/CandidateChip';
 import { candidateColor } from '../../lib/candidates';
 import { pct } from '../../lib/format';
 import { useGameState } from '../../store/gameStore';
+import { WhyLine } from '../impact/WhyChanged';
 
 /** Resumo da disputa (pesquisa mais recente, votos válidos) — usado no outliner. */
 export function RaceOverview({ limit = 6 }: { limit?: number }) {
@@ -51,6 +52,7 @@ export function RaceOverview({ limit = 6 }: { limit?: number }) {
                   </span>
                 </div>
               )}
+              {game.phase === 'campaign' && <WhyLine game={game} candidateId={id} />}
             </li>
           );
         })}
@@ -58,7 +60,8 @@ export function RaceOverview({ limit = 6 }: { limit?: number }) {
       {poll ? (
         <p className="text-[10.5px] leading-snug text-muted">
           {poll.pollster} · {poll.date.split('-').reverse().join('/')} · votos válidos · margem ±
-          {(poll.marginOfError * 100).toFixed(1)} p.p.
+          {(poll.marginOfError * 100).toFixed(1)} p.p. (amostra e viés de instituto). A linha “7 dias”
+          é a variação real e a principal causa, sem erro de pesquisa.
         </p>
       ) : (
         <p className="text-[10.5px] text-muted">Ainda não há pesquisa publicada.</p>

@@ -15,6 +15,7 @@ import { candidateColor } from '../../lib/candidates';
 import { HBar, LineChartBox } from '../../components/charts';
 import { pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
+import { WhyIntentionPanel } from '../impact/WhyChanged';
 
 const SEGMENTS: {
   key: keyof NonNullable<Poll['playerSegments']>;
@@ -142,9 +143,15 @@ export function PollsView() {
           label="Margem de erro"
           icon="scale"
           value={`±${(poll.marginOfError * 100).toFixed(1)} p.p.`}
-          sub={`${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`}
+          sub={
+            poll.houseMargin
+              ? `amostra ±${((poll.samplingMargin ?? 0) * 100).toFixed(1)} + instituto ±${(poll.houseMargin * 100).toFixed(1)} · ${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`
+              : `${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`
+          }
         />
       </div>
+
+      {game.phase === 'campaign' && <WhyIntentionPanel game={game} />}
 
       <div className="grid gap-3 @3xl:grid-cols-2">
         <Panel title={`Intenção de voto — ${poll.pollster}`} icon="bar-chart-3">
