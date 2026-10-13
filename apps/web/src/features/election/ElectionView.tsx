@@ -1,5 +1,4 @@
 import {
-  capitalOf,
   diffDays,
   formatDateLong,
   formatDateShort,
@@ -10,7 +9,6 @@ import {
   OTHERS_KEY,
   POP_TYPES,
   rankByPoll,
-  STATES,
   type ElectionResult,
   type GameState,
   type PopTypeId,
@@ -19,7 +17,6 @@ import {
   Avatar,
   Badge,
   Atlas,
-  BRAZIL_VIEWBOX,
   Button,
   cn,
   EmptyState,
@@ -28,14 +25,13 @@ import {
   PartyEmblem,
   scaleLayer,
   StatTile,
-  ZoneMap,
   type RegionPaint,
 } from '@republica/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { candidateColor } from '../../lib/candidates';
 import { HBar } from '../../components/charts';
 import { pct } from '../../lib/format';
-import { ATLAS_REGIONS } from '../map/atlasRegions';
+import { useMapGeometry } from '../map/mapGeometry';
 import { useGame, useGameState } from '../../store/gameStore';
 import { PostMortemPanel } from './PostMortemPanel';
 
@@ -51,6 +47,7 @@ function ResultMap({ game, progress }: { game: GameState; progress: number }) {
   const layer = useMemo(() => mapLayer(game, 'results'), [game]);
   const scale = useMemo(() => scaleLayer(layer.scale, layer.cells), [layer]);
   const units = useMemo(() => game.election?.units ?? [], [game]);
+  const geometry = useMapGeometry(game, units);
   const closesAt = useMemo(() => {
     const order = [...units].sort((a, b) => a.voters - b.voters);
     return Object.fromEntries(order.map((u, i) => [u.id, 0.12 + 0.85 * (i / Math.max(1, order.length - 1))]));
@@ -68,29 +65,14 @@ function ResultMap({ game, progress }: { game: GameState; progress: number }) {
       <div className="text-paper/90">{counted(id) ? layer.cells[id]?.label : 'Apurando…'}</div>
     </div>
   );
-  if (units[0]?.kind === 'zone') {
-    const stateId = units[0].stateId;
-    return (
-      <ZoneMap
-        kind={units.some((u) => u.zone?.type === 'center') ? 'city' : 'state'}
-        stateId={stateId}
-        cityId={game.election?.jurisdiction.cityId ?? capitalOf(stateId).id}
-        capitalCoords={STATES[stateId].capitalCoords}
-        zones={units.map((u) => ({
-          id: u.id,
-          name: u.name,
-          type: u.zone?.type ?? 'sector',
-          ...(u.zone?.direction ? { direction: u.zone.direction } : {}),
-        }))}
-        fills={paint}
-        renderTooltip={tooltip}
-      />
-    );
-  }
   return (
     <Atlas
-      regions={ATLAS_REGIONS}
-      world={[0, 0, BRAZIL_VIEWBOX.width, BRAZIL_VIEWBOX.height]}
+      regions={geometry.regions}
+      world={geometry.world}
+      outline={geometry.outline ?? null}
+      backdrop={geometry.backdrop ?? []}
+      context={geometry.context ?? true}
+      {...(geometry.kmPerUnit !== undefined ? { kmPerUnit: geometry.kmPerUnit } : {})}
       paint={paint}
       renderTooltip={tooltip}
       ariaLabel="Mapa do resultado da eleição"

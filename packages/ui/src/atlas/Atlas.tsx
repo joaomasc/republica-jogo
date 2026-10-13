@@ -98,6 +98,12 @@ export interface AtlasProps {
   insets?: Insets;
   /** Desenha países vizinhos, rios e graticulado. */
   context?: boolean;
+  /** Contorno que recorta as regiões (zonas de um estado ou cidade). Sem ele, as regiões são o território. */
+  outline?: string | null;
+  /** Terras de fundo desenhadas como vizinhas (ex.: os outros estados em volta de um mapa de zonas). */
+  backdrop?: readonly string[];
+  /** km por unidade do mundo (padrão: projeção nacional; null esconde a barra de escala). */
+  kmPerUnit?: number | null;
   /** Moldura: rosa dos ventos, escala e botões de zoom (desligue em mapas decorativos). */
   chrome?: boolean;
   onSelect?: (id: string) => void;
@@ -107,7 +113,7 @@ export interface AtlasProps {
 
 /** km por unidade do mundo (1° de latitude = 111,2 km). */
 const KM_PER_UNIT = 111.2 / MAP_PROJECTION.scale;
-const SCALE_STEPS = [50, 100, 200, 250, 500, 1000, 2000];
+const SCALE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
 
 /** Linhas do graticulado (a cada 5°) e marcos (Equador, Trópico de Capricórnio). */
 const GRATICULE = (() => {
@@ -161,6 +167,8 @@ const SEA_LABELS = [
   { id: 'trop', at: projectLonLat(-35.5, -22.8), text: 'Trópico de Capricórnio' },
 ];
 
+const NO_BACKDROP: readonly string[] = [];
+
 /** Países pequenos demais para o nome caber na visão geral. */
 const SMALL_COUNTRIES = new Set(['GUF']);
 
@@ -195,6 +203,8 @@ interface OverlayItem {
   oy: number;
   /** Largura do estado no mundo (rótulos somem quando o estado fica pequeno demais na tela). */
   minPx: number;
+  /** Some no nível 2 de zoom quando o estado já é largo o bastante para o nome (sigla → nome). */
+  maxPx: number;
   span: number;
   shown: boolean;
 }
@@ -219,6 +229,9 @@ export function Atlas({
   flyTo = null,
   insets = NO_INSETS,
   context = true,
+  outline = null,
+  backdrop = NO_BACKDROP,
+  kmPerUnit = KM_PER_UNIT,
   chrome = true,
   onSelect,
   renderTooltip,
@@ -248,9 +261,11 @@ export function Atlas({
   const suppressClick = useRef(false);
   const insetsRef = useRef(insets);
   const onSelectRef = useRef(onSelect);
+  const kmRef = useRef(kmPerUnit);
   useLayoutEffect(() => {
     insetsRef.current = insets;
     onSelectRef.current = onSelect;
+    kmRef.current = kmPerUnit;
   });
   /** Seleção estável (o callback do pai muda a cada renderização dele). */
   const select = useCallback((id: string) => onSelectRef.current?.(id), []);
@@ -287,8 +302,9 @@ export function Atlas({
       const sx = it.wx * c.k + c.x + it.ox * fitK.current;
       const sy = it.wy * c.k + c.y + it.oy * fitK.current;
       it.el.setAttribute('transform', `translate(${sx.toFixed(1)} ${sy.toFixed(1)})`);
-      if (it.minPx > 0) {
-        const show = it.span * c.k >= it.minPx;
+      if (it.minPx > 0 || it.maxPx > 0) {
+        const wide = it.span * c.k;
+        const show = it.maxPx > 0 ? level < 2 || wide < it.maxPx : wide >= it.minPx;
         if (show !== it.shown) {
           it.shown = show;
           it.el.style.display = show ? '' : 'none';
@@ -296,7 +312,7 @@ export function Atlas({
       }
     }
     // Barra de escala: a maior distância "redonda" que cabe em ~120 px.
-    const pxPerKm = c.k / KM_PER_UNIT;
+    const pxPerKm = c.k / (kmRef.current ?? KM_PER_UNIT);
     const km = [...SCALE_STEPS].reverse().find((s) => s * pxPerKm <= 130) ?? SCALE_STEPS[0]!;
     if (scaleBarRef.current) scaleBarRef.current.style.width = `${Math.round(km * pxPerKm)}px`;
     if (scaleLabelRef.current)
@@ -388,6 +404,7 @@ export function Atlas({
       ox: Number(el.dataset.ox ?? 0),
       oy: Number(el.dataset.oy ?? 0),
       minPx: Number(el.dataset.minpx ?? 0),
+      maxPx: Number(el.dataset.maxpx ?? 0),
       span: Number(el.dataset.span ?? 0),
       shown: true,
     }));
@@ -659,9 +676,28 @@ export function Atlas({
         {regions.map((r) => (
           <path key={r.id} id={`${uid}-r-${r.id}`} d={r.d} vectorEffect="non-scaling-stroke" />
         ))}
+        {outline && (
+          <>
+            <path id={`${uid}-outline`} d={outline} vectorEffect="non-scaling-stroke" />
+            <clipPath id={`${uid}-clip`}>
+              <path d={outline} />
+            </clipPath>
+          </>
+        )}
       </defs>
     ),
-    [uid, regions, hatch, glow, blur],
+    [uid, regions, hatch, glow, blur, outline],
+  );
+  const clip = outline ? `url(#${uid}-clip)` : undefined;
+  // Sombra, contorno nacional e terra-base: pelo contorno (zonas) ou pelas próprias regiões.
+  const baseShapes = useMemo(
+    () =>
+      outline ? (
+        <use href={`#${uid}-outline`} />
+      ) : (
+        regions.map((r) => <use key={r.id} href={`#${uid}-r-${r.id}`} />)
+      ),
+    [outline, regions, uid],
   );
   const worldLayers = useMemo(
     () => (
@@ -690,124 +726,134 @@ export function Atlas({
             <path className="atlas-neighbor-base" d={BRAZIL_OUTLINE} />
           </g>
         )}
+        {backdrop.length > 0 && (
+          <g pointerEvents="none">
+            {backdrop.map((d, i) => (
+              <path key={i} className="atlas-backdrop" d={d} vectorEffect="non-scaling-stroke" />
+            ))}
+          </g>
+        )}
 
         {/* Sombra da costa e contorno nacional (traço por baixo do preenchimento: só a metade de fora aparece). */}
         <g pointerEvents="none">
           <g className="atlas-shadow" filter={`url(#${blur})`} transform="translate(0 6)">
-            {regions.map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} />
-            ))}
+            {baseShapes}
           </g>
-          <g className="atlas-nation-outer">
-            {regions.map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} />
-            ))}
-          </g>
-          <g className="atlas-nation-inner">
-            {regions.map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} />
-            ))}
-          </g>
-          <g className="atlas-land-base">
-            {regions.map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} />
-            ))}
-          </g>
+          <g className="atlas-nation-outer">{baseShapes}</g>
+          <g className="atlas-nation-inner">{baseShapes}</g>
+          <g className="atlas-land-base">{baseShapes}</g>
         </g>
 
-        {/* Regiões interativas */}
-        <g
-          className="atlas-regions"
-          onPointerOver={(e) => {
-            const id = regionFromEvent(e);
-            if (id) setHover({ kind: 'region', id });
-          }}
-          onPointerOut={(e) => {
-            if (!(e.relatedTarget as Element | null)?.closest?.('[data-uf]')) setHover(null);
-          }}
-          onClick={(e) => {
-            if (suppressClick.current) return;
-            const id = regionFromEvent(e);
-            if (id) select(id);
-          }}
-        >
-          {regions.map((r) => {
-            const p = paint[r.id];
-            return (
-              <path
-                key={r.id}
-                d={r.d}
-                data-uf={r.id}
-                className="atlas-region"
-                fill={p?.fill ?? '#2a3a40'}
-                fillOpacity={p?.opacity ?? 1}
-                tabIndex={0}
-                role="button"
-                aria-label={r.name}
-                aria-pressed={selected === r.id}
-                onFocus={(e) =>
-                  setKeyboardFocus(e.currentTarget.matches(':focus-visible') ? r.id : null)
-                }
-                onBlur={() => setKeyboardFocus(null)}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  // Não deixa o Espaço chegar ao atalho global de pausa.
-                  e.preventDefault();
-                  e.stopPropagation();
-                  select(r.id);
-                }}
-              />
-            );
-          })}
-        </g>
-
-        <g pointerEvents="none">
-          {regions
-            .filter((r) => paint[r.id]?.noData)
-            .map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} fill={`url(#${hatch})`} />
-            ))}
-        </g>
-
-        {context && (
-          <g className="atlas-water" pointerEvents="none">
-            {RIVERS.map((r, i) => (
-              <path
-                key={`${r.name}-${i}`}
-                d={r.d}
-                className={`atlas-river atlas-river-${Math.min(6, Math.max(1, r.rank))}`}
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {LAKES.map((l, i) => (
-              <path
-                key={`${l.name}-${i}`}
-                d={l.d}
-                className="atlas-lake"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
+        {/* Regiões interativas (recortadas pelo contorno num mapa de zonas) */}
+        <g clipPath={clip}>
+          <g
+            className="atlas-regions"
+            onPointerOver={(e) => {
+              const id = regionFromEvent(e);
+              if (id) setHover({ kind: 'region', id });
+            }}
+            onPointerOut={(e) => {
+              if (!(e.relatedTarget as Element | null)?.closest?.('[data-uf]')) setHover(null);
+            }}
+            onClick={(e) => {
+              if (suppressClick.current) return;
+              const id = regionFromEvent(e);
+              if (id) select(id);
+            }}
+          >
+            {regions.map((r) => {
+              const p = paint[r.id];
+              return (
+                <path
+                  key={r.id}
+                  d={r.d}
+                  data-uf={r.id}
+                  className="atlas-region"
+                  fill={p?.fill ?? '#2a3a40'}
+                  fillOpacity={p?.opacity ?? 1}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={r.name}
+                  aria-pressed={selected === r.id}
+                  onFocus={(e) =>
+                    setKeyboardFocus(e.currentTarget.matches(':focus-visible') ? r.id : null)
+                  }
+                  onBlur={() => setKeyboardFocus(null)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    // Não deixa o Espaço chegar ao atalho global de pausa.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    select(r.id);
+                  }}
+                />
+              );
+            })}
           </g>
-        )}
 
-        <g className="atlas-borders" pointerEvents="none">
-          {regions.map((r) => (
-            <use key={r.id} href={`#${uid}-r-${r.id}`} />
-          ))}
-        </g>
-
-        {focusKey && (
-          <g className="atlas-dim" pointerEvents="none">
+          <g pointerEvents="none">
             {regions
-              .filter((r) => !focusKey.split(',').includes(r.id))
+              .filter((r) => paint[r.id]?.noData)
               .map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} />
+                <use key={r.id} href={`#${uid}-r-${r.id}`} fill={`url(#${hatch})`} />
               ))}
           </g>
-        )}
+
+          {context && (
+            <g className="atlas-water" pointerEvents="none">
+              {RIVERS.map((r, i) => (
+                <path
+                  key={`${r.name}-${i}`}
+                  d={r.d}
+                  className={`atlas-river atlas-river-${Math.min(6, Math.max(1, r.rank))}`}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+              {LAKES.map((l, i) => (
+                <path
+                  key={`${l.name}-${i}`}
+                  d={l.d}
+                  className="atlas-lake"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </g>
+          )}
+
+          <g className="atlas-borders" pointerEvents="none">
+            {regions.map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} />
+            ))}
+          </g>
+
+          {focusKey && (
+            <g className="atlas-dim" pointerEvents="none">
+              {regions
+                .filter((r) => !focusKey.split(',').includes(r.id))
+                .map((r) => (
+                  <use key={r.id} href={`#${uid}-r-${r.id}`} />
+                ))}
+            </g>
+          )}
+        </g>
+        {outline && <use href={`#${uid}-outline`} className="atlas-outline" pointerEvents="none" />}
       </>
     ),
-    [uid, regions, paint, selected, context, focusKey, hatch, blur, select],
+    [
+      uid,
+      regions,
+      paint,
+      selected,
+      context,
+      focusKey,
+      hatch,
+      blur,
+      select,
+      outline,
+      backdrop,
+      clip,
+      baseShapes,
+    ],
   );
   const overlayLayers = useMemo(
     () => (
@@ -891,7 +937,9 @@ export function Atlas({
                   data-wy={r.centroid[1]}
                   data-ox={ox}
                   data-oy={oy}
-                  className="atlas-region-label atlas-hide-lod-2"
+                  data-maxpx={110}
+                  data-span={r.bbox[2] - r.bbox[0]}
+                  className="atlas-region-label"
                 >
                   <text className="atlas-state-short" textAnchor="middle" dominantBaseline="middle">
                     {r.short}
@@ -987,7 +1035,7 @@ export function Atlas({
         <g ref={worldRef}>
           {worldLayers}
 
-          <g pointerEvents="none">
+          <g pointerEvents="none" clipPath={clip}>
             {pulses.map((p) =>
               regionById.has(p.id) ? (
                 <use
@@ -1033,7 +1081,10 @@ export function Atlas({
           style={{ left: insets.left + 14, top: insets.top + 12 }}
         >
           <CompassRose />
-          <div className="atlas-scale cartouche rounded-[4px] px-2 py-1">
+          <div
+            className="atlas-scale cartouche rounded-[4px] px-2 py-1"
+            style={kmPerUnit === null ? { display: 'none' } : undefined}
+          >
             <div ref={scaleBarRef} className="atlas-scale-bar" />
             <span ref={scaleLabelRef} className="atlas-scale-label" />
           </div>

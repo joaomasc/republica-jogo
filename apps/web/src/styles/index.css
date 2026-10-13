@@ -500,6 +500,19 @@
   .atlas-neighbor-base {
     fill: #1a272b;
   }
+  /* Mapa de zonas de um estado: os outros estados em volta, como terra vizinha. */
+  .atlas-backdrop {
+    fill: #1f2e33;
+    stroke: #0a1418;
+    stroke-width: 1;
+  }
+  /* Contorno do estado/município no mapa de zonas. */
+  .atlas-outline {
+    fill: none;
+    stroke: #04090c;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+  }
   .atlas-shadow use {
     fill: #010406;
     fill-opacity: 0.75;
@@ -541,7 +554,8 @@
     fill-opacity: 0.6;
   }
   .atlas-hover {
-    fill: none;
+    fill: #f3ead2;
+    fill-opacity: 0.08;
     stroke: #f3ead2;
     stroke-width: 2.4;
     stroke-linejoin: round;

@@ -180,7 +180,7 @@ packages/
     src/ai/               Interface AIProvider + provedor procedural
     tests/                Testes Vitest
     scripts/              Bots e simulação em lote (balanceamento)
-  ui/                     Componentes visuais: Atlas (mapa do Brasil), mapa de zonas, avatar SVG, painéis, barras
+  ui/                     Componentes visuais: Atlas (mapa do Brasil e das zonas eleitorais), avatar SVG, painéis, barras
   shared/                 Rotas e DTOs da API
 data/geo/                 Malhas das UFs e das cidades jogáveis (IBGE) e recorte sul-americano (Natural Earth)
 data/cidades-ibge.json    Cidades jogáveis: código IBGE, população (Censo 2022), nível REGIC

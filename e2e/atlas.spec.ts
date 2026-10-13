@@ -166,6 +166,27 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     await expect(page.getByTestId('ad-unit-AM')).toHaveAttribute('aria-pressed', 'false');
   });
 
+  test('zonas eleitorais no Atlas: bairros da cidade e regiões do estado', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await createCandidate(page, { officeTestId: 'office-prefeito', stateId: 'PE' });
+    const map = page.getByTestId('map');
+    await expect(map.getByRole('group', { name: 'Mapa das zonas eleitorais' })).toBeAttached();
+    // Malha real do município carregada: escala em km da própria cidade.
+    await expect(map.locator('.atlas-scale-label')).toHaveText(/\d+ km/);
+    await map.getByRole('button', { name: 'Zona Sul' }).click();
+    await expect(page.getByTestId('unit-details')).toBeVisible();
+    await expect(page.getByTestId('map-reading')).toBeVisible();
+    await shot(page, 'a11-cidade-zona');
+
+    await createCandidate(page, { officeTestId: 'office-governador', stateId: 'MG' });
+    await expect(map.getByRole('button', { name: 'Belo Horizonte' })).toBeAttached();
+    await map.getByRole('button', { name: 'Interior Norte' }).click();
+    await expect(page.getByTestId('unit-details')).toBeVisible();
+    await shot(page, 'a12-estado-zona');
+    expect(errors).toEqual([]);
+  });
+
   test('zoom pela roda e arrasto mexem a câmera sem erros, e "Enquadrar" volta ao Brasil inteiro', async ({
     page,
   }) => {

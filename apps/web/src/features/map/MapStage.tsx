@@ -1,25 +1,14 @@
-import { capitalOf, mapUnits, STATES } from '@republica/game-engine';
-import {
-  Atlas,
-  BRAZIL_VIEWBOX,
-  cn,
-  NO_INSETS,
-  ZoneMap,
-  type AtlasPin,
-  type Insets,
-  type MapFill,
-  type ZoneSpec,
-} from '@republica/ui';
+import { mapUnits } from '@republica/game-engine';
+import { Atlas, cn, NO_INSETS, type AtlasPin, type Insets } from '@republica/ui';
 import { useMemo, type CSSProperties } from 'react';
 import { useMatch, useNavigate } from 'react-router';
 import { useGameState } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
-import { ATLAS_REGIONS, CAPITAL_PINS } from './atlasRegions';
+import { CAPITAL_PINS } from './atlasRegions';
+import { useMapGeometry } from './mapGeometry';
 import { mapMarkers } from './mapMarkers';
 import { rankOf, useActiveLayer } from './useActiveLayer';
 import { useChangePulse } from './useChangePulse';
-
-const WORLD = [0, 0, BRAZIL_VIEWBOX.width, BRAZIL_VIEWBOX.height] as const;
 
 /**
  * Mapa sempre ao fundo da tela de jogo (estilo Victoria 3), desenhado pelo Atlas.
@@ -54,16 +43,13 @@ export function MapStage({
   // Com um painel usando o mapa como seletor, o realce são as escolhas dele (e a câmera não voa).
   const selected = mapPick ? null : routeSelected;
   const { layer, scale } = active;
-  const isZones = units[0]?.kind === 'zone';
-  const isCity = units.some((u) => u.zone?.type === 'center');
-  const stateId = units[0]?.stateId ?? 'SP';
-  // Saves antigos e o DF (zonas de cidade sem cidade definida) usam a capital.
-  const cityId = isCity
-    ? (game.election?.jurisdiction.cityId ?? game.government?.jurisdiction.cityId ?? capitalOf(stateId).id)
-    : undefined;
+  const geometry = useMapGeometry(game, units);
   const jurisdiction = game.government?.jurisdiction;
   const focus = useMemo(
-    () => (jurisdiction && jurisdiction.level !== 'federal' && jurisdiction.stateId ? [jurisdiction.stateId] : null),
+    () =>
+      jurisdiction && jurisdiction.level !== 'federal' && jurisdiction.stateId
+        ? [jurisdiction.stateId]
+        : null,
     [jurisdiction],
   );
 
@@ -73,7 +59,11 @@ export function MapStage({
     for (const [id, cell] of Object.entries(layer.cells)) if (cell.short) out[id] = cell.short;
     return out;
   }, [numbers, layer]);
-  const pins = useMemo<AtlasPin[]>(() => [...CAPITAL_PINS, ...markers], [markers]);
+  // Capitais e marcadores são por UF: no mapa de zonas, nenhum.
+  const pins = useMemo<AtlasPin[]>(
+    () => (geometry.zones ? [] : [...CAPITAL_PINS, ...markers]),
+    [geometry.zones, markers],
+  );
 
   const open = (id: string) => {
     if (mapPick) {
@@ -93,7 +83,9 @@ export function MapStage({
           <span className="font-display text-[13px] font-semibold tracking-[0.04em] text-gold-300">
             {names[id] ?? id}
           </span>
-          {cell?.short && <span className="text-[13px] font-semibold tabular-nums text-paper">{cell.short}</span>}
+          {cell?.short && (
+            <span className="text-[13px] font-semibold tabular-nums text-paper">{cell.short}</span>
+          )}
         </div>
         <div className="text-paper/90">{cell?.label}</div>
         {rank && layer.scale !== 'categorical' && (
@@ -108,53 +100,33 @@ export function MapStage({
     );
   };
 
-  const zoneFills = useMemo(() => {
-    const out: Record<string, MapFill> = {};
-    for (const [id, p] of Object.entries(scale.paint)) out[id] = { fill: p.fill, opacity: p.noData ? 0.65 : p.opacity };
-    return out;
-  }, [scale]);
-  const zones: ZoneSpec[] = units.map((u) => ({
-    id: u.id,
-    name: u.name,
-    type: u.zone?.type ?? 'sector',
-    ...(u.zone?.direction ? { direction: u.zone.direction } : {}),
-  }));
-
   return (
-    <div className={cn('map-ocean absolute overflow-hidden', className)} style={style} data-testid="map">
+    <div
+      className={cn('map-ocean absolute overflow-hidden', className)}
+      style={style}
+      data-testid="map"
+    >
       <div className="map-vignette pointer-events-none absolute inset-0" />
-      {isZones ? (
-        <div className="absolute inset-y-0 right-0" style={{ left: insets.left }}>
-          <ZoneMap
-            kind={isCity ? 'city' : 'state'}
-            stateId={stateId}
-            {...(cityId ? { cityId } : {})}
-            capitalCoords={STATES[stateId].capitalCoords}
-            zones={zones}
-            fills={zoneFills}
-            selected={selected}
-            onSelect={open}
-            renderTooltip={tooltip}
-          />
-        </div>
-      ) : (
-        <Atlas
-          regions={ATLAS_REGIONS}
-          world={WORLD}
-          paint={scale.paint}
-          values={values}
-          pins={pins}
-          pulses={pulses}
-          selected={selected}
-          marked={mapPick?.selected ?? null}
-          focus={focus}
-          flyTo={routeSelected}
-          insets={insets}
-          onSelect={open}
-          renderTooltip={tooltip}
-          ariaLabel="Mapa do Brasil"
-        />
-      )}
+      <Atlas
+        regions={geometry.regions}
+        world={geometry.world}
+        outline={geometry.outline ?? null}
+        backdrop={geometry.backdrop ?? []}
+        context={geometry.context ?? true}
+        {...(geometry.kmPerUnit !== undefined ? { kmPerUnit: geometry.kmPerUnit } : {})}
+        paint={scale.paint}
+        values={values}
+        pins={pins}
+        pulses={pulses}
+        selected={selected}
+        marked={mapPick?.selected ?? null}
+        focus={geometry.zones ? null : focus}
+        flyTo={routeSelected}
+        insets={insets}
+        onSelect={open}
+        renderTooltip={tooltip}
+        ariaLabel={geometry.zones ? 'Mapa das zonas eleitorais' : 'Mapa do Brasil'}
+      />
     </div>
   );
 }

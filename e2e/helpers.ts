@@ -78,9 +78,27 @@ export async function advanceUntilElection(page: Page) {
   throw new Error('Não chegou ao dia da eleição');
 }
 
-/** Espera a câmera do mapa parar (voos ao abrir/fechar painéis) antes de clicar em estados. */
+/**
+ * Espera a câmera do mapa parar (voos ao abrir/fechar painéis) antes de clicar em estados.
+ * O voo começa num efeito depois da renderização: por isso exige o `transform` da câmera parado
+ * por 250 ms, não só a ausência da classe de movimento.
+ */
 export async function waitMapIdle(page: Page) {
-  await expect(page.locator('.atlas').first()).not.toHaveClass(/atlas-moving/, { timeout: 10_000 });
+  await page.waitForFunction(
+    () => {
+      const w = window as unknown as { __mapIdle?: { t: string; since: number } };
+      const atlas = document.querySelector('.atlas');
+      const t = atlas?.querySelector('.atlas-svg > g')?.getAttribute('transform') ?? '';
+      const now = performance.now();
+      if (!w.__mapIdle || w.__mapIdle.t !== t) {
+        w.__mapIdle = { t, since: now };
+        return false;
+      }
+      return !atlas?.classList.contains('atlas-moving') && now - w.__mapIdle.since > 250;
+    },
+    undefined,
+    { timeout: 10_000, polling: 50 },
+  );
 }
 
 /** Abre um painel pelo dock; em telas baixas o item pode estar dentro de um grupo recolhido. */

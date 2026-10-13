@@ -42,7 +42,7 @@ Capturas da versão 0.8.0 (`e2e/nation.spec.ts` com `SHOTS=`) mostram:
 | Parte | Decisão |
 | --- | --- |
 | `BrazilMap` + `useZoomPan` + `MapStage` + legenda | **Substituir** pelo Atlas (seção 3). `BrazilMap` continua exportado para o menu e a tela de eleição até migrarem. |
-| `ZoneMap` (zonas eleitorais de cidade/estado) | **Manter** nesta etapa, dentro do novo palco (legenda e área segura novas). Migra para o Atlas depois. |
+| `ZoneMap` (zonas eleitorais de cidade/estado) | **Migrado** para o Atlas (etapa 8, §8). |
 | Paleta do mapa (`mapPalette.ts`, `lib/mapColors.ts`) | **Reconstruir** em `atlas/scales.ts`: escala esticada ao domínio real, com a legenda mostrando os extremos reais. |
 | Modos de mapa | **Estender** no motor (governadores, ideologia, produção por bem, níveis por edifício) e criar o vínculo painel → modo. |
 | Seletor de modos, legenda | **Reconstruir** (cartela com escala real, distribuição e ranking clicável). |
@@ -239,6 +239,7 @@ Entregue em 13/10/2026 (v0.9.0, branch `atlas`, um commit por etapa):
 | 5. Integração | `useMapFocus` (Mercado → produção do bem; Indústria → polos do edifício) e `useMapPick` (Indústria → onde construir; Propaganda → regiões do anúncio). |
 | 6. Desempenho | Rotas preguiçosas + pré-carregamento ocioso em produção; camadas memoizadas; `npm run test:perf`. |
 | 7. Telas | Eleição (Atlas + apuração por estado), Leis (eixo da categoria), Congresso (partido no mapa), Campanha (marcadores de agenda e propaganda), menu (Atlas decorativo). `BrazilMap` removido. |
+| 8. Zonas | Mapas de zonas (prefeito, vereador, governador) no Atlas: `map/zoneGeometry.ts` gera cunhas, anel metropolitano e círculos recortados pelo contorno real (`outline`), os outros estados como fundo (`backdrop`) e a escala em km de cada cidade (`kmPerUnit`, gerado). `ZoneMap`, `useZoomPan` e `MapControls` removidos. |
 
 ### Medições (Chrome, 1600×960, `npm run test:perf`, máquina de desenvolvimento)
 
@@ -259,8 +260,9 @@ Bundle (`vite build`): antes, um chunk de 2,5 MB (763 KB gzip). Depois, carga in
 
 - **Motor em pedaços:** o maior bloco da carga inicial é o motor (textos de eventos, perguntas).
   Carregar os pacotes de eventos sob demanda exige `import()` dinâmico dentro do motor.
-- **Zonas no Atlas:** o `ZoneMap` (eleições de prefeito/governador) ainda é o renderizador antigo;
-  migrar para o Atlas dá a ele câmera, legenda e marcadores.
+- **Prefeito/governador no mandato:** sem eleição em curso, o mapa mostra as 27 UFs com o estado
+  do jogador em destaque (comportamento anterior ao Atlas). Mostrar as zonas da própria cidade ou
+  do estado exige o motor produzir unidades de zona fora da eleição.
 - **Por que mudou, no mapa:** os pulsos dizem *que* um estado mudou; a dica poderia dizer *por quê*
   (as causas já existem no motor para intenção de voto e aprovação).
 - **Painéis largos:** com painel largo a faixa do mapa fica estreita; um botão "recolher painel"

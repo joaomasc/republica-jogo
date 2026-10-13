@@ -168,3 +168,48 @@ describe('enquadramento com interface', () => {
     expect(cx).toBeCloseTo(450 + (1600 - 450 - 300) / 2, 0);
   });
 });
+
+describe('zonas no Atlas', () => {
+  it('estado: cunhas antes dos círculos, rótulos dentro do contorno, vizinhos de fundo', async () => {
+    const { zoneAtlas } = await import('../map/zoneGeometry');
+    const z = zoneAtlas(
+      'state',
+      'MG',
+      [-43.94, -19.92],
+      [
+        { id: 'cap', name: 'Belo Horizonte', type: 'capital' },
+        { id: 'n', name: 'Interior Norte', type: 'sector', direction: 'n' },
+        { id: 'met', name: 'Região Metropolitana', type: 'metro' },
+        { id: 's', name: 'Interior Sul', type: 'sector', direction: 's' },
+      ],
+      null,
+    );
+    expect(z.regions.map((r) => r.id)).toEqual(['n', 's', 'met', 'cap']);
+    for (const r of z.regions) {
+      expect(r.centroid[0]).toBeGreaterThanOrEqual(z.world[0]);
+      expect(r.centroid[0]).toBeLessThanOrEqual(z.world[2]);
+      expect(r.bbox[2]).toBeGreaterThan(r.bbox[0]);
+    }
+    expect(z.backdrop).toHaveLength(26);
+    expect(z.context).toBe(true);
+    expect(z.kmPerUnit).toBeUndefined();
+  });
+
+  it('cidade: escala própria (km por unidade) e sem contexto nacional', async () => {
+    const { zoneAtlas } = await import('../map/zoneGeometry');
+    const { CITY_GEOMETRY } = await import('../map/cityGeometry.generated');
+    const [, recife] = Object.entries(CITY_GEOMETRY)[0]!;
+    const z = zoneAtlas(
+      'city',
+      'PE',
+      [-34.9, -8.05],
+      [{ id: 'c', name: 'Centro', type: 'center' }],
+      recife,
+    );
+    expect(z.context).toBe(false);
+    expect(z.kmPerUnit).toBeGreaterThan(0);
+    expect(z.outline).toBe(recife.d);
+    // Sem malha carregada: contorno genérico e sem barra de escala.
+    expect(zoneAtlas('city', 'PE', [-34.9, -8.05], [], null).kmPerUnit).toBeNull();
+  });
+});
