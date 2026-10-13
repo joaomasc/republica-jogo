@@ -125,6 +125,8 @@ export function AdsView() {
                   type="button"
                   disabled={!def.regional}
                   onClick={() => setUnitIds(toggle(unitIds, u.id))}
+                  aria-pressed={unitIds.includes(u.id)}
+                  data-testid={`ad-unit-${u.id}`}
                   className={cn(
                     'rounded-lg border-2 px-2 py-0.5 text-xs font-bold disabled:opacity-40',
                     unitIds.includes(u.id)

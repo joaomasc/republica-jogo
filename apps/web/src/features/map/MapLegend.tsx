@@ -334,7 +334,7 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
             />
             <Toggle
               icon="map-pin"
-              label="Marcadores (obras e canteiros)"
+              label="Marcadores (agenda, propaganda, obras e canteiros)"
               on={markers}
               onClick={() => toggle('mapMarkers')}
               testId="map-opt-markers"

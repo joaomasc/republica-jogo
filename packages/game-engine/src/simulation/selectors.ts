@@ -267,7 +267,7 @@ export function mapLayer(
   const player = getPlayer(state);
   const status = getPlayerStatus(state);
   const cells: Record<UnitId, MapCell> = {};
-  const pct = (v: number) => `${round(v * 100, 1)}%`;
+  const pct = (v: number) => formatPct(v);
 
   switch (mode) {
     case 'intention': {
@@ -413,7 +413,7 @@ export function mapLayer(
         } else
           cells[u.id] = {
             value: clamp((unemployment - 3) / 12, 0, 1),
-            label: `Desemprego ${round(unemployment, 1)}%`,
+            label: `Desemprego ${formatPct(unemployment / 100)}`,
             short: formatPct(unemployment / 100),
           };
       }

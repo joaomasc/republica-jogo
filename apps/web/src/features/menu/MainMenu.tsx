@@ -1,7 +1,8 @@
 import { weeklyChallenge } from '../../lib/weeklyChallenge';
 import { APP_VERSION } from '../changelog/changelog.data';
 import { LAW_CATEGORIES, loadGame, type SaveSlotInfo } from '@republica/game-engine';
-import { BrazilMap, cn, Icon } from '@republica/ui';
+import { Atlas, BRAZIL_VIEWBOX, cn, Icon, type RegionPaint } from '@republica/ui';
+import { ATLAS_REGIONS } from '../map/atlasRegions';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Logo } from '../../components/Logo';
@@ -36,7 +37,11 @@ export function MainMenu() {
       .catch(() => setLatest(null));
   }, []);
 
-  const fills = useMemo(() => DEFAULT_PARTY_COLORS, []);
+  const paint = useMemo(() => {
+    const out: Record<string, RegionPaint> = {};
+    for (const [id, f] of Object.entries(DEFAULT_PARTY_COLORS)) out[id] = { fill: f.fill, opacity: f.opacity ?? 1 };
+    return out;
+  }, []);
 
   const continueGame = async () => {
     if (current) {
@@ -140,8 +145,14 @@ export function MainMenu() {
   return (
     <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10 short:py-4">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-end opacity-35 [mask-image:linear-gradient(to_left,black_30%,transparent_85%)]">
-        <div className="h-[115%] w-[70%] max-w-[900px] translate-x-[8%]">
-          <BrazilMap fills={fills} showLabels={false} />
+        <div className="relative h-[115%] w-[70%] max-w-[900px] translate-x-[8%]">
+          <Atlas
+            regions={ATLAS_REGIONS}
+            world={[0, 0, BRAZIL_VIEWBOX.width, BRAZIL_VIEWBOX.height]}
+            paint={paint}
+            chrome={false}
+            ariaLabel="Mapa decorativo do Brasil"
+          />
         </div>
       </div>
       <div className="relative z-10 grid w-full max-w-6xl items-center gap-10 short:gap-6 lg:grid-cols-[1.1fr_1fr]">

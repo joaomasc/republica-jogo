@@ -1,3 +1,4 @@
+import { IDEOLOGY_AXES, type IdeologyAxis } from '../ideology/axes';
 import type { LawCategoryDefinition, LawOptionDefinition } from './types';
 
 type Opt = Omit<LawOptionDefinition, 'economy' | 'budget' | 'pops' | 'groups' | 'issues'> &
@@ -2103,4 +2104,25 @@ export function getLawOption(
 
 export function defaultLaws(): Record<string, string> {
   return Object.fromEntries(LAW_CATEGORIES.map((c) => [c.id, c.defaultOptionId]));
+}
+
+/**
+ * Eixo ideológico em que as opções de uma categoria de lei mais divergem (ex.: Comércio →
+ * protecionismo × livre comércio). Sai dos vetores ideológicos das próprias opções: o mapa de
+ * ideologia mostra onde o eleitorado apoia ou resiste à direção de uma reforma nessa área.
+ */
+export function lawCategoryAxis(id: string): IdeologyAxis {
+  const options = getLawCategory(id)?.options ?? [];
+  let best: IdeologyAxis = 'economy';
+  let bestRange = -1;
+  for (const axis of IDEOLOGY_AXES) {
+    const values = options.map((o) => o.ideology[axis]).filter((v): v is number => v !== undefined);
+    if (values.length < 2) continue;
+    const range = Math.max(...values) - Math.min(...values);
+    if (range > bestRange) {
+      bestRange = range;
+      best = axis;
+    }
+  }
+  return best;
 }

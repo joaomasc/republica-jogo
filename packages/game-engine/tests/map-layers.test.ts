@@ -34,9 +34,18 @@ describe('camadas do mapa', () => {
 
   it('valores compactos (para escrever no mapa) usam vírgula decimal e são curtos', () => {
     const s = national();
-    for (const mode of ['unemployment', 'income', 'informality', 'population', 'ideology'] as const) {
+    for (const mode of [
+      'unemployment',
+      'income',
+      'informality',
+      'population',
+      'ideology',
+    ] as const) {
       const cells = Object.values(mapLayer(s, mode).cells);
-      expect(cells.every((c) => c.short !== undefined), mode).toBe(true);
+      expect(
+        cells.every((c) => c.short !== undefined),
+        mode,
+      ).toBe(true);
       for (const c of cells) {
         expect(c.short!.length, `${mode}: ${c.short}`).toBeLessThanOrEqual(12);
         expect(c.short, mode).not.toMatch(/\d\.\d/);
@@ -87,7 +96,21 @@ describe('camadas do mapa', () => {
     const s = structuredClone(national());
     const layer = buildingLayer(s, 'steel_mill');
     expect(layer.mode).toBe('building');
-    const levels = Object.entries(s.industry.buildings).filter(([, b]) => (b.steel_mill?.level ?? 0) > 0);
+    const levels = Object.entries(s.industry.buildings).filter(
+      ([, b]) => (b.steel_mill?.level ?? 0) > 0,
+    );
     for (const [uf] of levels) expect(layer.cells[uf]!.value).toBeGreaterThan(0);
+  });
+});
+
+describe('eixo do mapa por categoria de lei', () => {
+  it('sai das opções da própria categoria (o eixo em que elas mais divergem)', async () => {
+    const { lawCategoryAxis, LAW_CATEGORIES } = await import('../src/index');
+    expect(lawCategoryAxis('trade')).toBe('trade');
+    expect(lawCategoryAxis('security')).toBe('security');
+    expect(lawCategoryAxis('environment')).toBe('environment');
+    // Toda categoria resolve para um eixo válido (desconhecida cai em economia).
+    for (const c of LAW_CATEGORIES) expect(typeof lawCategoryAxis(c.id)).toBe('string');
+    expect(lawCategoryAxis('nao-existe')).toBe('economy');
   });
 });

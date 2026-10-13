@@ -1,4 +1,5 @@
 import {
+  CAMPAIGN_ACTIONS,
   constructionQueueView,
   STATES,
   worksOverview,
@@ -17,6 +18,7 @@ type Badge = Omit<AtlasPin, 'x' | 'y' | 'offset' | 'kind'>;
 
 /**
  * Marcadores de dados sobre o mapa, todos do estado real do jogo, por estado:
+ * - campanha: compromissos fixos da agenda e propaganda regional no ar;
  * - suas obras públicas (sempre visíveis);
  * - canteiros industriais — os seus sempre; os do mercado só com o mapa aproximado.
  * Ficam acima da sigla, centralizados, em pixels de tela. Só no mapa nacional (por UF).
@@ -30,6 +32,45 @@ export function mapMarkers(game: GameState): AtlasPin[] {
     perState.set(stateId, list);
   };
   const name = (id: string) => STATES[id as StateId]?.name ?? id;
+
+  const campaign = game.campaign;
+  if (campaign) {
+    const agenda = new Map<string, string[]>();
+    if (campaign.agenda?.enabled)
+      for (const item of campaign.agenda.items) {
+        if (!item.enabled || item.unit === 'auto' || item.kind !== 'action') continue;
+        const action = CAMPAIGN_ACTIONS.find((a) => a.id === item.actionId);
+        const every = item.every === 1 ? 'todo dia' : `a cada ${item.every} dias`;
+        agenda.set(item.unit, [
+          ...(agenda.get(item.unit) ?? []),
+          `${action?.name ?? 'Compromisso'} (${every})`,
+        ]);
+      }
+    for (const [stateId, names] of agenda)
+      add(stateId, {
+        id: `agenda-${stateId}`,
+        icon: 'calendar-check',
+        tone: 'good',
+        count: names.length,
+        regionId: stateId,
+        title: describe(`Sua agenda em ${name(stateId)}`, names),
+      });
+    const ads = new Map<string, string[]>();
+    for (const ad of campaign.ads) {
+      if (!ad.active || ad.endDate < game.date) continue;
+      const until = `até ${ad.endDate.split('-').reverse().join('/')}`;
+      for (const unit of ad.unitIds) ads.set(unit, [...(ads.get(unit) ?? []), until]);
+    }
+    for (const [stateId, names] of ads)
+      add(stateId, {
+        id: `ads-${stateId}`,
+        icon: 'tv',
+        tone: 'info',
+        count: names.length,
+        regionId: stateId,
+        title: describe(`Sua propaganda regional no ar em ${name(stateId)}`, names),
+      });
+  }
 
   const works = new Map<string, string[]>();
   for (const w of worksOverview(game).mine)

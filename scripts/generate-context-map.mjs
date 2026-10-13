@@ -23,7 +23,22 @@ const NE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/maste
 const BOX = { minLon: -86, maxLon: -26, minLat: -42, maxLat: 14 };
 
 /** Países desenhados (ADM0_A3). França entra só pela Guiana Francesa (filtrada pela caixa). */
-const COUNTRIES = ['ARG', 'BOL', 'CHL', 'COL', 'ECU', 'GUY', 'PRY', 'PER', 'SUR', 'URY', 'VEN', 'FRA', 'PAN', 'BRA'];
+const COUNTRIES = [
+  'ARG',
+  'BOL',
+  'CHL',
+  'COL',
+  'ECU',
+  'GUY',
+  'PRY',
+  'PER',
+  'SUR',
+  'URY',
+  'VEN',
+  'FRA',
+  'PAN',
+  'BRA',
+];
 
 /** Onde escrever o nome de cada país (lon, lat): o centróide cai fora da vista em vários deles. */
 const LABEL_AT = {
@@ -67,24 +82,33 @@ const RIVER_NAMES = {
 };
 
 // --- Projeção: a mesma de scripts/generate-map.mjs (lida do arquivo gerado das UFs) -----------
-const brazilGenerated = readFileSync(resolve(root, 'packages/ui/src/map/brazilGeometry.generated.ts'), 'utf8');
+const brazilGenerated = readFileSync(
+  resolve(root, 'packages/ui/src/map/brazilGeometry.generated.ts'),
+  'utf8',
+);
 const projLine = brazilGenerated.match(/MAP_PROJECTION = (\{[^}]+\})/);
 if (!projLine) throw new Error('MAP_PROJECTION não encontrado em brazilGeometry.generated.ts');
 const P = Function(`return ${projLine[1]}`)();
-const project = (lon, lat) => [P.pad + (lon - P.minLon) * P.kx * P.scale, P.pad + (P.maxLat - lat) * P.scale];
+const project = (lon, lat) => [
+  P.pad + (lon - P.minLon) * P.kx * P.scale,
+  P.pad + (P.maxLat - lat) * P.scale,
+];
 
 // --- Entrada ------------------------------------------------------------------------------------
 function* points(c) {
   if (typeof c[0] === 'number') yield c;
   else for (const x of c) yield* points(x);
 }
-const inBox = ([lon, lat]) => lon >= BOX.minLon && lon <= BOX.maxLon && lat >= BOX.minLat && lat <= BOX.maxLat;
+const inBox = ([lon, lat]) =>
+  lon >= BOX.minLon && lon <= BOX.maxLon && lat >= BOX.minLat && lat <= BOX.maxLat;
 const touchesBox = (coords) => {
   for (const p of points(coords)) if (inBox(p)) return true;
   return false;
 };
-const polygonsOf = (g) => (g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []);
-const linesOf = (g) => (g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : []);
+const polygonsOf = (g) =>
+  g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+const linesOf = (g) =>
+  g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
 
 async function fetchSubset() {
   const get = async (name) => {
@@ -97,7 +121,10 @@ async function fetchSubset() {
     get('ne_50m_rivers_lake_centerlines'),
     get('ne_50m_lakes'),
   ]);
-  const round4 = (c) => (typeof c[0] === 'number' ? [Math.round(c[0] * 1e4) / 1e4, Math.round(c[1] * 1e4) / 1e4] : c.map(round4));
+  const round4 = (c) =>
+    typeof c[0] === 'number'
+      ? [Math.round(c[0] * 1e4) / 1e4, Math.round(c[1] * 1e4) / 1e4]
+      : c.map(round4);
   const subset = {
     source: 'Natural Earth 1:50m (domínio público), recorte da América do Sul',
     countries: countries.features
@@ -108,17 +135,27 @@ async function fetchSubset() {
       })),
     rivers: rivers.features
       .filter((f) => linesOf(f.geometry).some(touchesBox))
-      .map((f) => ({ name: f.properties.name, rank: f.properties.scalerank, lines: linesOf(f.geometry).map(round4) })),
+      .map((f) => ({
+        name: f.properties.name,
+        rank: f.properties.scalerank,
+        lines: linesOf(f.geometry).map(round4),
+      })),
     lakes: lakes.features
       .filter((f) => polygonsOf(f.geometry).some(touchesBox))
-      .map((f) => ({ name: f.properties.name ?? '', polygons: polygonsOf(f.geometry).map(round4) })),
+      .map((f) => ({
+        name: f.properties.name ?? '',
+        polygons: polygonsOf(f.geometry).map(round4),
+      })),
   };
   writeFileSync(SUBSET, JSON.stringify(subset));
   console.log(`Recorte salvo em ${SUBSET}`);
   return subset;
 }
 
-const data = process.argv.includes('--fetch') || !existsSync(SUBSET) ? await fetchSubset() : JSON.parse(readFileSync(SUBSET, 'utf8'));
+const data =
+  process.argv.includes('--fetch') || !existsSync(SUBSET)
+    ? await fetchSubset()
+    : JSON.parse(readFileSync(SUBSET, 'utf8'));
 
 // --- Simplificação (Douglas-Peucker, igual ao gerador das UFs) ---------------------------------
 function simplify(pts, tol) {
@@ -157,12 +194,14 @@ function simplify(pts, tol) {
 
 function ringArea(pts) {
   let a = 0;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) a += (pts[j][0] + pts[i][0]) * (pts[j][1] - pts[i][1]);
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++)
+    a += (pts[j][0] + pts[i][0]) * (pts[j][1] - pts[i][1]);
   return a / 2;
 }
 
 const r1 = (n) => Math.round(n * 10) / 10;
-const toPath = (pts, close) => `M${pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}${close ? 'Z' : ''}`;
+const toPath = (pts, close) =>
+  `M${pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}${close ? 'Z' : ''}`;
 let total = 0;
 
 function polygonPath(polygons, tol, minArea) {
@@ -200,7 +239,12 @@ for (const c of data.countries) {
 const rivers = [];
 for (const r of data.rivers) {
   const d = r.lines
-    .map((line) => simplify(line.map(([lon, lat]) => project(lon, lat)), 0.9))
+    .map((line) =>
+      simplify(
+        line.map(([lon, lat]) => project(lon, lat)),
+        0.9,
+      ),
+    )
     .filter((pts) => pts.length >= 2)
     .map((pts) => {
       total += pts.length;

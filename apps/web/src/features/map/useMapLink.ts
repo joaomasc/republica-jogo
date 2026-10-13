@@ -1,3 +1,4 @@
+import type { IdeologyAxis } from '@republica/game-engine';
 import { useEffect, useRef } from 'react';
 import { useUi, type MapFocus } from '../../store/uiStore';
 
@@ -42,4 +43,16 @@ export function useMapPick(
     );
   }, [hint, key, enabled, setMapPick]);
   useEffect(() => () => setMapPick(null), [setMapPick]);
+}
+
+/**
+ * O painel escolhe o eixo do mapa de ideologia (Leis: o eixo em que as opções da categoria
+ * divergem). Só vale com "o mapa acompanha os painéis" ligado; o eixo continua depois.
+ */
+export function useMapAxis(axis: IdeologyAxis): void {
+  const auto = useUi((s) => s.mapAuto);
+  const setMapAxis = useUi((s) => s.setMapAxis);
+  useEffect(() => {
+    if (auto) setMapAxis(axis);
+  }, [auto, axis, setMapAxis]);
 }

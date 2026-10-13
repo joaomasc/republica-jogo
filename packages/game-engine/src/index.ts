@@ -143,7 +143,13 @@ export * from './economy/types';
 export { BUDGET_INFO, budgetTotals, serviceQuality } from './economy/budget';
 export { ECONOMIC_SITUATIONS, economySummary, type EconomicSituation } from './economy/economy';
 export * from './laws/types';
-export { LAW_CATEGORIES, defaultLaws, getLawCategory, getLawOption } from './laws/laws.data';
+export {
+  LAW_CATEGORIES,
+  defaultLaws,
+  getLawCategory,
+  getLawOption,
+  lawCategoryAxis,
+} from './laws/laws.data';
 export {
   canProposeBill,
   categoriesForLevel,

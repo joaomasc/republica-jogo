@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { floatingTooltipStyle, MAP_INK, type MapFill, type MousePos } from './BrazilMap';
+import { floatingTooltipStyle, MAP_INK, type MapFill, type MousePos } from './mapShared';
 import { projectLonLat, STATE_GEOMETRY } from './brazilGeometry.generated';
 import type { CityGeometry } from './cityGeometry.generated';
 import { MapControls, type MapControlsPosition } from './MapControls';

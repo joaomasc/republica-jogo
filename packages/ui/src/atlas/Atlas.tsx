@@ -98,6 +98,8 @@ export interface AtlasProps {
   insets?: Insets;
   /** Desenha países vizinhos, rios e graticulado. */
   context?: boolean;
+  /** Moldura: rosa dos ventos, escala e botões de zoom (desligue em mapas decorativos). */
+  chrome?: boolean;
   onSelect?: (id: string) => void;
   renderTooltip?: (id: string) => ReactNode;
   ariaLabel?: string;
@@ -217,6 +219,7 @@ export function Atlas({
   flyTo = null,
   insets = NO_INSETS,
   context = true,
+  chrome = true,
   onSelect,
   renderTooltip,
   ariaLabel = 'Mapa',
@@ -1024,42 +1027,44 @@ export function Atlas({
       </svg>
 
       {/* Moldura: rosa dos ventos, escala e controles, dentro da área livre. */}
-      <div
-        className="atlas-frame pointer-events-none absolute flex flex-col items-start gap-2"
-        style={{ left: insets.left + 14, top: insets.top + 12 }}
-      >
-        <CompassRose />
-        <div className="atlas-scale cartouche rounded-[4px] px-2 py-1">
-          <div ref={scaleBarRef} className="atlas-scale-bar" />
-          <span ref={scaleLabelRef} className="atlas-scale-label" />
+      {chrome && (
+        <div
+          className="atlas-frame pointer-events-none absolute flex flex-col items-start gap-2"
+          style={{ left: insets.left + 14, top: insets.top + 12 }}
+        >
+          <CompassRose />
+          <div className="atlas-scale cartouche rounded-[4px] px-2 py-1">
+            <div ref={scaleBarRef} className="atlas-scale-bar" />
+            <span ref={scaleLabelRef} className="atlas-scale-label" />
+          </div>
+          <div className="cartouche pointer-events-auto flex flex-col divide-y divide-gold-500/25 overflow-hidden rounded-[5px]">
+            <button
+              type="button"
+              className="atlas-ctl"
+              onClick={() => zoomBy(1.6)}
+              aria-label="Aproximar"
+            >
+              <Plus size={15} />
+            </button>
+            <button
+              type="button"
+              className="atlas-ctl"
+              onClick={() => zoomBy(1 / 1.6)}
+              aria-label="Afastar"
+            >
+              <Minus size={15} />
+            </button>
+            <button
+              type="button"
+              className="atlas-ctl"
+              onClick={recenter}
+              aria-label="Enquadrar o mapa"
+            >
+              <Maximize2 size={13} />
+            </button>
+          </div>
         </div>
-        <div className="cartouche pointer-events-auto flex flex-col divide-y divide-gold-500/25 overflow-hidden rounded-[5px]">
-          <button
-            type="button"
-            className="atlas-ctl"
-            onClick={() => zoomBy(1.6)}
-            aria-label="Aproximar"
-          >
-            <Plus size={15} />
-          </button>
-          <button
-            type="button"
-            className="atlas-ctl"
-            onClick={() => zoomBy(1 / 1.6)}
-            aria-label="Afastar"
-          >
-            <Minus size={15} />
-          </button>
-          <button
-            type="button"
-            className="atlas-ctl"
-            onClick={recenter}
-            aria-label="Enquadrar o mapa"
-          >
-            <Maximize2 size={13} />
-          </button>
-        </div>
-      </div>
+      )}
 
       {hover && tooltipContent && (
         <div

@@ -1,4 +1,4 @@
-import { clamp, formatMoney, formatPct, round } from '../core/math';
+import { clamp, formatMoney, formatPct } from '../core/math';
 import type { StateId, UnitId } from '../core/types';
 import { BUILDINGS } from '../economy/industry/buildings.data';
 import { INDUSTRIAL_SECTORS, methodInfo } from '../economy/industry/catalog';
@@ -30,7 +30,7 @@ function industrialShare(state: GameState, stateId: StateId): number {
 /** Camadas econômicas do mapa (por estado; zonas usam o estado da zona). */
 export function economyLayer(state: GameState, mode: EconomyMode, units: ElectoralUnit[]): MapLayer {
   const cells: Record<UnitId, MapCell> = {};
-  const pct = (v: number) => `${round(v * 100, 1)}%`;
+  const pct = (v: number) => formatPct(v);
   const incomes = units.map((u) => state.regions[u.stateId]?.income ?? 0);
   const maxIncome = Math.max(1, ...incomes);
   for (const u of units) {
@@ -50,7 +50,7 @@ export function economyLayer(state: GameState, mode: EconomyMode, units: Elector
       }
       case 'unemployment': {
         const un = region?.unemployment ?? 0;
-        cells[u.id] = { value: clamp((un - 3) / 15, 0, 1), label: `Desemprego ${round(un, 1)}%`, short: formatPct(un / 100) };
+        cells[u.id] = { value: clamp((un - 3) / 15, 0, 1), label: `Desemprego ${formatPct(un / 100)}`, short: formatPct(un / 100) };
         break;
       }
       case 'informality': {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openNav, waitMapIdle } from './helpers';
+import { createCandidate, openNav, waitMapIdle } from './helpers';
 
 /** Pasta para capturas de tela opcionais (SHOTS=<pasta>). */
 const SHOTS = process.env.SHOTS;
@@ -36,6 +36,15 @@ async function centerX(page: Page, uf: string): Promise<number> {
 }
 
 test.describe('Atlas: mapa integrado aos painéis', () => {
+  test('menu principal desenha o Atlas decorativo sem erros', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('/');
+    await expect(page.getByRole('group', { name: 'Mapa decorativo do Brasil' })).toBeAttached();
+    await shot(page, 'a10-menu');
+    expect(errors).toEqual([]);
+  });
+
   test('legenda, números, ranking, painel → modo do mapa e câmera fora do painel', async ({
     page,
   }) => {
@@ -124,6 +133,37 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     await expect(page.getByTestId('unit-details')).toBeHidden();
     await shot(page, 'a08-industria');
     expect(errors).toEqual([]);
+  });
+
+  test('leis e Congresso conversam com o mapa: eixo da categoria e força de um partido', async ({
+    page,
+  }) => {
+    await startPresidency(page);
+    await openNav(page, 'leis');
+    await page.getByTestId('law-cat-trade').click();
+    await expect(page.getByTestId('map-axis')).toHaveValue('trade');
+    await page.getByTestId('law-cat-security').click();
+    await expect(page.getByTestId('map-axis')).toHaveValue('security');
+
+    await openNav(page, 'congresso');
+    await page.getByTestId('congress-tab-parties').click();
+    await page.locator('[data-testid^="party-map-"]').first().click();
+    await expect(page.getByTestId('map-mode-party')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('campanha: o mapa escolhe as regiões da propaganda', async ({ page }) => {
+    await createCandidate(page, { officeTestId: 'office-presidente' });
+    await openNav(page, 'propaganda');
+    await expect(page.getByTestId('ad-launch')).toBeVisible();
+    await expect(page.getByTestId('map-mode-intention')).toHaveAttribute('aria-checked', 'true');
+    await waitMapIdle(page);
+    // Painel largo: só parte do mapa fica visível; o clique vai direto no estado.
+    await page.locator('path[data-uf="AM"]').dispatchEvent('click');
+    await expect(page.getByTestId('ad-unit-AM')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('unit-details')).toBeHidden();
+    await shot(page, 'a09-propaganda');
+    await page.locator('path[data-uf="AM"]').dispatchEvent('click');
+    await expect(page.getByTestId('ad-unit-AM')).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('zoom pela roda e arrasto mexem a câmera sem erros, e "Enquadrar" volta ao Brasil inteiro', async ({
