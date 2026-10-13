@@ -24,6 +24,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { NationEmblem } from '../../components/NationEmblem';
+import { WhyApprovalCompact } from '../government/WhyApproval';
 import { WhyIntentionCompact } from '../impact/WhyChanged';
 import { num, PHASE_LABELS, pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
@@ -562,7 +563,10 @@ export function TopBar() {
             label="Aprovação"
             value={`${m.approval}%`}
             tone={m.approval >= 50 ? 'good' : m.approval >= 35 ? 'warn' : 'bad'}
-            hint="Aprovação do seu mandato."
+            hint="Aprovação do seu mandato. Clique para ver por que mudou."
+            details={<WhyApprovalCompact game={game} />}
+            onClick={() => navigate('/jogo/governo')}
+            testId="metric-approval"
           />
         )}
         {legitimacy !== null && (

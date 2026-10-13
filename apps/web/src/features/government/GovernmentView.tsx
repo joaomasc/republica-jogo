@@ -15,6 +15,7 @@ import { useGame, useGameState } from '../../store/gameStore';
 import { ObjectivesPanel } from './ObjectivesPanel';
 import { PromiseRow } from './PromiseRow';
 import { StreetPanel } from './StreetPanel';
+import { WhyApprovalPanel } from './WhyApproval';
 
 
 function ApprovalGauge({ value }: { value: number }) {
@@ -130,6 +131,8 @@ export function GovernmentView() {
           )}
         </Panel>
       </div>
+
+      <WhyApprovalPanel game={game} />
 
       <div className="grid gap-3 @3xl:grid-cols-3">
         {gov.branch === 'executive' ? (
