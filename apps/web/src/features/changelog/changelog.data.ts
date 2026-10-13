@@ -33,6 +33,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Ocupações com efeito real (consultor junta caixa, ONG faz base, cargo internacional afasta da base) e saldo de fama já descontado.',
       'Popularidade dos partidos responde a quem governa e às eleições, não a sorteio.',
       'Risco de gafe mostrado é o risco real da ação.',
+      'Manual atualizado: pesquisas, eventos, aprovação, medidor de impacto e pré-campanha.',
     ],
   },
   {
