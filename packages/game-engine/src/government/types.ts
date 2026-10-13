@@ -41,6 +41,48 @@ export interface GovernmentState {
   vice?: RunningMate | null;
   /** Reunião de gabinete do mês (governo executivo). */
   cabinet?: CabinetMeeting | null;
+  /** O que moveu a aprovação, com causa (mais recente primeiro). Ausente em saves antigos. */
+  approvalImpact?: ApprovalImpactEntry[];
+  /** Soma de tudo o que já foi registrado em `approvalImpact` (para conferir a cobertura). */
+  approvalCum?: number;
+  /** Composição do alvo da aprovação no último mês ("para onde a aprovação está indo"). */
+  approvalTarget?: ApprovalTarget;
+}
+
+export type ApprovalCauseKind =
+  | 'satisfaction'
+  | 'honeymoon'
+  | 'wear'
+  | 'scandal'
+  | 'deficit'
+  | 'record'
+  | 'decision'
+  | 'event'
+  | 'street'
+  | 'congress'
+  | 'works'
+  | 'cabinet'
+  | 'other';
+
+export interface ApprovalImpactEntry {
+  date: IsoDate;
+  kind: ApprovalCauseKind;
+  label: string;
+  /** Pontos de aprovação. */
+  delta: number;
+}
+
+export interface ApprovalTargetPart {
+  label: string;
+  value: number;
+  /** Sub-itens (ex.: a satisfação da população por desemprego, serviços, leis). */
+  parts?: { label: string; value: number }[];
+}
+
+export interface ApprovalTarget {
+  date: IsoDate;
+  target: number;
+  parts: ApprovalTargetPart[];
 }
 
 export interface CabinetCard {

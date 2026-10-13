@@ -85,3 +85,38 @@ describe('Causalidade da intenção de voto', () => {
     expect(why.top.some((l) => l.label.includes(name))).toBe(true);
   });
 });
+
+describe('Causalidade da aprovação', () => {
+  function month(s: GameState): GameState {
+    for (let g = 0; g < 20; g++) {
+      const ev = s.events.pending[0];
+      if (ev) {
+        s = dispatch(s, {
+          type: 'event/resolve',
+          instanceId: ev.instanceId,
+          optionId: ev.options.find((o) => o.available)?.id ?? '',
+        }).state;
+        continue;
+      }
+      if (s.government?.cabinet?.pending) {
+        s = dispatch(s, { type: 'gov/cabinet', cardId: null }).state;
+        continue;
+      }
+      break;
+    }
+    const out = dispatch(s, { type: 'time/advance', step: 'month' });
+    return out.result.ok ? out.state : s;
+  }
+
+  it('toda variação da aprovação tem causa listada (sem ruído sorteado)', () => {
+    let s = startGame({ ...defaultConfig(3, 'prefeito', 'BA'), scenarioId: 'prefeitura_salvador' });
+    const a0 = s.government!.approval;
+    const c0 = s.government!.approvalCum ?? 0;
+    for (let i = 0; i < 14 && s.phase === 'governing'; i++) s = month(s);
+    const gov = s.government!;
+    expect(Math.abs(gov.approval - a0 - ((gov.approvalCum ?? 0) - c0))).toBeLessThan(0.01);
+    expect(gov.approvalTarget?.parts[0]?.label).toBe('Satisfação da população');
+    // A partir do 7º mês o desgaste entra como parcela própria.
+    expect(gov.approvalImpact!.some((e) => e.kind === 'wear')).toBe(true);
+  });
+});

@@ -35,9 +35,9 @@ export function groupApprovalTarget(state: GameState, group: InterestGroup): num
 
 export function updateInterestGroups(state: GameState, rng: Rng): void {
   for (const group of Object.values(state.interestGroups)) {
+    // Sem ruído sorteado: o grupo caminha para o alvo (leis, bandeiras, orçamento, alinhamento).
     group.approval = clamp(
-      approach(group.approval, groupApprovalTarget(state, group), G.approvalAdjustRate) +
-        rng.normal(0, 1),
+      approach(group.approval, groupApprovalTarget(state, group), G.approvalAdjustRate),
       0,
       100,
     );

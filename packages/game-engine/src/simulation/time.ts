@@ -17,6 +17,7 @@ import { computeIntentions, OTHERS_KEY } from '../election/voterModel';
 import { processModifiers, processScheduledEvents, rollEvent } from '../events/events';
 import { cabinetBlockingReason } from '../government/cabinet';
 import { endTerm, governmentMonthlyTick } from '../government/government';
+import { measureApproval } from '../government/approvalLog';
 import { legislatureBlockingReason, processLegislatureDay } from '../legislature/legislature';
 import { handleTermEnd } from '../nation/nation';
 import { campaignAlerts, debateInvitationAlerts, pushAlert } from '../media/alerts';
@@ -331,7 +332,9 @@ function moveGovernmentDay(state: GameState, rng: Rng): Interrupt {
   }
   if (isMonthStart(state.date)) governmentMonthlyTick(state, rng);
   if (!state.government) return 'term_end';
-  processLegislatureDay(state, rng);
+  measureApproval(state, 'congress', { prefix: 'Congresso' }, () =>
+    processLegislatureDay(state, rng),
+  );
   if (!state.government) return 'term_end';
   if (state.date >= gov.endDate && !handleTermEnd(state)) {
     endTerm(state);

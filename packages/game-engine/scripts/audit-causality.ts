@@ -224,51 +224,56 @@ function campaignReport(active: boolean, weekly: boolean): void {
 
 function approvalReport(): void {
   const finals: number[] = [];
-  let explained = 0;
+  let unrecorded = 0;
   let total = 0;
   for (let seed = 1; seed <= SEEDS; seed++) {
     let s = startGame({
       ...defaultConfig(seed, 'prefeito', 'BA'),
       scenarioId: 'prefeitura_salvador',
     });
-    let last = s.government?.approval ?? 0;
+    // Cada passo (decisão ou mês): variação real × o que o registro de causas somou.
+    const step = (next: GameState): GameState => {
+      if (s.government && next.government) {
+        const d = next.government.approval - s.government.approval;
+        const rec = (next.government.approvalCum ?? 0) - (s.government.approvalCum ?? 0);
+        total += Math.abs(d);
+        unrecorded += Math.abs(d - rec);
+      }
+      return next;
+    };
     for (let guard = 0; guard < 3000 && s.phase === 'governing'; guard++) {
       const ev = s.events.pending[0];
       if (ev) {
-        s = act(s, {
-          type: 'event/resolve',
-          instanceId: ev.instanceId,
-          optionId: ev.options.find((o) => o.available)?.id ?? '',
-        });
+        s = step(
+          act(s, {
+            type: 'event/resolve',
+            instanceId: ev.instanceId,
+            optionId: ev.options.find((o) => o.available)?.id ?? '',
+          }),
+        );
         continue;
       }
       const d = pendingDecisions(s).find((x) => x.blocking);
       if (d && 'billId' in d && d.billId) {
-        s = act(s, { type: 'leg/vote', billId: d.billId, vote: 'yes' });
+        s = step(act(s, { type: 'leg/vote', billId: d.billId, vote: 'yes' }));
         continue;
       }
       if (blockingReason(s)) break;
       const out = dispatch(s, { type: 'time/advance', step: 'month' });
       if (!out.result.ok) break;
-      s = out.state;
-      if (s.government) {
-        total += Math.abs(s.government.approval - last);
-        last = s.government.approval;
-      }
+      s = step(out.state);
     }
     finals.push(
       s.career.lastEvaluation?.approval ?? s.government?.approvalHistory.at(-1)?.value ?? NaN,
     );
-    const log = (s.career.lastEvaluation as { approvalLog?: { delta: number }[] } | null)
-      ?.approvalLog;
-    explained += (log ?? []).reduce((a, e) => a + Math.abs(e.delta), 0);
   }
-  console.log(`\n== Aprovação · prefeitura de Salvador · bot passivo · ${SEEDS} mandatos ==`);
+  console.log(`
+== Aprovação · prefeitura de Salvador · bot passivo · ${SEEDS} mandatos ==`);
   console.log(
     `Aprovação final média: ${mean(finals).toFixed(1)} (${finals.map((f) => f.toFixed(0)).join(', ')})`,
   );
   console.log(
-    `|Δ| mensal total ${total.toFixed(1)}; com causa listada: ${total > 0 ? ((Math.min(explained, total) / total) * 100).toFixed(0) : '0'}%`,
+    `|Δ| total ${total.toFixed(1)} pontos; com causa listada: ${total > 0 ? (100 - (unrecorded / total) * 100).toFixed(1) : '0'}%`,
   );
 }
 

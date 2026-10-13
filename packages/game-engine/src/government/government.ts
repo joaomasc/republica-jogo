@@ -23,11 +23,17 @@ import { publishNews } from '../media/news';
 import { driftParties } from '../parties/parties';
 import { driftRelations, initCongress, coalitionSeats } from '../politics/congress';
 import { updateInterestGroups } from '../politics/interestGroups';
-import { updatePopulationMonthly } from '../population/satisfaction';
+import {
+  SATISFACTION_PART_LABEL,
+  satisfactionParts,
+  updatePopulationMonthly,
+  type SatisfactionParts,
+} from '../population/satisfaction';
 import { getPlayer, getPlayerParty, requireElection } from '../simulation/access';
 import type { GameState } from '../simulation/state';
 import { finalizePromises, setPromiseBaselines } from './promises';
-import type { GovernmentState, TermEvaluation } from './types';
+import { measureApproval, recordApproval } from './approvalLog';
+import type { ApprovalCauseKind, GovernmentState, TermEvaluation } from './types';
 
 const G = GameConstants.government;
 
@@ -48,14 +54,80 @@ export function termEndDate(electionYear: number, officeId: keyof typeof OFFICES
   return addDays(firstSundayOfOctober(nextYear), -office.campaignDays);
 }
 
-function governedPopsApproval(state: GameState): number {
+function governedPops(state: GameState) {
   const gov = state.government;
-  if (!gov) return 50;
-  const pops = Object.values(state.population.pops).filter(
-    (p) => gov.jurisdiction.level === 'federal' || p.stateId === gov.jurisdiction.stateId,
+  return Object.values(state.population.pops).filter(
+    (p) => !gov || gov.jurisdiction.level === 'federal' || p.stateId === gov.jurisdiction.stateId,
   );
+}
+
+/**
+ * Satisfação média dos Pops governados (ponderada pelo tamanho) e a composição do alvo para o
+ * qual ela caminha (desemprego, inflação, serviços, leis...).
+ */
+export function governedSatisfaction(state: GameState): {
+  value: number;
+  parts: { label: string; value: number }[];
+} {
+  const pops = governedPops(state);
   const total = sum(pops.map((p) => p.size));
-  return total > 0 ? sum(pops.map((p) => p.satisfaction * p.size)) / total : 50;
+  if (total <= 0) return { value: 50, parts: [] };
+  const acc: Partial<Record<keyof SatisfactionParts, number>> = {};
+  for (const pop of pops) {
+    const parts = satisfactionParts(state, pop);
+    for (const k of Object.keys(parts) as (keyof SatisfactionParts)[])
+      acc[k] = (acc[k] ?? 0) + parts[k] * pop.size;
+  }
+  return {
+    value: sum(pops.map((p) => p.satisfaction * p.size)) / total,
+    parts: (Object.keys(acc) as (keyof SatisfactionParts)[])
+      .filter((k) => k !== 'base')
+      .map((k) => ({ label: SATISFACTION_PART_LABEL[k], value: round((acc[k] ?? 0) / total, 1) }))
+      .filter((x) => Math.abs(x.value) >= 0.1),
+  };
+}
+
+interface TrendPart {
+  kind: ApprovalCauseKind;
+  label: string;
+  value: number;
+  sub?: { label: string; value: number }[];
+}
+
+/**
+ * Aplica a tendência mensal (30% da distância até o alvo) e registra o passo parcela por
+ * parcela: cada parcela puxa 30% do próprio valor; o "− 30% da aprovação atual" fica junto da
+ * primeira (satisfação), que é a convergência até ela.
+ */
+function applyApprovalTrend(state: GameState, parts: TrendPart[]): void {
+  const gov = state.government;
+  if (!gov) return;
+  const previous = gov.approval;
+  const target = parts.reduce((a, x) => a + x.value, 0);
+  const next = clamp100(approach(previous, target, G.approvalAdjustRate));
+  gov.approval = next;
+  gov.approvalTarget = {
+    date: state.date,
+    target: round(target, 1),
+    parts: parts
+      .filter((x, i) => i === 0 || Math.abs(x.value) >= 0.05)
+      .map((x) => ({
+        label: x.label,
+        value: round(x.value, 1),
+        ...(x.sub ? { parts: x.sub } : {}),
+      })),
+  };
+  const raw = G.approvalAdjustRate * (target - previous);
+  // Se o limite 0–100 cortou o passo, as parcelas encolhem na mesma proporção.
+  const scale = Math.abs(raw) > 1e-9 ? (next - previous) / raw : 0;
+  parts.forEach((x, i) => {
+    const pull = G.approvalAdjustRate * (x.value - (i === 0 ? previous : 0)) * scale;
+    const label =
+      i === 0
+        ? `${x.label} (${Math.round(x.value)}) puxa a aprovação (${Math.round(previous)})`
+        : x.label;
+    recordApproval(state, x.kind, label, pull);
+  });
 }
 
 /** Posse: cria o estado de governo/mandato a partir da eleição vencida. */
@@ -179,7 +251,10 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
   gov.monthsInOffice += 1;
 
   const revenueBefore = state.economy.revenue;
-  updateEconomy(state, rng);
+  // Obras inauguradas e efeitos da economia do mês (medidos: a manchete vira a causa).
+  measureApproval(state, 'works', { prefix: 'Obras e economia do mês' }, () =>
+    updateEconomy(state, rng),
+  );
   if (gov.budget) {
     const law = aggregateLawEffects(state, 'any');
     // A receita acompanha a arrecadação do país (bases tributárias e leis de impostos).
@@ -207,31 +282,43 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
       G.wearMax,
     );
   }
-  let target: number;
+  // Tendência: a aprovação anda 30% da distância até o alvo a cada mês. O alvo é uma soma de
+  // parcelas nomeadas, e a tendência é registrada parcela por parcela (sem ruído sorteado).
+  const previous = gov.approval;
+  const sat = governedSatisfaction(state);
+  const parts: TrendPart[] = [];
   if (gov.branch === 'executive') {
     const deficitPenalty =
       gov.budget && gov.budget.balance < 0
         ? Math.min(8, (-gov.budget.balance / Math.max(1, gov.budget.revenueTaxes)) * 40)
         : 0;
-    target =
-      governedPopsApproval(state) +
-      honeymoon -
-      player.scandal * 0.25 -
-      deficitPenalty -
-      (gov.wear ?? 0);
+    parts.push(
+      { kind: 'satisfaction', label: 'Satisfação da população', value: sat.value, sub: sat.parts },
+      { kind: 'honeymoon', label: 'Lua de mel do início do mandato', value: honeymoon },
+      { kind: 'scandal', label: 'Escândalos', value: -player.scandal * 0.25 },
+      { kind: 'deficit', label: 'Orçamento no vermelho', value: -deficitPenalty },
+      { kind: 'wear', label: 'Desgaste de governar', value: -(gov.wear ?? 0) },
+    );
   } else {
-    target =
-      40 +
-      governedPopsApproval(state) * 0.2 +
-      (player.fame - 40) / 5 +
-      gov.billsPassed * 2 +
-      honeymoon -
-      player.scandal * 0.25;
+    parts.push(
+      { kind: 'satisfaction', label: 'Patamar de um parlamentar', value: 40 },
+      {
+        kind: 'satisfaction',
+        label: 'Satisfação da população (20%)',
+        value: sat.value * 0.2,
+        sub: sat.parts.map((x) => ({ label: x.label, value: round(x.value * 0.2, 1) })),
+      },
+      { kind: 'record', label: 'Visibilidade (fama)', value: (player.fame - 40) / 5 },
+      {
+        kind: 'record',
+        label: `Projetos seus aprovados (${gov.billsPassed})`,
+        value: gov.billsPassed * 2,
+      },
+      { kind: 'honeymoon', label: 'Início do mandato', value: honeymoon },
+      { kind: 'scandal', label: 'Escândalos', value: -player.scandal * 0.25 },
+    );
   }
-  const previous = gov.approval;
-  gov.approval = clamp100(
-    approach(gov.approval, target, G.approvalAdjustRate) + rng.normal(0, 0.8),
-  );
+  applyApprovalTrend(state, parts);
   gov.approvalHistory.push({ date: state.date, value: round(gov.approval, 1) });
   if (gov.approvalHistory.length > 120) gov.approvalHistory.shift();
   player.attributes.popularity = clamp100(
@@ -247,13 +334,22 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
     0,
     G.politicalCapitalMax,
   );
-  updateInterestGroups(state, rng);
+  measureApproval(state, 'other', { prefix: 'Grupos de interesse' }, () =>
+    updateInterestGroups(state, rng),
+  );
   if (state.nation.strikes.some((x) => x.groupId === 'civil_servants')) gov.hadServantsStrike = true;
-  processMinisters(state, rng);
-  processLawsMonthly(state, rng);
-  processLegislatureMonth(state, rng);
-  nationalMonthlyTick(state, rng);
-  if (state.government) processStreetMonth(state);
+  measureApproval(state, 'cabinet', { prefix: 'Ministros' }, () => processMinisters(state, rng));
+  measureApproval(state, 'congress', { prefix: 'Leis em vigor' }, () =>
+    processLawsMonthly(state, rng),
+  );
+  measureApproval(state, 'congress', { prefix: 'Congresso' }, () =>
+    processLegislatureMonth(state, rng),
+  );
+  measureApproval(state, 'street', { prefix: 'Greves e instituições' }, () =>
+    nationalMonthlyTick(state, rng),
+  );
+  if (state.government)
+    measureApproval(state, 'street', { prefix: 'Ruas' }, () => processStreetMonth(state));
   driftRelations(state);
   driftParties(state.parties, rng, 30);
   player.scandal = clamp(player.scandal * 0.93, 0, 100);
@@ -291,12 +387,14 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
       link: 'party',
     });
   }
-  rollEvent(
-    state,
-    gov.branch === 'executive'
-      ? GameConstants.events.monthlyChanceGovernment
-      : GameConstants.events.monthlyChanceLegislature,
-  );
+  measureApproval(state, 'event', { prefix: 'Evento' }, () => {
+    rollEvent(
+      state,
+      gov.branch === 'executive'
+        ? GameConstants.events.monthlyChanceGovernment
+        : GameConstants.events.monthlyChanceLegislature,
+    );
+  });
   startCabinet(state, rng);
 }
 

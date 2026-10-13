@@ -13,6 +13,8 @@ import { offerRunoffDeal } from '../election/runoff';
 import { chooseRunningMate } from '../campaign/runningMate';
 import type { RunoffOffer } from '../election/types';
 import { describeImpact, ImpactMeter } from '../campaign/impact';
+import { measureApproval } from '../government/approvalLog';
+import type { ApprovalCauseKind } from '../government/types';
 import type { AgendaConfig, ImpactSource } from '../campaign/types';
 import { getCampaignAction } from '../campaign/actions.data';
 import { runInternalPoll } from '../campaign/research';
@@ -382,6 +384,37 @@ function impactTarget(
   }
 }
 
+/** Decisões do jogador no mandato que podem mexer na aprovação: tipo de causa e rótulo. */
+function approvalTargetOf(
+  state: GameState,
+  action: GameAction,
+): { kind: ApprovalCauseKind; label: string | { prefix: string } } | null {
+  if (!state.government || action.type === 'time/advance') return null;
+  switch (action.type) {
+    case 'event/resolve': {
+      const p = state.events.pending.find((x) => x.instanceId === action.instanceId);
+      const option = p?.options.find((o) => o.id === action.optionId);
+      return p ? { kind: 'event', label: `${p.title}${option ? ` → ${option.label}` : ''}` } : null;
+    }
+    case 'gov/cabinet': {
+      const card = state.government.cabinet?.cards.find((c) => c.id === action.cardId);
+      return { kind: 'cabinet', label: card ? `Gabinete: ${card.title}` : 'Gabinete' };
+    }
+    case 'works/start':
+    case 'works/cancel':
+      return { kind: 'works', label: { prefix: 'Obras' } };
+    case 'street/respond':
+      return { kind: 'street', label: { prefix: 'Resposta às ruas' } };
+    case 'exec/decree':
+    case 'exec/revoke':
+      return { kind: 'decision', label: { prefix: 'Decreto' } };
+    default:
+      return action.type.startsWith('leg/') || action.type.startsWith('gov/')
+        ? { kind: 'congress', label: { prefix: 'Sua articulação' } }
+        : { kind: 'decision', label: { prefix: 'Sua decisão' } };
+  }
+}
+
 /**
  * Ponto único de entrada do motor. Função pura: recebe um estado e uma ação,
  * devolve um NOVO estado (o original nunca é alterado) e o resultado da ação.
@@ -391,7 +424,13 @@ export function dispatch(state: GameState, action: GameAction): EngineOutput<Gam
   const draft = deepClone(state);
   const target = impactTarget(draft, action);
   const meter = target ? new ImpactMeter(draft) : null;
-  const result = apply(draft, action);
+  const approval = approvalTargetOf(draft, action);
+  let result: ActionResult = { ok: false, message: '' };
+  if (approval)
+    measureApproval(draft, approval.kind, approval.label, () => {
+      result = apply(draft, action);
+    });
+  else result = apply(draft, action);
   if (!result.ok) return { state, result };
   if (target && meter?.active) {
     const delta = meter.settle(target.source, target.label, target.key);

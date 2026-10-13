@@ -155,6 +155,7 @@ export { groupApprovalTarget } from './politics/interestGroups';
 export { coalitionSeats } from './politics/congress';
 export { PORTFOLIOS, availablePortfolios } from './politics/negotiation';
 export * from './government/types';
+export { APPROVAL_CAUSE_LABEL, explainApproval, type ApprovalExplanation } from './government/approvalLog';
 export { evaluatePromise, promiseStatusLabel } from './government/promises';
 export * from './career/types';
 export { careerOptions, nextAvailableElection, type CareerOption } from './career/career';

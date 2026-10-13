@@ -25,22 +25,39 @@ function lawsApplyTo(state: GameState, pop: Pop): boolean {
   return key === 'federal' || key.endsWith(`:${pop.stateId}`);
 }
 
+/** Parcelas do alvo de satisfação de um Pop (somadas, antes do limite 0–100). */
+export interface SatisfactionParts {
+  base: number;
+  unemployment: number;
+  inflation: number;
+  growth: number;
+  services: number;
+  laws: number;
+  standardOfLiving: number;
+  mood: number;
+}
+
+export const SATISFACTION_PART_LABEL: Record<keyof SatisfactionParts, string> = {
+  base: 'Patamar',
+  unemployment: 'Desemprego',
+  inflation: 'Inflação',
+  growth: 'Crescimento',
+  services: 'Serviços públicos',
+  laws: 'Leis vigentes',
+  standardOfLiving: 'Padrão de vida',
+  mood: 'Humor (notícias recentes)',
+};
+
 /**
- * Alvo de satisfação de um Pop: economia (desemprego, inflação, crescimento), serviços públicos
- * (orçamento × prioridades) e leis vigentes (efeitos diretos + alinhamento ideológico).
+ * Alvo de satisfação de um Pop, em parcelas: economia (desemprego, inflação, crescimento),
+ * serviços públicos (orçamento × prioridades), leis vigentes (efeitos diretos + alinhamento
+ * ideológico), padrão de vida e humor.
  */
-export function satisfactionTarget(state: GameState, pop: Pop): number {
+export function satisfactionParts(state: GameState, pop: Pop): SatisfactionParts {
   const e = state.economy;
   const region = state.regions[pop.stateId];
   const unemployment = region?.unemployment ?? e.unemployment;
-  let target =
-    P.baseSatisfaction -
-    (unemployment - P.satisfactionReferenceUnemployment) *
-      P.satisfactionUnemploymentFactor *
-      (pop.priorities.jobs / 80) -
-    (e.inflation - 4) * G.inflationApprovalFactor * (pop.priorities.inflation / 70) +
-    (e.growth - 2) * G.incomeApprovalFactor;
-
+  let services = 0;
   if (governsPop(state, pop)) {
     let num = 0;
     let den = 0;
@@ -49,16 +66,34 @@ export function satisfactionTarget(state: GameState, pop: Pop): number {
       num += weight * (serviceQuality(state, c) - 1);
       den += weight;
     }
-    if (den > 0) target += (num / den) * GameConstants.budget.satisfactionPerQuality;
+    if (den > 0) services = (num / den) * GameConstants.budget.satisfactionPerQuality;
   }
-
   // Leis federais valem para todos; as da esfera subnacional do jogador, só para os Pops dela.
-  target += lawSatisfaction(state, pop, 'national');
+  let laws = lawSatisfaction(state, pop, 'national');
   if (state.laws.jurisdictionKey !== 'federal' && lawsApplyTo(state, pop))
-    target += lawSatisfaction(state, pop, 'local');
-  // Padrão de vida (renda real e escassez, calculado pela economia industrial).
-  if (pop.sol !== undefined) target += (pop.sol - 50) * P.solSatisfactionFactor;
-  return clamp100(target + pop.mood * 10);
+    laws += lawSatisfaction(state, pop, 'local');
+  return {
+    base: P.baseSatisfaction,
+    unemployment:
+      -(unemployment - P.satisfactionReferenceUnemployment) *
+      P.satisfactionUnemploymentFactor *
+      (pop.priorities.jobs / 80),
+    inflation: -(e.inflation - 4) * G.inflationApprovalFactor * (pop.priorities.inflation / 70),
+    growth: (e.growth - 2) * G.incomeApprovalFactor,
+    services,
+    laws,
+    // Padrão de vida (renda real e escassez, calculado pela economia industrial).
+    standardOfLiving: pop.sol !== undefined ? (pop.sol - 50) * P.solSatisfactionFactor : 0,
+    mood: pop.mood * 10,
+  };
+}
+
+/** Alvo de satisfação de um Pop (soma das parcelas, limitada a 0–100). */
+export function satisfactionTarget(state: GameState, pop: Pop): number {
+  const p = satisfactionParts(state, pop);
+  return clamp100(
+    p.base + p.unemployment + p.inflation + p.growth + p.services + p.laws + p.standardOfLiving + p.mood,
+  );
 }
 
 /** Efeito das leis vigentes de uma esfera na satisfação de um Pop. */
