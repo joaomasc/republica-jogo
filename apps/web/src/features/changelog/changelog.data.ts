@@ -15,6 +15,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.0',
+    date: '2026-10-13',
+    title: 'Atlas: o mapa no centro do jogo',
+    summary:
+      'Um mapa novo, cartográfico e vivo, que conversa com cada painel: o que você decide aparece no Brasil, estado por estado.',
+    items: [
+      'Mapa redesenhado: o Brasil dentro da América do Sul, com países vizinhos, rios, represas, Equador, Trópico, capitais, escala em km e rosa dos ventos — tudo offline.',
+      'Cores que mostram diferença: a escala vai do menor ao maior estado, com os valores reais nas pontas da legenda e um traço por estado.',
+      'Novos modos de mapa: governos estaduais (partido de cada governador) e ideologia do eleitorado (escolha o eixo).',
+      'Legenda sempre à vista no canto direito, com números sobre o mapa, marcadores e ranking clicável dos 27 estados.',
+      'O mapa acompanha o painel: Economia mostra desemprego, Pesquisas a intenção de voto, Leis a ideologia no eixo da área da lei, Congresso a força de um partido.',
+      'Painéis usam o mapa: no Mercado, veja onde cada bem é produzido; na Indústria, os polos de cada edifício e o estado onde construir; na Propaganda, clique nos estados do anúncio.',
+      'Marcadores reais: agenda fixa, propaganda regional no ar, suas obras e canteiros industriais.',
+      'Estados que mudaram de verdade no mês piscam em verde ou vermelho.',
+      'Câmera nova: zoom no cursor, arrasto suave, voo até o estado aberto, e o Brasil desliza para fora do painel aberto.',
+      'Painel do estado com "Neste mapa": valor no modo ativo e posição entre os 27.',
+      'Apuração ao vivo: na eleição, os estados ganham a cor do vencedor conforme a contagem fecha.',
+      'Jogo mais leve para abrir: cada tela carrega sob demanda (carga inicial 30% menor).',
+      'Manual: nova seção "O mapa".',
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-10-12',
     title: 'Causalidade: todo número com motivo',

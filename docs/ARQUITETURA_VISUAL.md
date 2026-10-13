@@ -1,8 +1,8 @@
 # República — Arquitetura visual (Atlas)
 
 Documento de decisão da evolução visual e de interação do República. Complementa
-`DESIGN_NACAO.md` (contratos do motor). Escrito em 13/10/2026, antes da implementação; as seções
-"Estado" ao final registram o que já foi entregue.
+`DESIGN_NACAO.md` (contratos do motor). Escrito em 13/10/2026, antes da implementação; a seção
+"Estado" (§8) registra o que foi entregue e o que foi medido.
 
 ---
 
@@ -112,7 +112,8 @@ packages/ui/src/atlas           (sem dependência do estado do jogo: recebe geom
 apps/web/src/features/map
   MapStage.tsx                  orquestra: store → seletor do motor → escalas → Atlas; área segura
   mapModes.ts                   registro de modos + modo sugerido por painel
-  MapLegend.tsx                 cartela: escala com extremos reais, faixa de distribuição, ranking
+  MapLegend.tsx                 legenda no HUD: escala com extremos reais, faixa por UF, ranking
+  useMapLink.ts                 useMapFocus / useMapPick / useMapAxis (painel → mapa)
   mapMarkers.ts                 marcadores reais por UF (obras públicas, canteiros industriais, sua base)
   useChangePulse.ts             compara a camada do mês anterior → pulsos nas UFs que mudaram
 ```
@@ -155,7 +156,7 @@ MapStage ─ useMemo(game, modo/foco) ─► engine.mapLayer | goodLayer | build
 ```
 
 - Painéis **não falam com o Atlas**. Eles declaram intenção no `uiStore` (`useMapFocus({ kind: 'good',
-  id: 'steel' })` ao montar, limpa ao desmontar). O `MapStage` resolve a intenção num seletor do motor a
+  id: 'steel' })` ao montar, limpa ao desmontar; `useMapPick` quando o mapa vira seletor). O `MapStage` resolve a intenção num seletor do motor a
   cada estado novo; nada derivado do jogo fica guardado na store.
 - O motor continua sem React: só ganha seletores puros, cobertos por testes.
 
@@ -208,7 +209,11 @@ O jogador pode desligar o vínculo ("Mapa acompanha os painéis") e fixar um mod
 | Saves antigos | Nenhuma mudança no formato do save: tudo novo é seletor ou estado de interface. |
 
 Custo de migração: concentrado em `packages/ui/src/atlas` e `apps/web/src/features/map`. Os painéis
-recebem só uma linha (`useMapFocus`/modo sugerido) e, onde há escolha de bem/edifício, a chamada de foco.
+recebem uma ou duas linhas (`useMapFocus`, `useMapPick`, `useMapAxis`).
+
+**Mudança em relação ao plano:** a legenda foi desenhada no canto do mapa, mas quase todos os
+painéis são largos e ela sumia justamente quando o mapa conversa com o painel. Ela foi para o bloco
+HUD da direita (acima do tempo), sempre visível.
 
 ## 7. Etapas (cada uma verificável e num commit próprio)
 
@@ -223,4 +228,40 @@ recebem só uma linha (`useMapFocus`/modo sugerido) e, onde há escolha de bem/e
 
 ## 8. Estado
 
-_(atualizado a cada etapa entregue)_
+Entregue em 13/10/2026 (v0.9.0, branch `atlas`, um commit por etapa):
+
+| Etapa | Entregue |
+| --- | --- |
+| 1. Motor | Modos `governors` e `ideology`, `MapCell.short` (pt-BR), camadas de foco `goodLayer`/`buildingLayer`, `lawCategoryAxis` derivado dos vetores das opções. |
+| 2. Dados | Natural Earth 1:50m recortado: 13 países, 47 rios, 14 lagos/represas, 53 KB gerados. |
+| 3. Atlas | Câmera pura, escalas OKLab esticadas ao domínio real, SVG em camadas, rótulos/marcadores em pixels de tela com nível de detalhe, barra de escala. |
+| 4. Fatia vertical | `MapStage` com área livre e voo até o estado, legenda no HUD (escala real, faixa por UF, ranking, números, marcadores), pulsos de mudança, "Neste mapa" no painel da região. |
+| 5. Integração | `useMapFocus` (Mercado → produção do bem; Indústria → polos do edifício) e `useMapPick` (Indústria → onde construir; Propaganda → regiões do anúncio). |
+| 6. Desempenho | Rotas preguiçosas + pré-carregamento ocioso em produção; camadas memoizadas; `npm run test:perf`. |
+| 7. Telas | Eleição (Atlas + apuração por estado), Leis (eixo da categoria), Congresso (partido no mapa), Campanha (marcadores de agenda e propaganda), menu (Atlas decorativo). `BrazilMap` removido. |
+
+### Medições (Chrome, 1600×960, `npm run test:perf`, máquina de desenvolvimento)
+
+| Gesto | Mediana do quadro | p95 |
+| --- | --- | --- |
+| Zoom pela roda (números e marcadores ligados) | 13,4 ms (≈75 fps, teto do headless) | 40 ms |
+| Arrasto | 13,4 ms | 26,7 ms |
+| Voo "Enquadrar" | 13,4 ms | 40 ms |
+| Voo até um estado + montagem do painel da região | 26,6 ms | 67 ms (picos = render do painel) |
+
+A hipótese da seção 2.1 se confirmou: com a câmera fora do React e filtros desligados no gesto,
+o SVG sustenta a taxa de quadros máxima para 27 UFs + contexto. PixiJS continua desnecessário.
+
+Bundle (`vite build`): antes, um chunk de 2,5 MB (763 KB gzip). Depois, carga inicial ≈ 1,69 MB
+(≈ 535 KB gzip: casca 348 KB + motor 1,34 MB), gráficos (381 KB) e ~50 telas sob demanda.
+
+### Próximos passos
+
+- **Motor em pedaços:** o maior bloco da carga inicial é o motor (textos de eventos, perguntas).
+  Carregar os pacotes de eventos sob demanda exige `import()` dinâmico dentro do motor.
+- **Zonas no Atlas:** o `ZoneMap` (eleições de prefeito/governador) ainda é o renderizador antigo;
+  migrar para o Atlas dá a ele câmera, legenda e marcadores.
+- **Por que mudou, no mapa:** os pulsos dizem *que* um estado mudou; a dica poderia dizer *por quê*
+  (as causas já existem no motor para intenção de voto e aprovação).
+- **Painéis largos:** com painel largo a faixa do mapa fica estreita; um botão "recolher painel"
+  (painel vira barra lateral) deixaria o mapa inteiro visível sem fechar a tela.

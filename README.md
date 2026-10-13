@@ -82,6 +82,7 @@ A IA generativa e os saves na nuvem precisam do servidor (`apps/server`), que n�
 npm test                         # Vitest: motor (eleição, população, campanha, dinheiro, eventos, leis, economia, save) + API
 npm run test:e2e                 # Playwright: criar candidato → campanha → eleição → resultado → salvar → carregar
 PW_CHANNEL=chrome npm run test:e2e   # usa o Chrome instalado (se `npx playwright install chromium` não for possível)
+npm run test:perf                # tempo de quadro do mapa (zoom, arrasto, voo) e abertura de painéis, isolado
 npm run typecheck && npm run lint
 npm run check                    # typecheck + lint + testes + build
 npm run simulate -- presidente SP 10   # ferramenta de balanceamento: bots jogam N campanhas
@@ -115,6 +116,15 @@ O desenho completo (ids, unidades, fórmulas) está em [docs/DESIGN_NACAO.md](do
 - **Nação** (`src/nation/`): legitimidade, regime e identidade do país, peso político dos grupos de interesse, radicalismo e greves, objetivos de cenário.
 - **Interface**: telas Economia, Mercado nacional, Indústria e obras, Comércio exterior, Leis, Congresso (proposições, plenário, bancadas, mesa e impeachment), Decretos, Nação e a seção econômica no painel de cada estado. O Centro de Decisões abre as votações obrigatórias.
 - **Balanceamento**: `npx tsx packages/game-engine/scripts/governance-sim.ts` simula quatro anos sob seis pacotes de leis (padrão, liberal, desenvolvimentista, social-democrata, socialista e planificado) e imprime crescimento, inflação, industrialização, comércio, peso dos grupos e satisfação dos Pops.
+
+## Atlas: o mapa no centro do jogo
+
+O mapa ([docs/ARQUITETURA_VISUAL.md](docs/ARQUITETURA_VISUAL.md)) é um renderizador próprio em SVG (`packages/ui/src/atlas`), sem dependências novas:
+
+- **Carta em camadas:** o Brasil dentro da América do Sul (países vizinhos, rios, represas, graticulado, Equador e Trópico — Natural Earth 1:50m, gerado por `npm run generate:context-map`), capitais, barra de escala em km e rótulos com nível de detalhe por zoom.
+- **Câmera fora do React:** zoom no cursor, arrasto e voos escrevem o `transform` direto no SVG; o mapa desliza para a área livre quando um painel abre e voa até o estado aberto.
+- **Leitura honesta:** escala esticada do menor ao maior estado, com os valores reais nas pontas da legenda; "sem dados" é hachurado, nunca uma cor da escala.
+- **Mapa e painéis conversam** pelo `uiStore`: o painel sugere o modo (Economia → desemprego), pede um recorte (`useMapFocus`: produção de um bem, polos de um edifício) ou usa o mapa como seletor (`useMapPick`: onde construir, regiões da propaganda). O motor resolve tudo em seletores puros (`mapLayer`, `goodLayer`, `buildingLayer`, `lawCategoryAxis`).
 
 ## Dinamismo: eventos, gabinete, rivais e carreira
 
@@ -170,14 +180,16 @@ packages/
     src/ai/               Interface AIProvider + provedor procedural
     tests/                Testes Vitest
     scripts/              Bots e simulação em lote (balanceamento)
-  ui/                     Componentes visuais: avatar SVG, mapa do Brasil e de zonas, painéis, barras
+  ui/                     Componentes visuais: Atlas (mapa do Brasil), mapa de zonas, avatar SVG, painéis, barras
   shared/                 Rotas e DTOs da API
-data/geo/                 Malhas das UFs e das cidades jogáveis (IBGE), fonte dos mapas
+data/geo/                 Malhas das UFs e das cidades jogáveis (IBGE) e recorte sul-americano (Natural Earth)
 data/cidades-ibge.json    Cidades jogáveis: código IBGE, população (Censo 2022), nível REGIC
 scripts/fetch-cities.mjs  Baixa do IBGE os dados e contornos das cidades (npm run fetch:cities)
 scripts/generate-map.mjs  Converte as malhas em paths SVG e gera o cadastro de cidades do motor
+scripts/generate-context-map.mjs  Países vizinhos, rios e lagos na projeção do mapa (npm run generate:context-map)
 e2e/                      Testes Playwright
 docs/GAME_DESIGN.md       Mecânicas e fórmulas
+docs/ARQUITETURA_VISUAL.md  Atlas: auditoria, decisões (PixiJS/D3), arquitetura, medições
 docs/ROADMAP_DINAMISMO.md Diagnóstico e blocos de melhoria (eventos, tensão, mundo vivo, modos)
 docs/BANCO_DE_CONTEUDO.md 2.805 ideias de conteúdo: cenários, arcos, eventos, cartas, perguntas
 ```
