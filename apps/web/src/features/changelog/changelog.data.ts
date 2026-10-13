@@ -18,6 +18,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.8.0',
     date: '2026-10-12',
     title: 'Causalidade: todo número com motivo',
+    commit: '6c36a7e',
     summary:
       'Nada mais muda "por acaso": intenção de voto, aprovação e eventos dizem por que mudaram, e a entressafra virou uma pré-campanha de verdade.',
     items: [
