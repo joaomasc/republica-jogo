@@ -118,6 +118,21 @@ function recentRepeats(state: GameState, actionId: string): number {
 }
 
 /** Executa uma ação de campanha no rascunho do estado. */
+/**
+ * Risco real de gafe da ação (o mostrado ao jogador): risco base × equipe (assessoria reduz) ×
+ * experiência (quem tem estrada erra menos) × dificuldade.
+ */
+export function actionGaffeRisk(state: GameState, def: CampaignActionDefinition): number {
+  const campaign = state.campaign;
+  const player = getPlayer(state);
+  return (
+    def.risk *
+    (1 - Math.min(0.8, campaign ? staffBonus(campaign.staff, 'gaffeRisk') : 0)) *
+    (1.3 - player.attributes.experience / 100) *
+    getDifficulty(state).negativeEventBias
+  );
+}
+
 export function performCampaignAction(state: GameState, input: CampaignActionInput): ActionOutcome {
   const error = canPerformAction(state, input);
   if (error) return { result: { ok: false, message: error }, days: 0 };
@@ -221,14 +236,7 @@ export function performCampaignAction(state: GameState, input: CampaignActionInp
   }
 
   // Risco: gafes e repercussões negativas.
-  const gaffe = withRng(state, (rng) => {
-    const risk =
-      def.risk *
-      (1 - Math.min(0.8, staffBonus(campaign.staff, 'gaffeRisk'))) *
-      (1.3 - player.attributes.experience / 100) *
-      getDifficulty(state).negativeEventBias;
-    return rng.chance(risk);
-  });
+  const gaffe = withRng(state, (rng) => rng.chance(actionGaffeRisk(state, def)));
   let message = `${def.name} realizado(a).`;
   if (gaffe) {
     status.rejectionMod += C.gaffeRejection;

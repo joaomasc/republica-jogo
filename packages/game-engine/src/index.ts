@@ -89,7 +89,12 @@ export { dhondt } from './election/proportional';
 // Campanha
 export * from './campaign/types';
 export * from './campaign/actions.data';
-export { actionCost, canPerformAction, type CampaignActionInput } from './campaign/actions';
+export {
+  actionCost,
+  actionGaffeRisk,
+  canPerformAction,
+  type CampaignActionInput,
+} from './campaign/actions';
 export { AD_TONES, estimateAdCost, type AdCampaignInput } from './campaign/ads';
 export {
   STAFF_LEVELS,

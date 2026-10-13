@@ -1,4 +1,5 @@
 import {
+  actionGaffeRisk,
   actionCost,
   CAMPAIGN_ACTIONS,
   canStartInterview,
@@ -108,7 +109,11 @@ function ActionDialog({
           </Badge>
           <Badge tone="info">Energia {action.energy}</Badge>
           <Badge>{action.days === 0 ? 'Rápida' : `${action.days} dia(s)`}</Badge>
-          {action.risk > 0 && <Badge tone="warn">Risco {Math.round(action.risk * 100)}%</Badge>}
+          {action.risk > 0 && (
+            <Badge tone="warn">
+              Risco de gafe {Math.round(actionGaffeRisk(game, action) * 100)}%
+            </Badge>
+          )}
           <Badge>Público: {action.audience}</Badge>
         </div>
         {needsUnit && (
@@ -288,7 +293,11 @@ export function CampaignView() {
                           <Badge tone="gold">{a.cost > 0 ? formatMoney(cost) : 'grátis'}</Badge>
                           <Badge tone="info">⚡{a.energy}</Badge>
                           <Badge>{a.days === 0 ? 'rápida' : `${a.days}d`}</Badge>
-                          {a.risk >= 0.05 && <Badge tone="warn">risco</Badge>}
+                          {a.risk >= 0.05 && (
+                            <Badge tone="warn">
+                              risco {Math.round(actionGaffeRisk(game, a) * 100)}%
+                            </Badge>
+                          )}
                         </div>
                       </button>
                     );
