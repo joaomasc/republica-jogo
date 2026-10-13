@@ -136,7 +136,7 @@ function publishPublicPoll(state: GameState): void {
     kind: 'new_poll',
     severity: 'info',
     title: 'Uma nova pesquisa foi publicada',
-    message: `${poll.pollster}: você tem ${Math.round(mine * 100)}% (margem ±${(poll.marginOfError * 100).toFixed(1)} p.p.).`,
+    message: `${poll.pollster}: você tem ${Math.round(mine * 100)}% (margem ±${(poll.marginOfError * 100).toFixed(1).replace('.', ',')} p.p.).`,
     link: 'polls',
   });
 

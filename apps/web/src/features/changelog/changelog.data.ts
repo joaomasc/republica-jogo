@@ -15,9 +15,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.0',
+    date: '2026-10-12',
+    title: 'Causalidade: todo número com motivo',
+    summary:
+      'Nada mais muda "por acaso": intenção de voto, aprovação e eventos dizem por que mudaram, e a entressafra virou uma pré-campanha de verdade.',
+    items: [
+      '"Por que mudou?" na barra superior, nas pesquisas e na disputa: as 3 principais causas da semana, com o nome de quem fez o quê.',
+      'Pesquisas honestas: a margem inclui o viés de cada instituto, e a tela separa o que a pesquisa mostra do que mudou de fato.',
+      'Adversários sem sorte: cada rival faz campanha conforme orçamento, habilidade e estilo; ataques vêm com motivo.',
+      'O início da semana (pauta nova, temas que esfriam, rivais aderindo) deixou de mexer nos votos às escondidas.',
+      'Aprovação sem ruído: o Gabinete mostra para onde ela está indo (satisfação, lua de mel, desgaste, escândalos, déficit) e o que a moveu no mês.',
+      'Eventos com gatilho: saúde, segurança, economia, clima e outros temas mudam a chance de cada evento; todo evento diz "por que agora?" ou se é um imprevisto.',
+      'Consequências chegam: continuações de eventos no mandato (como "propina exposta") antes nunca disparavam.',
+      'Pré-campanha: escolha a próxima eleição e avance de marco em marco (janela partidária, convenções...), com uma preparação por bloco e resumo do que mudou.',
+      'Base eleitoral, caixa da pré-campanha, alianças, fama, credibilidade e reputação entram na campanha seguinte, com prévia "se a campanha começasse hoje".',
+      'Ocupações com efeito real (consultor junta caixa, ONG faz base, cargo internacional afasta da base) e saldo de fama já descontado.',
+      'Popularidade dos partidos responde a quem governa e às eleições, não a sorteio.',
+      'Risco de gafe mostrado é o risco real da ação.',
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-10-12',
     title: 'Dinamismo: mil eventos, gabinete, rivais e carreira',
+    commit: '8bd3dd2',
     summary:
       'O maior pacote até aqui: o jogo ganhou ritmo no governo, memória entre eleições e vida entre um mandato e outro.',
     items: [

@@ -8,7 +8,7 @@ import {
 } from '@republica/game-engine';
 import { cn, Icon, Panel } from '@republica/ui';
 import { Link } from 'react-router';
-import { pct, pp } from '../../lib/format';
+import { num, pct, pp } from '../../lib/format';
 
 const GROUP_COLOR: Record<CauseGroup, string> = {
   mine: '#f2b51e',
@@ -64,7 +64,7 @@ function PollVsReal({ why, compact }: { why: IntentionExplanation; compact?: boo
           Pesquisa {latest.pollster} ({shortDate(latest.date)})
         </span>
         <span className="font-semibold tabular-nums">
-          {pct(latest.share)} ±{(latest.margin * 100).toFixed(1)}
+          {pct(latest.share)} ±{num(latest.margin * 100)}
         </span>
       </div>
       {previous && poll.shown !== null && (
@@ -92,12 +92,8 @@ function PollVsReal({ why, compact }: { why: IntentionExplanation; compact?: boo
         </>
       )}
       <div className="text-[10.5px] text-muted">
-        Margem ±{(latest.margin * 100).toFixed(1)} p.p.: amostra ±
-        {(latest.samplingMargin * 100).toFixed(1)}
-        {latest.houseMargin > 0
-          ? ` e viés de instituto ±${(latest.houseMargin * 100).toFixed(1)}`
-          : ''}
-        .
+        Margem ±{num(latest.margin * 100)} p.p.: amostra ±{num(latest.samplingMargin * 100)}
+        {latest.houseMargin > 0 ? ` e viés de instituto ±${num(latest.houseMargin * 100)}` : ''}.
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import { Badge, Button, EmptyState, Panel, Segmented, StatTile } from '@republic
 import { useMemo, useState } from 'react';
 import { candidateColor } from '../../lib/candidates';
 import { HBar, LineChartBox } from '../../components/charts';
-import { pct } from '../../lib/format';
+import { num, pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 import { WhyIntentionPanel } from '../impact/WhyChanged';
 
@@ -142,10 +142,10 @@ export function PollsView() {
         <StatTile
           label="Margem de erro"
           icon="scale"
-          value={`±${(poll.marginOfError * 100).toFixed(1)} p.p.`}
+          value={`±${num(poll.marginOfError * 100)} p.p.`}
           sub={
             poll.houseMargin
-              ? `amostra ±${((poll.samplingMargin ?? 0) * 100).toFixed(1)} + instituto ±${(poll.houseMargin * 100).toFixed(1)} · ${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`
+              ? `amostra ±${num((poll.samplingMargin ?? 0) * 100)} + instituto ±${num(poll.houseMargin * 100)} · ${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`
               : `${poll.sampleSize.toLocaleString('pt-BR')} entrevistas`
           }
         />

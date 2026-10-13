@@ -107,6 +107,32 @@ test.describe('República — fluxo principal', () => {
     await page.getByTestId('cabinet-card').first().click();
     await expect(page.getByTestId('cabinet-modal')).toBeHidden();
     await expect(page.getByTestId('time-day')).toBeEnabled();
+    // "Por que a aprovação mudou?": a barra superior leva ao Gabinete com as causas do mês.
+    await page.getByTestId('metric-approval').click();
+    await expect(page.getByTestId('why-approval')).toBeVisible();
+    await expect(page.getByTestId('why-approval')).toContainText('Para onde a aprovação está indo');
+  });
+
+  test('"por que mudou?": intenção com causas e pesquisa × variação real', async ({ page }) => {
+    await createCandidate(page, { officeTestId: 'office-prefeito', stateId: 'RS' });
+    // Duas semanas: duas pesquisas públicas para comparar.
+    let weeks = 0;
+    for (let i = 0; i < 30 && weeks < 2; i++) {
+      if (await clearBlockers(page)) continue;
+      const week = page.getByTestId('time-week');
+      if (await week.isEnabled()) {
+        await week.click();
+        weeks++;
+      }
+    }
+    await clearBlockers(page);
+    await page.getByTestId('metric-intention').hover();
+    await expect(page.getByTestId('why-intention-compact')).toBeVisible();
+    await page.getByTestId('metric-intention').click();
+    await expect(page.getByTestId('why-intention')).toBeVisible();
+    await expect(page.getByTestId('why-intention').getByTestId('why-poll')).toContainText(
+      'Pesquisa',
+    );
   });
 
   test('cenários, sandbox e configurações abrem', async ({ page }) => {
