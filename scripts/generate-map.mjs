@@ -249,6 +249,8 @@ for (const c of cityInfo) {
     d,
     bbox: [0, 0, r1(w), r1(h)],
     centroid: [r1(bestCentroid[0]), r1(bestCentroid[1])],
+    // 1 unidade = 1/s grau de latitude (111,2 km por grau): barra de escala do mapa da cidade.
+    kmPerUnit: Math.round((111.2 / s) * 1e4) / 1e4,
   };
   const lon = lon0 + bestCentroid[0] / (kx * s);
   const lat = lat1 - bestCentroid[1] / s;
@@ -270,12 +272,14 @@ writeFileSync(
   `/* eslint-disable */
 // ARQUIVO GERADO por scripts/generate-map.mjs — não edite à mão.
 // Fonte: IBGE, API de Malhas Territoriais v3 (qualidade intermediária), simplificado.
-// Cada cidade tem a própria escala (lado maior = ${CITY_SIZE}). Carregado sob demanda pelo ZoneMap.
+// Cada cidade tem a própria escala (lado maior = ${CITY_SIZE}). Carregado sob demanda pelo mapa de zonas.
 
 export interface CityGeometry {
   d: string;
   centroid: [number, number];
   bbox: [number, number, number, number];
+  /** Quilômetros por unidade do desenho (cada cidade tem a própria escala). */
+  kmPerUnit: number;
 }
 
 export const CITY_GEOMETRY: Record<string, CityGeometry> = ${JSON.stringify(cityShapes).replace(/},"/g, '},\n  "')};

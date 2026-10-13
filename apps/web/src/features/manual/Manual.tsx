@@ -191,6 +191,81 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: 'mapa',
+    title: 'O mapa: modos, legenda e painéis',
+    icon: 'map',
+    keywords:
+      'mapa atlas 3d relevo girar modo legenda ranking números marcadores pulso zoom enquadrar escala painel acompanha escolher região governadores ideologia produção',
+    body: () => (
+      <>
+        <P>
+          O mapa é o centro do jogo: tudo que ele pinta vem do estado real da partida. Escolha o
+          modo na faixa de ícones do canto inferior direito (Política, Sociedade, Economia) — de
+          intenção de voto e governadores estaduais a desemprego, ideologia do eleitorado e
+          industrialização.
+        </P>
+        <H>Lendo a legenda</H>
+        <Ul>
+          <li>
+            A cor usa a <b>escala relativa</b>: vai do estado com o menor valor ao com o maior. As
+            pontas da legenda mostram esses dois valores reais, e cada traço acima da faixa é um
+            estado.
+          </li>
+          <li>
+            <b>Números no mapa</b> (#) escreve o valor sobre cada estado; <b>Ranking</b> lista todos
+            em ordem — clique para abrir o estado.
+          </li>
+          <li>
+            <b>Marcadores</b> mostram sua agenda fixa, propaganda regional no ar, suas obras e os
+            canteiros industriais. Passe o mouse para ver o que é.
+          </li>
+          <li>
+            Quando o mês (ou, na campanha, a semana) vira, os estados cuja leitura mudou de verdade
+            piscam: verde se melhorou, vermelho se piorou.
+          </li>
+        </Ul>
+        <H>O mapa conversa com os painéis</H>
+        <Ul>
+          <li>
+            Abrir um painel muda o modo do mapa para o que importa nele: Economia → desemprego,
+            Pesquisas → intenção de voto, Leis → ideologia, Congresso → partidos. Desligue em
+            &quot;O mapa acompanha o painel aberto&quot; na legenda.
+          </li>
+          <li>
+            Mercado: escolha um bem e o mapa mostra quem o produz. Indústria: escolha um edifício e
+            veja seus polos. Leis: o mapa de ideologia usa o eixo da área da lei escolhida.
+          </li>
+          <li>
+            Alguns painéis usam o mapa para escolher: na Indústria, clique no estado onde quer
+            construir; na Propaganda, clique nos estados para incluí-los no anúncio. A dica do mapa
+            diz o que o clique vai fazer.
+          </li>
+        </Ul>
+        <H>Câmera</H>
+        <P>
+          Roda do mouse aproxima, arrastar move, clique duplo aproxima no ponto. O mapa desliza
+          para a parte livre quando um painel abre e voa até o estado que você abrir;
+          &quot;Enquadrar&quot; volta ao Brasil inteiro. Aproximando, aparecem nomes, capitais e
+          rios menores; a barra de escala mostra a distância em km.
+        </P>
+        <H>Mapa em 3D</H>
+        <P>
+          Com o botão de cubo da legenda, o mapa vira relevo: a altura de cada estado é o valor dele
+          no modo ativo (desemprego, intenção de voto, produção de um bem...). Trocar de modo faz os
+          estados subirem e descerem. Arrastar move, botão direito (ou Ctrl + arrastar) gira e
+          inclina, a roda aproxima; a rosa dos ventos mostra para onde é o norte. Sem suporte a 3D
+          no navegador, o jogo usa o mapa plano; os mapas de zonas de cidade e estado são sempre
+          planos.
+        </P>
+        <Tip>
+          O painel de um estado traz &quot;Neste mapa&quot;: o valor dele no modo ativo e a posição
+          entre os 27. Troque o modo com o painel aberto para comparar o estado em vários
+          indicadores.
+        </Tip>
+      </>
+    ),
+  },
+  {
     id: 'eleitores',
     title: 'Como o eleitor decide',
     icon: 'users',

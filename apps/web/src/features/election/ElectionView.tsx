@@ -1,5 +1,4 @@
 import {
-  capitalOf,
   diffDays,
   formatDateLong,
   formatDateShort,
@@ -10,7 +9,6 @@ import {
   OTHERS_KEY,
   POP_TYPES,
   rankByPoll,
-  STATES,
   type ElectionResult,
   type GameState,
   type PopTypeId,
@@ -18,54 +16,68 @@ import {
 import {
   Avatar,
   Badge,
-  BrazilMap,
+  Atlas,
   Button,
   cn,
   EmptyState,
   Icon,
   Panel,
   PartyEmblem,
+  scaleLayer,
   StatTile,
-  ZoneMap,
+  type RegionPaint,
 } from '@republica/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { candidateColor } from '../../lib/candidates';
 import { HBar } from '../../components/charts';
 import { pct } from '../../lib/format';
-import { layerFills } from '../../lib/mapColors';
+import { useMapGeometry } from '../map/mapGeometry';
 import { useGame, useGameState } from '../../store/gameStore';
 import { PostMortemPanel } from './PostMortemPanel';
 
-function ResultMap({ game }: { game: GameState }) {
+/** Cor das regiões ainda em apuração (a terra, sem cor de vencedor). */
+const COUNTING: RegionPaint = { fill: '#22343b', opacity: 1 };
+
+/**
+ * Mapa do resultado. Durante a apuração animada, cada região ganha a cor do vencedor quando a
+ * contagem dela "fecha" — as de eleitorado menor primeiro, como na apuração real. O resultado
+ * mostrado é sempre o do motor; só a ordem de revelação é encenada.
+ */
+function ResultMap({ game, progress }: { game: GameState; progress: number }) {
   const layer = useMemo(() => mapLayer(game, 'results'), [game]);
-  const fills = useMemo(() => layerFills(layer), [layer]);
-  const units = game.election?.units ?? [];
+  const scale = useMemo(() => scaleLayer(layer.scale, layer.cells), [layer]);
+  const units = useMemo(() => game.election?.units ?? [], [game]);
+  const geometry = useMapGeometry(game, units);
+  const closesAt = useMemo(() => {
+    const order = [...units].sort((a, b) => a.voters - b.voters);
+    return Object.fromEntries(order.map((u, i) => [u.id, 0.12 + 0.85 * (i / Math.max(1, order.length - 1))]));
+  }, [units]);
+  const paint = useMemo(() => {
+    if (progress >= 1) return scale.paint;
+    const out: Record<string, RegionPaint> = {};
+    for (const [id, p] of Object.entries(scale.paint)) out[id] = progress >= (closesAt[id] ?? 1) ? p : COUNTING;
+    return out;
+  }, [progress, scale, closesAt]);
+  const counted = (id: string) => progress >= 1 || progress >= (closesAt[id] ?? 1);
   const tooltip = (id: string) => (
     <div>
-      <div className="font-bold">{units.find((u) => u.id === id)?.name}</div>
-      <div className="text-muted">{layer.cells[id]?.label}</div>
+      <div className="font-display text-[13px] font-semibold text-gold-300">{units.find((u) => u.id === id)?.name}</div>
+      <div className="text-paper/90">{counted(id) ? layer.cells[id]?.label : 'Apurando…'}</div>
     </div>
   );
-  if (units[0]?.kind === 'zone') {
-    const stateId = units[0].stateId;
-    return (
-      <ZoneMap
-        kind={units.some((u) => u.zone?.type === 'center') ? 'city' : 'state'}
-        stateId={stateId}
-        cityId={game.election?.jurisdiction.cityId ?? capitalOf(stateId).id}
-        capitalCoords={STATES[stateId].capitalCoords}
-        zones={units.map((u) => ({
-          id: u.id,
-          name: u.name,
-          type: u.zone?.type ?? 'sector',
-          ...(u.zone?.direction ? { direction: u.zone.direction } : {}),
-        }))}
-        fills={fills}
-        renderTooltip={tooltip}
-      />
-    );
-  }
-  return <BrazilMap fills={fills} renderTooltip={tooltip} />;
+  return (
+    <Atlas
+      regions={geometry.regions}
+      world={geometry.world}
+      outline={geometry.outline ?? null}
+      backdrop={geometry.backdrop ?? []}
+      context={geometry.context ?? true}
+      {...(geometry.kmPerUnit !== undefined ? { kmPerUnit: geometry.kmPerUnit } : {})}
+      paint={paint}
+      renderTooltip={tooltip}
+      ariaLabel="Mapa do resultado da eleição"
+    />
+  );
 }
 
 function Results({
@@ -145,8 +157,8 @@ function Results({
           </div>
         </Panel>
         <Panel title="Mapa do resultado" icon="map" bodyClassName="p-2">
-          <div className="h-[46vh] min-h-[320px]">
-            <ResultMap game={game} />
+          <div className="map-ocean relative h-[46vh] min-h-[320px] overflow-hidden rounded-[4px]">
+            <ResultMap game={game} progress={progress} />
           </div>
         </Panel>
       </div>

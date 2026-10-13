@@ -143,7 +143,13 @@ export * from './economy/types';
 export { BUDGET_INFO, budgetTotals, serviceQuality } from './economy/budget';
 export { ECONOMIC_SITUATIONS, economySummary, type EconomicSituation } from './economy/economy';
 export * from './laws/types';
-export { LAW_CATEGORIES, defaultLaws, getLawCategory, getLawOption } from './laws/laws.data';
+export {
+  LAW_CATEGORIES,
+  defaultLaws,
+  getLawCategory,
+  getLawOption,
+  lawCategoryAxis,
+} from './laws/laws.data';
 export {
   canProposeBill,
   categoriesForLevel,
@@ -182,6 +188,7 @@ export * from './simulation/api';
 export { blockingReason, type AdvanceResult, type Interrupt } from './simulation/time';
 export { validateNewGame, type NewGameConfig, type SandboxOptions } from './simulation/startGame';
 export * from './simulation/selectors';
+export * from './simulation/focusLayers';
 export {
   getCandidate,
   getParty,

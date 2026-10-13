@@ -24,8 +24,23 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
+      // A medição de desempenho roda à parte (npm run test:perf): em paralelo com outros
+      // navegadores os números não significam nada.
+      testIgnore: /perf\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
+        // Os testes exercitam o mapa 2D (SVG); o 3D tem teste próprio (e2e/atlas3d.spec.ts).
+        storageState: 'e2e/storage-2d.json',
+        viewport: { width: 1600, height: 960 },
+        ...(channel ? { channel } : {}),
+      },
+    },
+    {
+      name: 'perf',
+      testMatch: /perf\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/storage-2d.json',
         viewport: { width: 1600, height: 960 },
         ...(channel ? { channel } : {}),
       },

@@ -1,4 +1,4 @@
-import { clamp, round } from '../core/math';
+import { clamp, formatMoney, formatPct } from '../core/math';
 import type { StateId, UnitId } from '../core/types';
 import { BUILDINGS } from '../economy/industry/buildings.data';
 import { INDUSTRIAL_SECTORS, methodInfo } from '../economy/industry/catalog';
@@ -30,7 +30,7 @@ function industrialShare(state: GameState, stateId: StateId): number {
 /** Camadas econômicas do mapa (por estado; zonas usam o estado da zona). */
 export function economyLayer(state: GameState, mode: EconomyMode, units: ElectoralUnit[]): MapLayer {
   const cells: Record<UnitId, MapCell> = {};
-  const pct = (v: number) => `${round(v * 100, 1)}%`;
+  const pct = (v: number) => formatPct(v);
   const incomes = units.map((u) => state.regions[u.stateId]?.income ?? 0);
   const maxIncome = Math.max(1, ...incomes);
   for (const u of units) {
@@ -40,33 +40,33 @@ export function economyLayer(state: GameState, mode: EconomyMode, units: Elector
     switch (mode) {
       case 'industrialization': {
         const share = industrialShare(state, s);
-        cells[u.id] = { value: clamp(share / 0.4, 0, 1), label: `Indústria: ${pct(share)} do valor adicionado` };
+        cells[u.id] = { value: clamp(share / 0.4, 0, 1), label: `Indústria: ${pct(share)} do valor adicionado`, short: formatPct(share, 0) };
         break;
       }
       case 'income': {
         const inc = region?.income ?? 0;
-        cells[u.id] = { value: inc / maxIncome, label: `Renda média R$ ${Math.round(inc).toLocaleString('pt-BR')}` };
+        cells[u.id] = { value: inc / maxIncome, label: `Renda média R$ ${Math.round(inc).toLocaleString('pt-BR')}`, short: formatMoney(inc) };
         break;
       }
       case 'unemployment': {
         const un = region?.unemployment ?? 0;
-        cells[u.id] = { value: clamp((un - 3) / 15, 0, 1), label: `Desemprego ${round(un, 1)}%` };
+        cells[u.id] = { value: clamp((un - 3) / 15, 0, 1), label: `Desemprego ${formatPct(un / 100)}`, short: formatPct(un / 100) };
         break;
       }
       case 'informality': {
         const v = labor && labor.laborForce > 0 ? labor.informal / labor.laborForce : 0;
-        cells[u.id] = { value: clamp(v / 0.4, 0, 1), label: `Informalidade ${pct(v)} da força de trabalho` };
+        cells[u.id] = { value: clamp(v / 0.4, 0, 1), label: `Informalidade ${pct(v)} da força de trabalho`, short: formatPct(v, 0) };
         break;
       }
       case 'construction': {
         const n = state.industry.queue.filter((q) => q.stateId === s).length;
-        cells[u.id] = { value: clamp(n / 8, 0, 1), label: n ? `${n} obra(s) em andamento` : 'Nenhuma obra' };
+        cells[u.id] = { value: clamp(n / 8, 0, 1), label: n ? `${n} obra(s) em andamento` : 'Nenhuma obra', short: `${n}` };
         break;
       }
       case 'resources': {
         const res = STATE_RESOURCES[s] ?? {};
         const total = Object.values(res).reduce((a, b) => a + (b ?? 0), 0);
-        cells[u.id] = { value: clamp(Math.sqrt(total / 1200), 0, 1), label: `Potencial de recursos: ${Math.round(total)} níveis` };
+        cells[u.id] = { value: clamp(Math.sqrt(total / 1200), 0, 1), label: `Potencial de recursos: ${Math.round(total)} níveis`, short: `${Math.round(total)}` };
         break;
       }
     }

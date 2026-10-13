@@ -16,9 +16,11 @@ import {
   type BudgetCategory,
   type LawBranch,
   type LawOptionDefinition,
+  lawCategoryAxis,
 } from '@republica/game-engine';
 import { Badge, Button, cn, EmptyState, Icon, Panel, StatTile, Tooltip } from '@republica/ui';
 import { useMemo, useState } from 'react';
+import { useMapAxis } from '../map/useMapLink';
 import { useNavigate } from 'react-router';
 import { useGame, useGameState } from '../../store/gameStore';
 import { PartySupport, ProjectionBars } from './BillParts';
@@ -241,6 +243,8 @@ export function LawsView() {
   const cats = level ? categoriesForLevel(level) : [];
   const [catId, setCatId] = useState(cats[0]?.id ?? '');
   const [optionId, setOptionId] = useState<string | null>(null);
+  // O mapa de ideologia mostra o eixo em que as opções desta área divergem.
+  useMapAxis(lawCategoryAxis(catId || cats[0]?.id || ''));
   if (!gov || !level) return <EmptyState icon="scale" title="Sem mandato" text="Leis só podem ser propostas por quem tem mandato." />;
   const cat = getLawCategory(catId) ?? cats[0];
   const activeBills = game.laws.bills.filter(isBillActive);

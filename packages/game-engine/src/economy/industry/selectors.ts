@@ -273,6 +273,39 @@ export function goodDetail(state: GameState, goodId: GoodId): GoodDetail {
   };
 }
 
+/** Produção de um bem em cada UF (R$ bi/ano a preços-base), somando todos os edifícios produtores. */
+export function goodOutputByState(state: GameState, goodId: GoodId): Record<StateId, number> {
+  const out = {} as Record<StateId, number>;
+  for (const stateId of STATE_IDS) {
+    let total = 0;
+    for (const b of PRODUCERS[goodId]) {
+      const bs = state.industry.buildings[stateId][b];
+      if (!bs || bs.level <= 0) continue;
+      const q = methodInfo(b, bs.methodId).outputs.find(([g]) => g === goodId)?.[1] ?? 0;
+      total += q * bs.level * bs.staffing * bs.productivity;
+    }
+    out[stateId] = real(state, total);
+  }
+  return out;
+}
+
+/** Níveis de um edifício em cada UF, com ocupação média e obras na fila. */
+export function buildingByState(
+  state: GameState,
+  buildingId: BuildingId,
+): Record<StateId, { levels: number; staffing: number; queued: number }> {
+  const out = {} as Record<StateId, { levels: number; staffing: number; queued: number }>;
+  for (const stateId of STATE_IDS) {
+    const bs = state.industry.buildings[stateId][buildingId];
+    out[stateId] = {
+      levels: bs && bs.level > 0 ? bs.level : 0,
+      staffing: bs && bs.level > 0 ? bs.staffing : 0,
+      queued: state.industry.queue.filter((q) => q.stateId === stateId && q.buildingId === buildingId).length,
+    };
+  }
+  return out;
+}
+
 export interface BuildingRow {
   id: BuildingId;
   name: string;

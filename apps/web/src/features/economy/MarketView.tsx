@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { HBar, LineChartBox } from '../../components/charts';
 import { billions, num } from '../../lib/format';
 import { useGameState } from '../../store/gameStore';
+import { useMapFocus } from '../map/useMapLink';
 
 const STATUS: Record<MarketStatus, { label: string; tone: 'bad' | 'info' | 'good' | 'warn' | 'neutral' }> = {
   escassez: { label: 'Escassez', tone: 'bad' },
@@ -29,6 +30,8 @@ export function MarketView() {
   const shown = rows.filter((r) => category === 'all' || r.category === category);
   const current = selected ?? shown[0]?.id ?? null;
   const detail = current ? goodDetail(game, current) : null;
+  // Escolher um bem pinta o mapa com a produção dele por estado.
+  useMapFocus(selected ? { kind: 'good', id: selected } : null);
 
   return (
     <div className="grid grid-cols-1 gap-3 @6xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">

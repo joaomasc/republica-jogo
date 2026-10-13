@@ -4,10 +4,11 @@ import {
   formatDateShort,
   partyCompatibility,
 } from '@republica/game-engine';
-import { Badge, Button, EmptyState, Panel, PartyEmblem } from '@republica/ui';
+import { Badge, Button, EmptyState, Icon, Panel, PartyEmblem, Tooltip } from '@republica/ui';
 import { useState } from 'react';
 import { Hemicycle } from '../../components/Hemicycle';
 import { useGame, useGameState } from '../../store/gameStore';
+import { useUi } from '../../store/uiStore';
 
 /** Plenário, partidos e negociação de base. */
 export function PartiesTab() {
@@ -15,6 +16,8 @@ export function PartiesTab() {
   const act = useGame((s) => s.act);
   const gov = game.government;
   const [portfolio, setPortfolio] = useState('');
+  const setMapPartyId = useUi((s) => s.setMapPartyId);
+  const setMapMode = useUi((s) => s.setMapMode);
   if (!gov) return <EmptyState icon="building-2" title="Sem mandato" />;
   const player = game.candidates[game.playerId];
   const ports = availablePortfolios(game);
@@ -111,6 +114,20 @@ export function PartiesTab() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-display font-semibold">{p.acronym}</span>
+                    <Tooltip content={`Ver no mapa a força do ${p.acronym} em cada estado`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMapPartyId(p.id);
+                          setMapMode('party');
+                        }}
+                        aria-label={`Ver ${p.acronym} no mapa`}
+                        data-testid={`party-map-${p.id}`}
+                        className="flex h-6 w-6 items-center justify-center rounded-[3px] text-muted transition hover:bg-ink-700 hover:text-gold-300"
+                      >
+                        <Icon name="map-pin" size={13} />
+                      </button>
+                    </Tooltip>
                     <span className="text-xs text-muted">{s} cadeiras</span>
                     {inCoalition && <Badge tone="good">Base</Badge>}
                     {p.id === player?.partyId && <Badge tone="gold">Seu partido</Badge>}

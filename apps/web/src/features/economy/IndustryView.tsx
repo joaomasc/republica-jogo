@@ -4,14 +4,16 @@ import {
   OWNER_LABELS,
   planView,
   STATE_LIST,
+  type BuildingId,
   type OwnerKind,
   type SectorId,
   type StateId,
 } from '@republica/game-engine';
-import { Badge, Bar, Button, Icon, Panel, StatTile } from '@republica/ui';
+import { Badge, Bar, Button, cn, Icon, Panel, StatTile } from '@republica/ui';
 import { useMemo, useState } from 'react';
 import { num, pct, people } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
+import { useMapFocus, useMapPick } from '../map/useMapLink';
 import { ConstructionPicker, ConstructionQueue } from './ConstructionPanel';
 
 const OWNER_COLORS: Record<OwnerKind, string> = {
@@ -99,6 +101,11 @@ export function IndustryView() {
     (game.government?.jurisdiction.stateId as StateId | undefined) ?? 'SP',
   );
   const isExec = game.government?.branch === 'executive';
+  const [building, setBuilding] = useState<BuildingId | null>(null);
+  // Escolher um edifício mostra no mapa onde ele existe; o mapa vira seletor de onde construir.
+  useMapFocus(building ? { kind: 'building', id: building } : null);
+  const picked = useMemo(() => [stateId], [stateId]);
+  useMapPick('Clique para escolher onde construir', picked, (id) => setStateId(id as StateId), isExec);
   const sectors = [...new Map(rows.map((r) => [r.sector, r.sectorName])).entries()];
   const shown = rows.filter((r) => r.levels > 0 && (sector === 'all' || r.sector === sector)).sort((a, b) => b.employment - a.employment);
   const usage = dash.constructionCapacity > 0 ? dash.constructionUsed / dash.constructionCapacity : 0;
@@ -149,7 +156,17 @@ export function IndustryView() {
               </thead>
               <tbody>
                 {shown.map((r) => (
-                  <tr key={r.id} className="border-t border-ink-700/60" title={`Maiores polos: ${r.topStates.map((t) => `${t.stateId} (${num(t.levels, 0)})`).join(', ')}`}>
+                  <tr
+                    key={r.id}
+                    className={cn(
+                      'cursor-pointer border-t border-ink-700/60 transition hover:bg-ink-700/40',
+                      building === r.id && 'bg-ink-700/70 outline outline-1 outline-gold-500/50',
+                    )}
+                    onClick={() => setBuilding(building === r.id ? null : r.id)}
+                    aria-selected={building === r.id}
+                    data-testid={`industry-row-${r.id}`}
+                    title={`Clique para ver no mapa onde há ${r.name}. Maiores polos: ${r.topStates.map((t) => `${t.stateId} (${num(t.levels, 0)})`).join(', ')}`}
+                  >
                     <td className="py-1.5">
                       <span className="flex items-center gap-2">
                         <Icon name={r.icon} size={15} className="text-gold-400" />
@@ -184,7 +201,13 @@ export function IndustryView() {
               title="Mandar construir"
               icon="hard-hat"
               actions={
-                <select className="game-select py-1 text-xs" value={stateId} onChange={(e) => setStateId(e.target.value as StateId)}>
+                <select
+                  className="game-select py-1 text-xs"
+                  value={stateId}
+                  onChange={(e) => setStateId(e.target.value as StateId)}
+                  data-testid="construction-state"
+                  aria-label="Estado onde construir (ou clique no mapa)"
+                >
                   {STATE_LIST.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}

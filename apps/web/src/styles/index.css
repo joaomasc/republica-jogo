@@ -435,9 +435,7 @@
   }
   .map-ocean {
     background:
-      radial-gradient(ellipse 65% 60% at 55% 48%, rgb(34 82 98 / 0.55), transparent 70%),
-      repeating-linear-gradient(0deg, rgb(160 205 210 / 0.035) 0 1px, transparent 1px 72px),
-      repeating-linear-gradient(90deg, rgb(160 205 210 / 0.035) 0 1px, transparent 1px 72px),
+      radial-gradient(ellipse 65% 60% at 60% 45%, rgb(34 82 98 / 0.5), transparent 70%),
       linear-gradient(180deg, #0a1c25, #06121a);
   }
   .map-vignette {
@@ -456,6 +454,474 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+}
+
+/* --- Atlas (mapa) ------------------------------------------------------------------------- */
+@layer components {
+  .atlas {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+  }
+  .atlas.atlas-dragging {
+    cursor: grabbing;
+  }
+  .atlas-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Mundo: graticulado, vizinhos, sombra, contorno nacional */
+  .atlas-graticule {
+    fill: none;
+    stroke: rgb(160 205 210 / 0.075);
+    stroke-width: 0.8;
+  }
+  .atlas-graticule-mark {
+    fill: none;
+    stroke: rgb(220 188 106 / 0.2);
+    stroke-width: 1;
+  }
+  .atlas-dashed {
+    stroke-dasharray: 7 6;
+  }
+  .atlas-neighbor {
+    fill: #1a272b;
+    stroke: #0a1418;
+    stroke-width: 1;
+  }
+  .atlas-neighbor-base {
+    fill: #1a272b;
+  }
+  /* Mapa de zonas de um estado: os outros estados em volta, como terra vizinha. */
+  .atlas-backdrop {
+    fill: #1f2e33;
+    stroke: #0a1418;
+    stroke-width: 1;
+  }
+  /* Contorno do estado/município no mapa de zonas. */
+  .atlas-outline {
+    fill: none;
+    stroke: #04090c;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+  }
+  .atlas-shadow use {
+    fill: #010406;
+    fill-opacity: 0.75;
+  }
+  .atlas-nation-outer use {
+    fill: none;
+    stroke: #04090c;
+    stroke-width: 7.5;
+    stroke-linejoin: round;
+  }
+  .atlas-nation-inner use {
+    fill: none;
+    stroke: #c7a047;
+    stroke-opacity: 0.8;
+    stroke-width: 3.4;
+    stroke-linejoin: round;
+  }
+  .atlas-land-base use {
+    fill: #22343b;
+  }
+
+  /* Regiões */
+  .atlas-region {
+    cursor: pointer;
+    outline: none;
+    transition:
+      fill 0.5s ease,
+      fill-opacity 0.5s ease;
+  }
+  .atlas-borders use {
+    fill: none;
+    stroke: #06111a;
+    stroke-opacity: 0.85;
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+  }
+  .atlas-dim use {
+    fill: #050d12;
+    fill-opacity: 0.6;
+  }
+  .atlas-hover {
+    fill: #f3ead2;
+    fill-opacity: 0.08;
+    stroke: #f3ead2;
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+  }
+  .atlas-selected {
+    fill: none;
+    stroke: #f0d68a;
+    stroke-width: 3.2;
+    stroke-linejoin: round;
+  }
+  .atlas-marked {
+    fill: #f0d68a;
+    fill-opacity: 0.16;
+    stroke: #f0d68a;
+    stroke-width: 2.6;
+    stroke-dasharray: 7 4;
+    stroke-linejoin: round;
+  }
+  .atlas-pulse {
+    stroke-width: 3;
+    stroke-linejoin: round;
+    fill-opacity: 0;
+    stroke-opacity: 0;
+    animation: atlas-pulse 2.1s ease-out 1 both;
+  }
+  .atlas-pulse-good {
+    fill: #7fe0a6;
+    stroke: #8ff0b6;
+  }
+  .atlas-pulse-bad {
+    fill: #ff8a70;
+    stroke: #ff9c84;
+  }
+
+  /* Hidrografia */
+  .atlas-river {
+    fill: none;
+    stroke: #6f9db0;
+    stroke-opacity: 0.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .atlas-river-1 {
+    stroke-width: 2.1;
+  }
+  .atlas-river-2 {
+    stroke-width: 1.8;
+  }
+  .atlas-river-3 {
+    stroke-width: 1.5;
+  }
+  .atlas-river-4 {
+    stroke-width: 1.2;
+  }
+  .atlas-river-5 {
+    stroke-width: 0.95;
+  }
+  .atlas-river-6 {
+    stroke-width: 0.8;
+  }
+  .atlas-lake {
+    fill: #0f2631;
+    stroke: #6f9db0;
+    stroke-opacity: 0.5;
+    stroke-width: 0.8;
+  }
+
+  /* Rótulos (pixels de tela) */
+  .atlas-state-short {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: 0.05em;
+    fill: #f6efdc;
+    stroke: #06121a;
+    stroke-width: 3.2px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+  .atlas-state-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    fill: #eadfbf;
+    stroke: #06121a;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+  .atlas-value text {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 11.5px;
+    fill: #fff3d0;
+    stroke: #06121a;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .atlas-country-label {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    fill: #7f908c;
+    fill-opacity: 0.8;
+  }
+  .atlas-sea-label {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    fill: #6f97a3;
+    fill-opacity: 0.6;
+  }
+  .atlas-line-label {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    fill: rgb(220 188 106 / 0.55);
+  }
+  .atlas-grid-label {
+    font-family: var(--font-sans);
+    font-size: 9.5px;
+    fill: rgb(160 205 210 / 0.4);
+  }
+  .atlas-capital-dot {
+    fill: #f6efdc;
+    stroke: #06121a;
+    stroke-width: 1.5;
+  }
+  .atlas-capital-star {
+    fill: #f0d68a;
+    stroke: #06121a;
+    stroke-width: 1.2;
+  }
+  .atlas-capital-label {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11px;
+    fill: #efe5cc;
+    stroke: #06121a;
+    stroke-width: 2.6px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+
+  /* Marcadores de dados */
+  .atlas-badge {
+    cursor: pointer;
+  }
+  .atlas-badge-disc {
+    fill: #0d1c25;
+    stroke: currentColor;
+    stroke-width: 1.5;
+  }
+  .atlas-badge:hover .atlas-badge-disc {
+    fill: #18303b;
+  }
+  .atlas-badge-count {
+    fill: currentColor;
+    stroke: #06121a;
+    stroke-width: 1;
+  }
+  .atlas-badge-count-text {
+    font-family: var(--font-sans);
+    font-size: 8.5px;
+    font-weight: 800;
+    fill: #06121a;
+  }
+  .atlas-tone-gold {
+    color: var(--color-gold-400);
+  }
+  .atlas-tone-good {
+    color: var(--color-good);
+  }
+  .atlas-tone-bad {
+    color: var(--color-bad);
+  }
+  .atlas-tone-warn {
+    color: var(--color-warn);
+  }
+  .atlas-tone-info {
+    color: var(--color-info);
+  }
+  .atlas-tone-neutral {
+    color: var(--color-muted);
+  }
+
+  /* Nível de detalhe pelo zoom (data-lod no contêiner) */
+  .atlas[data-lod='0'] .atlas-lod-1,
+  .atlas[data-lod='0'] .atlas-lod-2,
+  .atlas[data-lod='1'] .atlas-lod-2,
+  .atlas[data-lod='1'] .atlas-lod-0-only,
+  .atlas[data-lod='2'] .atlas-lod-0-only,
+  .atlas[data-lod='0'] .atlas-river-6,
+  .atlas[data-lod='2'] .atlas-hide-lod-2 {
+    display: none;
+  }
+
+  /* Durante gestos e voos: sem filtros nem transições (custam um quadro inteiro cada). */
+  .atlas-moving .atlas-shadow,
+  .atlas-moving .atlas-selected {
+    filter: none;
+  }
+  .atlas-moving .atlas-region {
+    transition: none;
+  }
+  .atlas-moving .atlas-badge {
+    pointer-events: none;
+  }
+
+  /* Moldura */
+  .atlas-ctl {
+    display: flex;
+    height: 30px;
+    width: 30px;
+    align-items: center;
+    justify-content: center;
+    color: rgb(236 228 208 / 0.9);
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .atlas-ctl:hover {
+    background: rgb(34 64 76 / 0.8);
+    color: var(--color-gold-300);
+  }
+  .atlas-scale {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .atlas-scale-bar {
+    height: 6px;
+    border: 1px solid rgb(236 228 208 / 0.75);
+    border-top: none;
+    background: linear-gradient(90deg, rgb(236 228 208 / 0.75) 50%, transparent 50%) bottom / 100% 2px no-repeat;
+  }
+  .atlas-scale-label {
+    font-size: 10.5px;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+/* --- Atlas 3D --------------------------------------------------------------------------- */
+@layer components {
+  .atlas3d {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+  }
+  .atlas3d:active {
+    cursor: grabbing;
+  }
+  .atlas3d-canvas {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+  }
+  .atlas3d-overlay {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+  }
+  /* Âncora no ponto projetado; o conteúdo centraliza nele. */
+  .atlas3d-anchor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    will-change: transform;
+  }
+  .atlas3d-anchor > * {
+    position: absolute;
+    translate: -50% -50%;
+  }
+  .atlas3d-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+    pointer-events: none;
+    background: none;
+    border: 0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: default;
+  }
+  .atlas3d-label:focus-visible {
+    outline: 2px solid var(--color-gold-400);
+    background: rgb(5 13 18 / 0.6);
+  }
+  .atlas3d-short {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: #f6efdc;
+    text-shadow:
+      0 0 3px #06121a,
+      0 0 3px #06121a,
+      0 1px 2px #06121a;
+  }
+  .atlas3d-value {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff3d0;
+    font-variant-numeric: tabular-nums lining-nums;
+    text-shadow:
+      0 0 3px #06121a,
+      0 0 3px #06121a;
+  }
+  .atlas3d-country {
+    white-space: nowrap;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(127 144 140 / 0.8);
+  }
+  .atlas3d-badge {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+    min-width: 20px;
+    padding: 0 4px;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    background: #0d1c25;
+    font-size: 9px;
+    font-weight: 800;
+    pointer-events: auto;
+  }
+}
+
+@keyframes atlas-pulse {
+  0% {
+    fill-opacity: 0;
+    stroke-opacity: 0;
+  }
+  15% {
+    fill-opacity: 0.28;
+    stroke-opacity: 0.95;
+  }
+  100% {
+    fill-opacity: 0;
+    stroke-opacity: 0;
   }
 }
 

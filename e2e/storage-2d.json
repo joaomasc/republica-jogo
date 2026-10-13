@@ -1,0 +1,11 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        { "name": "republica:ui", "value": "{\"state\":{\"map3d\":false},\"version\":0}" }
+      ]
+    }
+  ]
+}
