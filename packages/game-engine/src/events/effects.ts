@@ -145,6 +145,8 @@ export function applyEffects(
   state: GameState,
   effects: readonly Effect[],
   ctx: EventContext,
+  /** Decisão que causou estes efeitos (guardada nas continuações agendadas). */
+  origin?: string,
 ): string[] {
   const out: string[] = [];
   const player = getPlayer(state);
@@ -332,6 +334,7 @@ export function applyEffects(
             eventId: e.eventId,
             date: addDays(state.date, e.inDays),
             context: e.vars ? { ...ctx, extra: { ...ctx.extra, ...e.vars } } : { ...ctx },
+            ...(origin ? { origin } : {}),
           });
         break;
       }

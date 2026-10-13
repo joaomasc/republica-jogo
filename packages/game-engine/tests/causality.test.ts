@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { dispatch, explainIntention, explainRival, startGame, type GameState } from '../src/index';
 import { driftParties } from '../src/parties/parties';
+import { DriverReader, driverEffect } from '../src/events/drivers';
+import { getEventDefinition } from '../src/events/events.data';
+import { fireEvent } from '../src/events/events';
 import { computeIntentions } from '../src/election/voterModel';
 import { defaultConfig } from './helpers';
 
@@ -147,5 +150,44 @@ describe('Popularidade dos partidos', () => {
     });
     expect(parties[gov!]!.popularity).toBeLessThan(before[gov!]!);
     expect(parties[other!]!.popularity).toBeCloseTo(before[other!]!, 10);
+  });
+});
+
+describe('Eventos com causa', () => {
+  const base = () =>
+    startGame({ ...defaultConfig(1, 'prefeito', 'BA'), scenarioId: 'prefeitura_salvador' });
+
+  it('a fila na UPA depende do orçamento da saúde (e diz isso ao jogador)', () => {
+    const def = getEventDefinition('mun_fila_upa')!;
+    const s = base();
+    const b = s.government!.budget!;
+    b.spending.health = b.baseline.health * 0.7;
+    const bad = driverEffect(def, new DriverReader(s))!;
+    b.spending.health = b.baseline.health * 1.3;
+    const good = driverEffect(def, new DriverReader(s))!;
+    expect(bad.mult).toBeGreaterThan(1.5);
+    expect(good.mult).toBeLessThan(bad.mult / 2);
+    const fired = fireEvent(s, def)!;
+    expect(fired.cause).toMatch(/Saúde: serviço .* do padrão/);
+    expect(fired.unforeseen).toBeUndefined();
+  });
+
+  it('evento sem gatilho no estado vem marcado como imprevisto', () => {
+    const s = base();
+    const fired = fireEvent(s, getEventDefinition('mun_animais')!)!;
+    expect(fired.unforeseen).toBe(true);
+    expect(fired.cause).toMatch(/^Imprevisto/);
+  });
+
+  it('continuação mostra a decisão que a causou', () => {
+    let s = base();
+    const lobby = fireEvent(s, getEventDefinition('lobby_offer')!)!;
+    s = dispatch(s, {
+      type: 'event/resolve',
+      instanceId: lobby.instanceId,
+      optionId: 'accept',
+    }).state;
+    const item = s.events.scheduled.find((x) => x.eventId === 'bribe_exposed');
+    expect(item?.origin).toMatch(/→/);
   });
 });

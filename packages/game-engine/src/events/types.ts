@@ -214,6 +214,10 @@ export interface PendingEvent {
   description: string;
   context: EventContext;
   options: PendingEventOption[];
+  /** Por que o evento saiu agora (consequência de uma decisão, tema do estado). */
+  cause?: string;
+  /** Saiu por puro sorteio: um imprevisto. */
+  unforeseen?: boolean;
 }
 
 export interface ActiveModifier {
@@ -226,13 +230,21 @@ export interface ActiveModifier {
 
 export interface EventsState {
   pending: PendingEvent[];
-  scheduled: { eventId: string; date: IsoDate; context: EventContext }[];
+  scheduled: {
+    eventId: string;
+    date: IsoDate;
+    context: EventContext;
+    /** Decisão que agendou a continuação ("Proposta de lobista → Aceitar"). */
+    origin?: string;
+  }[];
   log: {
     instanceId: string;
     eventId: string;
     date: IsoDate;
     title: string;
     choiceLabel: string | null;
+    /** Por que saiu (ver PendingEvent.cause). */
+    cause?: string;
   }[];
   lastFired: Record<string, IsoDate>;
   firedCount: Record<string, number>;

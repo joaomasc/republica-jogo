@@ -650,7 +650,7 @@ export function chooseWeekCard(state: GameState, cardId: string | null): ActionR
   const meter = new ImpactMeter(state);
   let details: string[] = [];
   meter.step('card', card.title, () => {
-    details = applyEffects(state, effects, card.ctx);
+    details = applyEffects(state, effects, card.ctx, `Carta da semana: ${card.title}`);
   });
   week.pending = false;
   week.outcome = { cardId, success, details };

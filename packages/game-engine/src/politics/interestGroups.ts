@@ -50,7 +50,12 @@ export function updateInterestGroups(state: GameState, rng: Rng): void {
     if (state.phase === 'governing' && protestRolls(state, group, rng)) {
       const def = getEventDefinition('group_protest');
       if (def && state.events.pending.length === 0)
-        fireEvent(state, def, { groupId: group.id, groupName: group.name });
+        fireEvent(
+          state,
+          def,
+          { groupId: group.id, groupName: group.name },
+          `${group.name} insatisfeito (aprovação ${Math.round(group.approval)}, radicalismo ${Math.round(group.radicalism ?? NC.initialRadicalism)})`,
+        );
     }
   }
 }

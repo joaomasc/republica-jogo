@@ -17,6 +17,7 @@ import {
 } from '../src/index';
 import { CAUSE_GROUP_LABEL, SOURCE_GROUP } from '../src/campaign/explain';
 import { computeIntentions } from '../src/election/voterModel';
+import { driverOf } from '../src/events/drivers';
 import { EVENT_DEFINITIONS, getEventDefinition } from '../src/events/events.data';
 import { defaultConfig } from './bot';
 
@@ -286,6 +287,7 @@ function trigger(id: string): string {
   if (d.condition) return 'condição';
   if (d.weightModifier) return 'peso dinâmico';
   if (d.months) return 'calendário';
+  if (driverOf(d)) return 'tema do estado';
   return 'sem gatilho';
 }
 
