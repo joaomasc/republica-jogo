@@ -332,6 +332,13 @@ function moveGovernmentDay(state: GameState, rng: Rng): Interrupt {
   }
   if (isMonthStart(state.date)) governmentMonthlyTick(state, rng);
   if (!state.government) return 'term_end';
+  // Consequências agendadas por decisões anteriores (continuações de eventos) e efeitos com
+  // duração também valem no mandato — antes só rodavam na campanha.
+  measureApproval(state, 'event', { prefix: 'Consequência' }, () => {
+    processModifiers(state);
+    processScheduledEvents(state);
+  });
+  if (!state.government) return 'term_end';
   measureApproval(state, 'congress', { prefix: 'Congresso' }, () =>
     processLegislatureDay(state, rng),
   );

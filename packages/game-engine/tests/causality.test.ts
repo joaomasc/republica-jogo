@@ -119,4 +119,15 @@ describe('Causalidade da aprovação', () => {
     // A partir do 7º mês o desgaste entra como parcela própria.
     expect(gov.approvalImpact!.some((e) => e.kind === 'wear')).toBe(true);
   });
+
+  it('consequências agendadas (continuações de eventos) também disparam no mandato', () => {
+    let s = startGame({ ...defaultConfig(1, 'prefeito', 'BA'), scenarioId: 'prefeitura_salvador' });
+    s.events.scheduled.push({ eventId: 'bribe_exposed', date: s.date, context: {} });
+    s = month(s);
+    expect(s.events.scheduled).toHaveLength(0);
+    expect(
+      s.events.log.some((e) => e.eventId === 'bribe_exposed') ||
+        s.events.pending.some((e) => e.eventId === 'bribe_exposed'),
+    ).toBe(true);
+  });
 });
