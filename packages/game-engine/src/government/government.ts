@@ -20,7 +20,7 @@ import { initLegislature, processLegislatureMonth } from '../legislature/legisla
 import { setMayorParty } from '../map/cities';
 import { pushAlert } from '../media/alerts';
 import { publishNews } from '../media/news';
-import { driftParties } from '../parties/parties';
+import { driftPartiesInState } from '../parties/drift';
 import { driftRelations, initCongress, coalitionSeats } from '../politics/congress';
 import { updateInterestGroups } from '../politics/interestGroups';
 import {
@@ -351,7 +351,7 @@ export function governmentMonthlyTick(state: GameState, rng: Rng): void {
   if (state.government)
     measureApproval(state, 'street', { prefix: 'Ruas' }, () => processStreetMonth(state));
   driftRelations(state);
-  driftParties(state.parties, rng, 30);
+  driftPartiesInState(state, 30);
   player.scandal = clamp(player.scandal * 0.93, 0, 100);
   player.attributes.experience = clamp100(player.attributes.experience + 0.25);
   gov.stability = round(stability(state), 1);

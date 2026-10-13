@@ -24,7 +24,8 @@ import { campaignAlerts, debateInvitationAlerts, pushAlert } from '../media/aler
 import { addHistory } from '../history/history';
 import { pollHeadline } from '../media/headlines';
 import { publishNews } from '../media/news';
-import { driftParties, factionReaction } from '../parties/parties';
+import { driftPartiesInState } from '../parties/drift';
+import { factionReaction } from '../parties/parties';
 import { interestGroupDonations } from '../politics/interestGroups';
 import { POP_TYPES, type PopTypeId } from '../population/popTypes';
 import { updatePopulationMonthly } from '../population/satisfaction';
@@ -213,7 +214,7 @@ function campaignDailyTick(state: GameState, rng: Rng, meter: ImpactMeter): void
     Math.round(campaign.militants * (1 + (campaign.enthusiasm - 50) / 20000)),
   );
 
-  driftParties(state.parties, rng, 1);
+  driftPartiesInState(state, 1);
   const status = getPlayerStatus(state);
   if (status) factionReaction(party, status.perceivedIdeology);
 

@@ -13,11 +13,11 @@ import { rollCityMayors } from '../map/cities';
 import { publishNews } from '../media/news';
 import {
   createPartyFromInput,
-  driftParties,
   partyCompatibility,
   validatePartyInput,
   type CreatePartyInput,
 } from '../parties/parties';
+import { driftPartiesInState } from '../parties/drift';
 import { refreshPartyAffinities } from '../population/population';
 import { updatePopulationMonthly } from '../population/satisfaction';
 import { getPlayer, getPlayerParty } from '../simulation/access';
@@ -112,7 +112,7 @@ export function fastForward(state: GameState, toDate: string): void {
       state.date = next > toDate ? toDate : next;
       updateEconomy(state, rng);
       updatePopulationMonthly(state);
-      driftParties(state.parties, rng, 30);
+      driftPartiesInState(state, 30);
       player.scandal = clamp(player.scandal * 0.92, 0, 100);
       applyOccupationMonth(state);
       const y = yearOf(state.date);

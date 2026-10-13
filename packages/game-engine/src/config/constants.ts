@@ -472,7 +472,10 @@ export const GameConstants = {
   party: {
     unityDecayPerDay: 0.02,
     factionDistanceFactor: 60,
-    popularityDriftSd: 1.5,
+    /** Fração da distância até o patamar que a popularidade recupera por mês. */
+    popularityReversion: 0.05,
+    /** Pontos de popularidade por mês para o partido de um governo ótimo (ou péssimo, negativo). */
+    popularityGovernmentEffect: 1,
     supportBaseShare: 0.3,
     compatibilityMoneyFactor: 0.6,
   },

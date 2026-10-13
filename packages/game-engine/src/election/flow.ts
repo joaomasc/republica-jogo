@@ -133,7 +133,10 @@ function recordElection(state: GameState, won: boolean, pct: number, round: 1 | 
     sentiment: won ? 1 : -1,
   });
   const party = getPlayerParty(state);
-  party.popularity = clamp100(party.popularity + (won ? 3 : -1));
+  // Resultado de eleição muda o patamar do partido (não é notícia que passa).
+  const shift = won ? 3 : -1;
+  party.popularity = clamp100(party.popularity + shift);
+  party.popularityBase = clamp100((party.popularityBase ?? party.popularity - shift) + shift);
   player.fame = clamp100(player.fame + (won ? 8 : 3));
 }
 

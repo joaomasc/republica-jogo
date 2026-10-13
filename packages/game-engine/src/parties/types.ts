@@ -50,6 +50,11 @@ export interface Party {
   ideology: IdeologyVector;
   /** Popularidade nacional (0..100). */
   popularity: number;
+  /**
+   * Patamar para onde a popularidade volta quando as notícias passam (resultados eleitorais o
+   * deslocam). Ausente em saves antigos: assume a popularidade atual.
+   */
+  popularityBase?: number;
   /** Influência institucional (0..100) — tempo de TV, cargos, máquina. */
   influence: number;
   /** Recursos financeiros relativos (0..100). */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dispatch, explainIntention, explainRival, startGame, type GameState } from '../src/index';
+import { driftParties } from '../src/parties/parties';
 import { computeIntentions } from '../src/election/voterModel';
 import { defaultConfig } from './helpers';
 
@@ -129,5 +130,22 @@ describe('Causalidade da aprovação', () => {
       s.events.log.some((e) => e.eventId === 'bribe_exposed') ||
         s.events.pending.some((e) => e.eventId === 'bribe_exposed'),
     ).toBe(true);
+  });
+});
+
+describe('Popularidade dos partidos', () => {
+  it('não oscila sem causa: só volta ao patamar e responde à avaliação de quem governa', () => {
+    const s = startGame(defaultConfig(5, 'prefeito', 'RS'));
+    const parties = structuredClone(s.parties);
+    const before = Object.fromEntries(Object.values(parties).map((p) => [p.id, p.popularity]));
+    const [gov, other] = Object.keys(parties);
+    driftParties(parties, 90, {
+      governingPartyId: gov!,
+      governingScore: -1,
+      playerPartyId: null,
+      playerScore: null,
+    });
+    expect(parties[gov!]!.popularity).toBeLessThan(before[gov!]!);
+    expect(parties[other!]!.popularity).toBeCloseTo(before[other!]!, 10);
   });
 });
