@@ -23,6 +23,14 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'ui',
+          root: './packages/ui',
+          include: ['src/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        test: {
           name: 'web',
           root: './apps/web',
           include: ['src/**/*.test.ts'],

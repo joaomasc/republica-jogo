@@ -1,6 +1,7 @@
 import '@fontsource-variable/cinzel';
 import '@fontsource-variable/source-sans-3';
 import '@fontsource-variable/source-serif-4';
+import '@fontsource-variable/source-serif-4/wght-italic.css';
 import './styles/index.css';
 import { REAL_PARTIES } from '@republica/game-engine';
 import { preloadPartyLogos } from '@republica/ui';
