@@ -10,6 +10,25 @@ function previewTone(text: string): string {
   return 'border-ink-500 text-muted';
 }
 
+/** "Por que agora?": a causa do evento no estado do jogo (ou o aviso de que é imprevisto). */
+export function EventCause({ cause, compact }: { cause: string; compact?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-1.5 rounded-lg border border-ink-500 bg-ink-950/50 px-2 py-1.5 text-paper/80',
+        compact ? 'text-[11px]' : 'text-xs',
+      )}
+      data-testid="event-cause"
+    >
+      <Icon name="circle-help" size={compact ? 12 : 14} className="mt-px shrink-0 text-gold-400" />
+      <span>
+        <span className="font-semibold text-gold-300">Por que agora? </span>
+        {cause}
+      </span>
+    </div>
+  );
+}
+
 /** Evento pendente: o tempo para até o jogador decidir (estilo Crusader Kings). */
 export function EventModal() {
   const event = useGame((s) => s.game?.events.pending[0] ?? null);
@@ -30,8 +49,10 @@ export function EventModal() {
           <Badge tone={cat.tone}>{cat.label}</Badge>
           {event.context.unitName && <Badge>{event.context.unitName}</Badge>}
           {event.context.opponentName && <Badge tone="warn">{event.context.opponentName}</Badge>}
+          {event.unforeseen && <Badge tone="warn">Imprevisto</Badge>}
         </div>
         <p className="text-base leading-relaxed text-paper/90">{event.description}</p>
+        {event.cause && <EventCause cause={event.cause} />}
         <div className="space-y-2">
           {event.options.map((o) => (
             <button

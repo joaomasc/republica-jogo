@@ -3,6 +3,7 @@ import { Badge, Button, cn, EmptyState, Icon, Panel, Segmented } from '@republic
 import { useState } from 'react';
 import { useGame, useGameState } from '../../store/gameStore';
 import { CATEGORY_INFO } from './categories';
+import { EventCause } from './EventModal';
 
 const NEWS_LABEL: Record<NewsCategory, string> = {
   campaign: 'Campanha',
@@ -44,8 +45,10 @@ export function EventsView() {
                     {CATEGORY_INFO[e.category].label}
                   </Badge>
                   <span className="font-display font-semibold">{e.title}</span>
+                  {e.unforeseen && <Badge tone="warn">Imprevisto</Badge>}
                 </div>
                 <p className="text-sm text-muted">{e.description}</p>
+                {e.cause && <EventCause cause={e.cause} compact />}
                 <div className="flex flex-wrap gap-1.5">
                   {e.options.map((o) => (
                     <Button
@@ -76,6 +79,7 @@ export function EventsView() {
                   {l.choiceLabel && (
                     <div className="text-xs text-gold-400">Decisão: {l.choiceLabel}</div>
                   )}
+                  {l.cause && <div className="text-[11px] text-muted">{l.cause}</div>}
                 </li>
               ))}
             </ul>
