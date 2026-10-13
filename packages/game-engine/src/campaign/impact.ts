@@ -1,9 +1,11 @@
 import { computeIntentions } from '../election/voterModel';
 import type { GameState } from '../simulation/state';
+import type { CandidateId } from '../core/types';
 import type { ImpactDelta, ImpactSource } from './types';
 
 /** Limite de registros guardados no save. */
 const IMPACT_LIMIT = 900;
+const RIVAL_IMPACT_LIMIT = 1500;
 /** Variações menores que isso (0,001 p.p.) não são registradas. */
 const EPSILON = 1e-5;
 
@@ -17,24 +19,43 @@ export const IMPACT_SOURCE_LABEL: Record<ImpactSource, string> = {
   opponents: 'Adversários',
   decay: 'Desgaste natural',
   airtime: 'Horário eleitoral gratuito',
-  time: 'Passagem do tempo e outros',
+  time: 'Indecisos decidindo',
+  week: 'Pauta da semana',
+  economy: 'Economia e humor do eleitor',
 };
 
+/** Situação "real" de todos os candidatos no modelo de voto (sem erro de pesquisa). */
+export interface RaceStanding {
+  player: ImpactDelta;
+  /** Intenção de voto de cada adversário. */
+  rivals: Record<CandidateId, number>;
+}
+
 /**
- * Situação "real" do jogador no modelo de voto (sem erro de pesquisa).
+ * Situação "real" do jogador e dos adversários no modelo de voto (sem erro de pesquisa).
  * Retorna null fora de campanha ou se o jogador não disputa a eleição em curso.
  */
-export function playerStanding(state: GameState): ImpactDelta | null {
+export function raceStanding(state: GameState): RaceStanding | null {
   const election = state.election;
   if (!election || !state.campaign || state.phase !== 'campaign') return null;
   const id = state.playerId;
   if (!election.candidateIds.includes(id)) return null;
   const snap = computeIntentions(state, election, { includeSegments: false });
+  const rivals: Record<CandidateId, number> = {};
+  for (const c of election.candidateIds) if (c !== id) rivals[c] = snap.total.shares[c] ?? 0;
   return {
-    share: snap.total.shares[id] ?? 0,
-    valid: snap.valid[id] ?? 0,
-    rejection: snap.rejection[id] ?? 0,
+    player: {
+      share: snap.total.shares[id] ?? 0,
+      valid: snap.valid[id] ?? 0,
+      rejection: snap.rejection[id] ?? 0,
+    },
+    rivals,
   };
+}
+
+/** Situação "real" do jogador no modelo de voto (sem erro de pesquisa). */
+export function playerStanding(state: GameState): ImpactDelta | null {
+  return raceStanding(state)?.player ?? null;
 }
 
 export function diffStanding(after: ImpactDelta, before: ImpactDelta): ImpactDelta {
@@ -65,6 +86,7 @@ export function recordImpact(
 ): void {
   const campaign = state.campaign;
   if (!campaign || negligible(delta)) return;
+  campaign.impactCum = (campaign.impactCum ?? 0) + delta.share;
   const log = (campaign.impact ??= []);
   if (key) {
     const same = log.find((e) => e.key === key && e.date === date);
@@ -79,18 +101,45 @@ export function recordImpact(
   if (log.length > IMPACT_LIMIT) log.length = IMPACT_LIMIT;
 }
 
+/** Registra a variação de cada adversário (soma no registro do mesmo dia, fonte e rótulo). */
+export function recordRivalImpact(
+  state: GameState,
+  source: ImpactSource,
+  label: string,
+  deltas: Record<CandidateId, number>,
+  date: string = state.date,
+): void {
+  const campaign = state.campaign;
+  if (!campaign) return;
+  const log = (campaign.rivalImpact ??= []);
+  for (const [candidateId, share] of Object.entries(deltas)) {
+    if (Math.abs(share) < EPSILON) continue;
+    const same = log.find(
+      (e) =>
+        e.date === date &&
+        e.candidateId === candidateId &&
+        e.label === label &&
+        e.source === source,
+    );
+    if (same) same.share += share;
+    else log.unshift({ date, candidateId, source, label, share });
+  }
+  if (log.length > RIVAL_IMPACT_LIMIT) log.length = RIVAL_IMPACT_LIMIT;
+}
+
 /**
  * Mede uma sequência de etapas: cada `step` roda uma mudança e registra a diferença
- * em relação à medição anterior. `total()` diz quanto foi atribuído até agora.
+ * em relação à medição anterior — do jogador e de cada adversário. `total()` diz quanto foi
+ * atribuído até agora.
  */
 export class ImpactMeter {
-  private last: ImpactDelta | null;
-  private readonly start: ImpactDelta | null;
+  private last: RaceStanding | null;
+  private readonly start: RaceStanding | null;
   /** Os registros ficam na data em que a medição começou (o dia que está sendo jogado). */
   private readonly date: string;
 
   constructor(private readonly state: GameState) {
-    this.last = playerStanding(state);
+    this.last = raceStanding(state);
     this.start = this.last;
     this.date = state.date;
   }
@@ -99,14 +148,27 @@ export class ImpactMeter {
     return this.last !== null;
   }
 
-  step(source: ImpactSource, label: string, fn: () => void, key?: string): ImpactDelta | null {
+  /**
+   * Roda `fn` e registra o que mudou. O rótulo pode ser calculado depois da mudança
+   * (função) — útil quando só se sabe o que aconteceu depois (ex.: qual evento saiu).
+   */
+  step(
+    source: ImpactSource,
+    label: string | (() => string),
+    fn: () => void,
+    key?: string,
+  ): ImpactDelta | null {
     fn();
     if (!this.last) return null;
-    const now = playerStanding(this.state);
+    const now = raceStanding(this.state);
     if (!now) return null;
-    const delta = diffStanding(now, this.last);
+    const delta = diffStanding(now.player, this.last.player);
+    const rivals: Record<CandidateId, number> = {};
+    for (const [id, v] of Object.entries(now.rivals)) rivals[id] = v - (this.last.rivals[id] ?? v);
     this.last = now;
-    recordImpact(this.state, source, label, delta, key, this.date);
+    const text = typeof label === 'function' ? label() : label;
+    recordImpact(this.state, source, text, delta, key, this.date);
+    recordRivalImpact(this.state, source, text, rivals, this.date);
     return delta;
   }
 
@@ -118,7 +180,7 @@ export class ImpactMeter {
   /** Variação acumulada desde a criação do medidor. */
   total(): ImpactDelta | null {
     if (!this.start || !this.last) return null;
-    return diffStanding(this.last, this.start);
+    return diffStanding(this.last.player, this.start.player);
   }
 }
 

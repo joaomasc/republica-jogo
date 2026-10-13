@@ -108,6 +108,7 @@ export {
 } from './campaign/finance';
 export { internalPollCost } from './campaign/research';
 export { describeImpact, IMPACT_SOURCE_LABEL } from './campaign/impact';
+export * from './campaign/explain';
 export { RIVAL_STYLE_INFO } from './campaign/weekly';
 export {
   AGENDA_ACTIONS,

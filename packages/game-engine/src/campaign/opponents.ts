@@ -7,6 +7,7 @@ import { publishNews } from '../media/news';
 import { POP_TYPE_IDS } from '../population/popTypes';
 import { getDifficulty } from '../simulation/access';
 import type { GameState } from '../simulation/state';
+import type { ImpactMeter } from './impact';
 import { STYLE_POPS } from './weekly';
 import {
   addKnowledge,
@@ -18,21 +19,37 @@ import {
 
 const O = GameConstants.opponents;
 
+/** Por que um adversário partiu para o ataque (vai na notícia e no medidor de impacto). */
+function attackReason(tacticTarget: boolean, isLeader: boolean, targetIsPlayer: boolean): string {
+  if (tacticTarget) return 'tática da semana';
+  if (isLeader) return targetIsPlayer ? 'você encostou na liderança' : 'defende a liderança';
+  return 'tenta tirar votos do líder';
+}
+
 /**
- * IA simples dos adversários: cada dia gastam parte do orçamento em presença, mídia e persuasão,
- * e eventualmente atacam o líder (ou o jogador, se ele estiver crescendo).
+ * IA dos adversários: cada dia gastam parte do orçamento em agenda (presença), mídia
+ * (conhecimento) e persuasão, e eventualmente atacam o líder (ou o jogador, se ele estiver
+ * crescendo). Os ganhos diários são determinísticos (orçamento × habilidade × estilo); só o
+ * ataque é um sorteio, com chance dada pela agressividade e pela tática. Com `meter`, cada rival
+ * vira uma linha própria no medidor de impacto ("Campanha de Fulano", "Fulano atacou você").
  */
 export function opponentsDailyTick(
   state: GameState,
   rng: Rng,
   standings: Record<CandidateId, number>,
+  meter?: ImpactMeter,
 ): void {
   const election = state.election;
   if (!election) return;
   const diff = getDifficulty(state);
   const leader = Object.entries(standings).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const step = (source: 'opponents', label: string, fn: () => void, key: string): void => {
+    if (meter) meter.step(source, label, fn, key);
+    else fn();
+  };
 
-  for (const id of election.candidateIds) {
+  const day = Math.max(0, diffDays(election.roundStartDate, state.date));
+  for (const [index, id] of election.candidateIds.entries()) {
     if (id === state.playerId) continue;
     const status = election.participants[id];
     const cand = state.candidates[id];
@@ -54,27 +71,39 @@ export function opponentsDailyTick(
     const knowledgeMult = style === 'digital' ? 1.4 : 1;
     const presenceMult = style === 'machine' ? 1.4 : 1;
 
-    for (const unit of election.units)
-      addKnowledge(
-        status,
-        unit.id,
-        O.knowledgeGrowth * power * knowledgeMult * rng.range(0.6, 1.4),
-      );
+    // Agenda do dia: as regiões-foco, mais uma região em rodízio (cada dia uma) e, na tática
+    // de disputa, as regiões do jogador (em dobro).
     const targets = [...status.focusUnits];
-    const extra = rng.pick(election.units);
-    targets.push(extra.id);
+    const tour = election.units[(day + index * 3) % election.units.length];
+    if (tour) targets.push(tour.id);
     if (tactic?.kind === 'contest' && tactic.units) targets.push(...tactic.units, ...tactic.units);
-    for (const unitId of targets) {
-      addPresence(status, unitId, O.presenceGain * power * presenceMult * rng.range(0.5, 1.2));
-      addRegionalMomentum(status, unitId, O.momentumGain * 2 * power * rng.range(0.3, 1.2));
-    }
     const focusPops = style
       ? [...new Set([...(party?.priorityPopTypes ?? []), ...STYLE_POPS[style]])]
       : party?.priorityPopTypes.length
         ? party.priorityPopTypes
         : POP_TYPE_IDS;
-    for (const t of focusPops)
-      addPopMomentum(status, t, O.momentumGain * power * rng.range(0.4, 1.3));
+    const what =
+      tactic?.kind === 'contest'
+        ? 'disputa as suas regiões'
+        : style === 'digital'
+          ? 'redes e vídeos'
+          : style === 'machine'
+            ? 'estrutura partidária nas regiões'
+            : 'agenda e propaganda';
+    step(
+      'opponents',
+      `Campanha de ${cand.ballotName} (${what})`,
+      () => {
+        for (const unit of election.units)
+          addKnowledge(status, unit.id, O.knowledgeGrowth * power * knowledgeMult);
+        for (const unitId of targets) {
+          addPresence(status, unitId, O.presenceGain * power * presenceMult * 0.85);
+          addRegionalMomentum(status, unitId, O.momentumGain * 2 * power * 0.75);
+        }
+        for (const t of focusPops) addPopMomentum(status, t, O.momentumGain * power * 0.85);
+      },
+      `opp:${id}`,
+    );
 
     // Ataques: quem está atrás ataca o líder; o líder ataca quem cresce.
     const myShare = standings[id] ?? 0;
@@ -84,31 +113,37 @@ export function opponentsDailyTick(
       (style === 'attacker' ? 1.6 : style === 'technocrat' ? 0.6 : 1);
     const attackChance =
       O.attackChance * (0.5 + status.aggressiveness) * diff.opponentStrength * tacticMult;
-    if (rng.chance(attackChance)) {
-      const target =
-        tactic?.kind === 'attack' && tactic.targetId && tactic.targetId !== id
-          ? tactic.targetId
-          : id === leader
-            ? playerShare > myShare * 0.6
-              ? state.playerId
-              : null
-            : leader;
-      if (target && target !== id) {
-        const targetStatus = election.participants[target];
-        if (targetStatus) {
-          for (const t of POP_TYPE_IDS)
-            addPopMomentum(targetStatus, t, O.attackMomentum * rng.range(0.5, 1.5));
-          targetStatus.rejectionMod += 0.6;
-          status.rejectionMod += 0.3;
-          const victim = state.candidates[target];
-          publishNews(state, {
-            headline: `${cand.ballotName} parte para o ataque contra ${victim?.ballotName ?? 'adversário'}`,
-            category: 'opponent',
-            sentiment: target === state.playerId ? -1 : 0,
-          });
-        }
-      }
-    }
+    if (!rng.chance(attackChance)) continue;
+    const fromTactic = tactic?.kind === 'attack' && !!tactic.targetId && tactic.targetId !== id;
+    const target = fromTactic
+      ? tactic.targetId!
+      : id === leader
+        ? playerShare > myShare * 0.6
+          ? state.playerId
+          : null
+        : leader;
+    if (!target || target === id) continue;
+    const targetStatus = election.participants[target];
+    if (!targetStatus) continue;
+    const victim = state.candidates[target];
+    const onPlayer = target === state.playerId;
+    const reason = attackReason(fromTactic, id === leader, onPlayer);
+    step(
+      'opponents',
+      `${cand.ballotName} atacou ${onPlayer ? 'você' : (victim?.ballotName ?? 'um adversário')} (${reason})`,
+      () => {
+        for (const t of POP_TYPE_IDS) addPopMomentum(targetStatus, t, O.attackMomentum);
+        targetStatus.rejectionMod += 0.6;
+        status.rejectionMod += 0.3;
+        publishNews(state, {
+          headline: `${cand.ballotName} parte para o ataque contra ${victim?.ballotName ?? 'adversário'}`,
+          body: `Motivo: ${reason}.`,
+          category: 'opponent',
+          sentiment: onPlayer ? -1 : 0,
+        });
+      },
+      `oppatk:${id}`,
+    );
   }
 }
 

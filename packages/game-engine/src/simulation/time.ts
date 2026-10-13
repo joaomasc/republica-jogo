@@ -78,6 +78,22 @@ function isMonthStart(date: string): boolean {
   return date.endsWith('-01');
 }
 
+/** "desemprego 8,1% → 8,4%, inflação 4,0% → 4,2%" — só o que mudou de forma visível. */
+export function describeEconomyChange(
+  before: { unemployment: number; inflation: number; growth: number },
+  after: { unemployment: number; inflation: number; growth: number },
+): string {
+  const f = (v: number) => v.toFixed(1).replace('.', ',');
+  const parts: string[] = [];
+  if (Math.abs(after.unemployment - before.unemployment) >= 0.05)
+    parts.push(`desemprego ${f(before.unemployment)}% → ${f(after.unemployment)}%`);
+  if (Math.abs(after.inflation - before.inflation) >= 0.05)
+    parts.push(`inflação ${f(before.inflation)}% → ${f(after.inflation)}%`);
+  if (Math.abs(after.growth - before.growth) >= 0.05)
+    parts.push(`PIB ${f(before.growth)}% → ${f(after.growth)}%`);
+  return parts.length > 0 ? parts.join(', ') : 'estável';
+}
+
 /** Popularidade do jogador acompanha a intenção de voto e a rejeição. */
 export function updatePopularity(state: GameState, playerShare: number, rejection: number): void {
   const player = getPlayer(state);
@@ -157,19 +173,26 @@ function campaignDailyTick(state: GameState, rng: Rng, meter: ImpactMeter): void
   const groupMoney = interestGroupDonations(state);
   if (groupMoney > 0) earn(state, groupMoney, 'interest_group', 'Apoio de grupos de interesse');
   processAdsDaily(state, rng, meter);
-  meter.step('opponents', 'Campanha dos adversários', () =>
-    opponentsDailyTick(state, rng, snapshot.total.shares),
+  opponentsDailyTick(state, rng, snapshot.total.shares, meter);
+  meter.step('airtime', 'Horário eleitoral gratuito (todos os candidatos)', () =>
+    freeAirtimeTick(state),
   );
-  meter.step('airtime', 'Horário eleitoral gratuito', () => freeAirtimeTick(state));
 
-  meter.step('decay', 'Desgaste natural (todos perdem presença e momentum)', () => {
+  // Desgaste natural, em três linhas: o seu, o dos adversários e o humor do eleitor.
+  meter.step('decay', 'Sua presença e sua lembrança esfriam sem campanha', () => {
+    const status = election.participants[player.id];
     const presenceDecay =
       C.presenceDecayPerDay * (1 - Math.min(0.7, staffBonus(campaign.staff, 'presenceDecay')));
+    if (status) decayStatus(status, presenceDecay);
+    player.scandal = clamp(player.scandal - 0.05, 0, 100);
+  });
+  meter.step('decay', 'Adversários perdem fôlego (presença e momentum esfriam)', () => {
     for (const id of election.candidateIds) {
       const status = election.participants[id];
-      if (status) decayStatus(status, id === player.id ? presenceDecay : C.presenceDecayPerDay);
+      if (status && id !== player.id) decayStatus(status, C.presenceDecayPerDay);
     }
-    player.scandal = clamp(player.scandal - 0.05, 0, 100);
+  });
+  meter.step('decay', 'Humor do eleitor volta ao normal depois das notícias', () => {
     for (const pop of Object.values(state.population.pops))
       pop.mood *= 1 - GameConstants.population.moodDecayPerDay;
   });
@@ -193,14 +216,27 @@ function campaignDailyTick(state: GameState, rng: Rng, meter: ImpactMeter): void
   const status = getPlayerStatus(state);
   if (status) factionReaction(party, status.perceivedIdeology);
 
-  meter.step('event', 'Eventos e efeitos em andamento', () => {
-    processModifiers(state);
-    // Na véspera da eleição não surgem novos eventos (nada fica pendente por cima da votação).
-    if (diffDays(state.date, election.date) > 1) {
-      processScheduledEvents(state);
-      rollEvent(state, GameConstants.events.dailyChanceCampaign);
-    }
-  });
+  if (state.events.modifiers.length > 0)
+    meter.step(
+      'event',
+      `Efeitos em andamento: ${state.events.modifiers.map((m) => m.label).join(', ')}`,
+      () => processModifiers(state),
+    );
+  // Na véspera da eleição não surgem novos eventos (nada fica pendente por cima da votação).
+  if (diffDays(state.date, election.date) > 1) {
+    const logged = state.events.log[0]?.instanceId;
+    meter.step(
+      'event',
+      () => {
+        const fresh = state.events.log[0];
+        return fresh && fresh.instanceId !== logged ? `Evento: ${fresh.title}` : 'Eventos do dia';
+      },
+      () => {
+        processScheduledEvents(state);
+        rollEvent(state, GameConstants.events.dailyChanceCampaign);
+      },
+    );
+  }
   debateInvitationAlerts(state);
 
   const daysSinceStart = diffDays(election.roundStartDate, state.date);
@@ -224,24 +260,44 @@ function moveCampaignDay(state: GameState, rng: Rng): Interrupt {
   }
   const meter = new ImpactMeter(state);
   campaignDailyTick(state, rng, meter);
-  state.date = addDays(state.date, 1);
+  meter.step('time', 'Indecisos decidindo (a eleição está mais perto)', () => {
+    state.date = addDays(state.date, 1);
+  });
   if (isMonthStart(state.date)) {
-    updateEconomy(state, rng);
-    updatePopulationMonthly(state);
+    const before = { ...state.economy };
+    meter.step(
+      'economy',
+      () => `Economia do mês: ${describeEconomyChange(before, state.economy)}`,
+      () => {
+        updateEconomy(state, rng);
+        updatePopulationMonthly(state);
+      },
+    );
   }
-  // O que sobrou: menos indecisos com a proximidade da eleição, economia, popularidade, partidos.
-  meter.settle('time', 'Passagem do tempo (indecisos, economia, popularidade)');
   // 2º turno: o rival corteja um derrotado por semana.
-  if (election.round === 2 && diffDays(election.roundStartDate, state.date) % 7 === 3)
-    rivalMoves(state, rng);
+  if (election.round === 2 && diffDays(election.roundStartDate, state.date) % 7 === 3) {
+    let label = 'Negociações do 2º turno';
+    meter.step(
+      'opponents',
+      () => label,
+      () => {
+        label = rivalMoves(state, rng) ?? label;
+      },
+    );
+  }
   if (
     state.settings.weekly &&
     state.date < election.date &&
     diffDays(election.roundStartDate, state.date) % 7 === 0
   ) {
-    startWeek(state, rng);
-    if (state.campaign?.week?.pending) return 'event';
+    startWeek(state, rng, meter);
+    if (state.campaign?.week?.pending) {
+      meter.settle('time', 'Outros efeitos do dia');
+      return 'event';
+    }
   }
+  // Resíduo (deve ser zero): qualquer coisa que tenha escapado das etapas nomeadas acima.
+  meter.settle('time', 'Outros efeitos do dia');
   if (state.date >= election.date) {
     state.phase = 'election_day';
     election.status = 'election_day';

@@ -113,6 +113,9 @@ export function createPoll(state: GameState, options: RunPollOptions): Poll {
       ? 0
       : houseEffect(pollster, id, state.meta.seed, uncertainty);
 
+  // Margem honesta: o erro amostral E o viés de cada instituto (que muda de uma pesquisa para outra).
+  const samplingMargin = 1.96 * Math.sqrt(0.25 / n) * Math.sqrt(P.designEffect) * uncertainty;
+  const houseMargin = options.kind === 'internal' ? 0 : 1.96 * P.houseEffectSd * uncertainty;
   return withRng(state, (rng) => {
     const total = sample(snapshot.total, n, rng, uncertainty, bias);
     const office = OFFICES[election.officeId];
@@ -186,7 +189,10 @@ export function createPoll(state: GameState, options: RunPollOptions): Poll {
       pollster,
       kind: options.kind,
       sampleSize: n,
-      marginOfError: round(1.96 * Math.sqrt(0.25 / n) * Math.sqrt(P.designEffect) * uncertainty, 4),
+      marginOfError: round(Math.hypot(samplingMargin, houseMargin), 4),
+      samplingMargin: round(samplingMargin, 4),
+      houseMargin: round(houseMargin, 4),
+      ...(state.campaign ? { realMark: state.campaign.impactCum ?? 0 } : {}),
       total,
       rejection,
       knowledge,

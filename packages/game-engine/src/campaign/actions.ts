@@ -17,7 +17,13 @@ import {
 import type { GameState } from '../simulation/state';
 import { getCampaignAction, type CampaignActionDefinition } from './actions.data';
 import { earn, spend } from './finance';
-import { describeImpact, diffStanding, playerStanding, recordImpact } from './impact';
+import {
+  describeImpact,
+  diffStanding,
+  raceStanding,
+  recordImpact,
+  recordRivalImpact,
+} from './impact';
 import { applyProposal } from './promises';
 import { getProposal } from './proposals';
 import { staffBonus } from './staff';
@@ -121,7 +127,7 @@ export function performCampaignAction(state: GameState, input: CampaignActionInp
   const player = getPlayer(state);
   const status = getPlayerStatus(state);
   if (!status) return { result: { ok: false, message: 'Você não está nesta eleição.' }, days: 0 };
-  const before = playerStanding(state);
+  const before = raceStanding(state);
 
   const cost = actionCost(state, def);
   if (cost > 0) spend(state, cost, ACTION_LEDGER[def.id] ?? 'other', def.name);
@@ -262,15 +268,19 @@ export function performCampaignAction(state: GameState, input: CampaignActionInp
   }
 
   // Efeito imediato da ação (antes de o tempo passar), para o jogador ver o quanto rendeu.
-  const after = before ? playerStanding(state) : null;
-  const impact = before && after ? diffStanding(after, before) : undefined;
-  if (impact) {
+  const after = before ? raceStanding(state) : null;
+  const impact = before && after ? diffStanding(after.player, before.player) : undefined;
+  if (impact && before && after) {
     const where = unit
       ? ` — ${unit.name}`
       : input.popTypeId
         ? ` — ${POP_TYPES[input.popTypeId].plural}`
         : '';
-    recordImpact(state, 'action', `${def.name}${where}`, impact);
+    const label = `${def.name}${where}`;
+    recordImpact(state, 'action', label, impact);
+    const rivals: Record<string, number> = {};
+    for (const [id, v] of Object.entries(after.rivals)) rivals[id] = v - (before.rivals[id] ?? v);
+    recordRivalImpact(state, 'action', `Ação de ${player.ballotName}: ${label}`, rivals);
   }
 
   campaign.log.unshift({
