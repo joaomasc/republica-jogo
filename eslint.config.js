@@ -15,6 +15,7 @@ export default tseslint.config(
       'test-results/**',
       'packages/ui/src/map/brazilGeometry.generated.ts',
       'packages/ui/src/map/cityGeometry.generated.ts',
+      'packages/ui/src/atlas/contextGeometry.generated.ts',
       'packages/game-engine/src/map/cities.generated.ts',
     ],
   },

@@ -7,6 +7,7 @@ package-lock.json
 data/geo
 packages/ui/src/map/brazilGeometry.generated.ts
 packages/ui/src/map/cityGeometry.generated.ts
+packages/ui/src/atlas/contextGeometry.generated.ts
 packages/game-engine/src/map/cities.generated.ts
 data/cidades-ibge.json
 apps/server/src/generated
