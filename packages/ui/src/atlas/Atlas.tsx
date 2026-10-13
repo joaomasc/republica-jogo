@@ -131,14 +131,25 @@ const GRATICULE = (() => {
   for (const lat of lats) {
     if (lat < -35 || lat > 10) continue;
     const [x, y] = projectLonLat(-29.2, lat);
-    labels.push({ id: `lat${lat}`, x, y, text: lat === 0 ? '0°' : `${Math.abs(lat)}° ${lat > 0 ? 'N' : 'S'}` });
+    labels.push({
+      id: `lat${lat}`,
+      x,
+      y,
+      text: lat === 0 ? '0°' : `${Math.abs(lat)}° ${lat > 0 ? 'N' : 'S'}`,
+    });
   }
   for (const lon of lons) {
     if (lon < -75 || lon > -35) continue;
     const [x, y] = projectLonLat(lon, -35.6);
     labels.push({ id: `lon${lon}`, x, y, text: `${Math.abs(lon)}° O` });
   }
-  return { d, eq: `M${x0} ${eq}H${x1}`, tropic: `M${x0} ${tropic}H${x1}`, labels, extent: [x0, y0, x1, y1] as Bounds };
+  return {
+    d,
+    eq: `M${x0} ${eq}H${x1}`,
+    tropic: `M${x0} ${tropic}H${x1}`,
+    labels,
+    extent: [x0, y0, x1, y1] as Bounds,
+  };
 })();
 
 const SEA_LABELS = [
@@ -155,7 +166,8 @@ function prefersReducedMotion(): boolean {
   if (typeof document === 'undefined') return true;
   return (
     document.documentElement.classList.contains('reduce-motion') ||
-    (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   );
 }
 
@@ -166,6 +178,10 @@ function placeTooltip(el: HTMLElement, x: number, y: number, size: Size) {
   el.style.left = `${flipX ? x - 16 : x + 16}px`;
   el.style.top = `${flipY ? y - 16 : y + 16}px`;
   el.style.transform = `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`;
+}
+
+function regionFromEvent(e: SyntheticEvent): string | null {
+  return (e.target as Element).closest<SVGElement>('[data-uf]')?.dataset.uf ?? null;
 }
 
 interface OverlayItem {
@@ -228,9 +244,13 @@ export function Atlas({
   const pinch = useRef<{ dist: number; cam: Camera } | null>(null);
   const suppressClick = useRef(false);
   const insetsRef = useRef(insets);
+  const onSelectRef = useRef(onSelect);
   useLayoutEffect(() => {
     insetsRef.current = insets;
+    onSelectRef.current = onSelect;
   });
+  /** Seleção estável (o callback do pai muda a cada renderização dele). */
+  const select = useCallback((id: string) => onSelectRef.current?.(id), []);
 
   const [hover, setHover] = useState<{ kind: 'region' | 'pin'; id: string } | null>(null);
   const mouse = useRef<[number, number]>([0, 0]);
@@ -276,7 +296,8 @@ export function Atlas({
     const pxPerKm = c.k / KM_PER_UNIT;
     const km = [...SCALE_STEPS].reverse().find((s) => s * pxPerKm <= 130) ?? SCALE_STEPS[0]!;
     if (scaleBarRef.current) scaleBarRef.current.style.width = `${Math.round(km * pxPerKm)}px`;
-    if (scaleLabelRef.current) scaleLabelRef.current.textContent = `${km.toLocaleString('pt-BR')} km`;
+    if (scaleLabelRef.current)
+      scaleLabelRef.current.textContent = `${km.toLocaleString('pt-BR')} km`;
   }, []);
 
   const scheduleApply = useCallback(
@@ -314,9 +335,12 @@ export function Atlas({
         return;
       }
       const duration = flightDuration(from, target, s);
-      const start = performance.now();
+      // O relógio começa no primeiro quadro desenhado: se um painel pesado montar junto,
+      // o voo não "pula" o começo.
+      let start = -1;
       rootRef.current?.classList.add('atlas-moving');
       const step = (now: number) => {
+        if (start < 0) start = now;
         const t = Math.min(1, (now - start) / duration);
         apply(interpolateCamera(from, target, easeInOutCubic(t), s));
         if (t < 1) anim.current = requestAnimationFrame(step);
@@ -370,7 +394,8 @@ export function Atlas({
   // A dica nasce onde o mouse está (não no canto, esperando o próximo movimento).
   const hoverKey = hover ? `${hover.kind}:${hover.id}` : '';
   useLayoutEffect(() => {
-    if (hoverKey && tooltipRef.current) placeTooltip(tooltipRef.current, mouse.current[0], mouse.current[1], size.current);
+    if (hoverKey && tooltipRef.current)
+      placeTooltip(tooltipRef.current, mouse.current[0], mouse.current[1], size.current);
   }, [hoverKey]);
 
   // --- Tamanho do contêiner -------------------------------------------------------------------
@@ -435,7 +460,14 @@ export function Atlas({
       const factor = Math.exp(-e.deltaY * unit);
       userMoved.current = true;
       markMoving();
-      scheduleApply(clampCamera(zoomAround(cam.current, factor, sx, sy, limits()), panBounds, size.current, limits()));
+      scheduleApply(
+        clampCamera(
+          zoomAround(cam.current, factor, sx, sy, limits()),
+          panBounds,
+          size.current,
+          limits(),
+        ),
+      );
     };
     const onMove = (e: PointerEvent) => {
       if (!pointers.current.has(e.pointerId)) return;
@@ -466,7 +498,14 @@ export function Atlas({
       }
       if (d.moved) {
         markMoving();
-        scheduleApply(clampCamera({ ...d.cam, x: d.cam.x + dx, y: d.cam.y + dy }, panBounds, size.current, limits()));
+        scheduleApply(
+          clampCamera(
+            { ...d.cam, x: d.cam.x + dx, y: d.cam.y + dy },
+            panBounds,
+            size.current,
+            limits(),
+          ),
+        );
       }
     };
     const onUp = (e: PointerEvent) => {
@@ -497,7 +536,14 @@ export function Atlas({
     const onDouble = (e: MouseEvent) => {
       const [sx, sy] = local(e);
       userMoved.current = true;
-      flyToCamera(clampCamera(zoomAround(cam.current, 1.9, sx, sy, limits()), panBounds, size.current, limits()));
+      flyToCamera(
+        clampCamera(
+          zoomAround(cam.current, 1.9, sx, sy, limits()),
+          panBounds,
+          size.current,
+          limits(),
+        ),
+      );
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     svg.addEventListener('pointerdown', onDown);
@@ -530,7 +576,13 @@ export function Atlas({
     userMoved.current = true;
     flyToCamera(
       clampCamera(
-        zoomAround(cam.current, factor, area.x + area.width / 2, area.y + area.height / 2, limits()),
+        zoomAround(
+          cam.current,
+          factor,
+          area.x + area.width / 2,
+          area.y + area.height / 2,
+          limits(),
+        ),
         panBounds,
         s,
         limits(),
@@ -556,8 +608,6 @@ export function Atlas({
     mouse.current = [e.clientX - rect.left, e.clientY - rect.top];
     placeTooltip(el, mouse.current[0], mouse.current[1], size.current);
   };
-  const regionFromEvent = (e: SyntheticEvent): string | null =>
-    (e.target as Element).closest<SVGElement>('[data-uf]')?.dataset.uf ?? null;
 
   const tooltipContent =
     hover?.kind === 'region'
@@ -566,18 +616,362 @@ export function Atlas({
         ? pinById.get(hover.id)?.title
         : null;
 
-  const focusSet = focus ? new Set(focus) : null;
   const hatch = `${uid}-hatch`;
   const glow = `${uid}-glow`;
   const blur = `${uid}-blur`;
+  // Camadas pesadas memoizadas: passar o mouse (hover) re-renderiza só os realces, não o mapa.
+  const focusKey = focus ? focus.join(',') : '';
+  const defsLayer = useMemo(
+    () => (
+      <defs>
+        <pattern
+          id={hatch}
+          width="7"
+          height="7"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <rect width="7" height="7" fill="#22323a" />
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="7"
+            stroke="#5b7076"
+            strokeWidth="2.2"
+            strokeOpacity="0.55"
+          />
+        </pattern>
+        <filter id={glow} x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.5" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id={blur} x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+        {/* Geometria única das regiões, reaproveitada por <use>. O vector-effect fica aqui: no <use> ele não chega ao clone. */}
+        {regions.map((r) => (
+          <path key={r.id} id={`${uid}-r-${r.id}`} d={r.d} vectorEffect="non-scaling-stroke" />
+        ))}
+      </defs>
+    ),
+    [uid, regions, hatch, glow, blur],
+  );
+  const worldLayers = useMemo(
+    () => (
+      <>
+        {context && (
+          <g className="atlas-context" pointerEvents="none">
+            <path className="atlas-graticule" d={GRATICULE.d} vectorEffect="non-scaling-stroke" />
+            <path
+              className="atlas-graticule-mark"
+              d={GRATICULE.eq}
+              vectorEffect="non-scaling-stroke"
+            />
+            <path
+              className="atlas-graticule-mark atlas-dashed"
+              d={GRATICULE.tropic}
+              vectorEffect="non-scaling-stroke"
+            />
+            {CONTEXT_LAND.map((c) => (
+              <path
+                key={c.id}
+                className="atlas-neighbor"
+                d={c.d}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            <path className="atlas-neighbor-base" d={BRAZIL_OUTLINE} />
+          </g>
+        )}
+
+        {/* Sombra da costa e contorno nacional (traço por baixo do preenchimento: só a metade de fora aparece). */}
+        <g pointerEvents="none">
+          <g className="atlas-shadow" filter={`url(#${blur})`} transform="translate(0 6)">
+            {regions.map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} />
+            ))}
+          </g>
+          <g className="atlas-nation-outer">
+            {regions.map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} />
+            ))}
+          </g>
+          <g className="atlas-nation-inner">
+            {regions.map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} />
+            ))}
+          </g>
+          <g className="atlas-land-base">
+            {regions.map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} />
+            ))}
+          </g>
+        </g>
+
+        {/* Regiões interativas */}
+        <g
+          className="atlas-regions"
+          onPointerOver={(e) => {
+            const id = regionFromEvent(e);
+            if (id) setHover({ kind: 'region', id });
+          }}
+          onPointerOut={(e) => {
+            if (!(e.relatedTarget as Element | null)?.closest?.('[data-uf]')) setHover(null);
+          }}
+          onClick={(e) => {
+            if (suppressClick.current) return;
+            const id = regionFromEvent(e);
+            if (id) select(id);
+          }}
+        >
+          {regions.map((r) => {
+            const p = paint[r.id];
+            return (
+              <path
+                key={r.id}
+                d={r.d}
+                data-uf={r.id}
+                className="atlas-region"
+                fill={p?.fill ?? '#2a3a40'}
+                fillOpacity={p?.opacity ?? 1}
+                tabIndex={0}
+                role="button"
+                aria-label={r.name}
+                aria-pressed={selected === r.id}
+                onFocus={(e) =>
+                  setKeyboardFocus(e.currentTarget.matches(':focus-visible') ? r.id : null)
+                }
+                onBlur={() => setKeyboardFocus(null)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  // Não deixa o Espaço chegar ao atalho global de pausa.
+                  e.preventDefault();
+                  e.stopPropagation();
+                  select(r.id);
+                }}
+              />
+            );
+          })}
+        </g>
+
+        <g pointerEvents="none">
+          {regions
+            .filter((r) => paint[r.id]?.noData)
+            .map((r) => (
+              <use key={r.id} href={`#${uid}-r-${r.id}`} fill={`url(#${hatch})`} />
+            ))}
+        </g>
+
+        {context && (
+          <g className="atlas-water" pointerEvents="none">
+            {RIVERS.map((r, i) => (
+              <path
+                key={`${r.name}-${i}`}
+                d={r.d}
+                className={`atlas-river atlas-river-${Math.min(6, Math.max(1, r.rank))}`}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            {LAKES.map((l, i) => (
+              <path
+                key={`${l.name}-${i}`}
+                d={l.d}
+                className="atlas-lake"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </g>
+        )}
+
+        <g className="atlas-borders" pointerEvents="none">
+          {regions.map((r) => (
+            <use key={r.id} href={`#${uid}-r-${r.id}`} />
+          ))}
+        </g>
+
+        {focusKey && (
+          <g className="atlas-dim" pointerEvents="none">
+            {regions
+              .filter((r) => !focusKey.split(',').includes(r.id))
+              .map((r) => (
+                <use key={r.id} href={`#${uid}-r-${r.id}`} />
+              ))}
+          </g>
+        )}
+      </>
+    ),
+    [uid, regions, paint, selected, context, focusKey, hatch, blur, select],
+  );
+  const overlayLayers = useMemo(
+    () => (
+      <>
+        {context && (
+          <g pointerEvents="none">
+            {GRATICULE.labels.map((l) => (
+              <g key={l.id} data-wx={l.x} data-wy={l.y} className="atlas-lod-0-only">
+                <text className="atlas-grid-label" textAnchor="middle" dominantBaseline="middle">
+                  {l.text}
+                </text>
+              </g>
+            ))}
+            {SEA_LABELS.map((s) => (
+              <g key={s.id} data-wx={s.at[0]} data-wy={s.at[1]}>
+                <text
+                  className={
+                    s.id === 'atl' || s.id === 'pac' ? 'atlas-sea-label' : 'atlas-line-label'
+                  }
+                  textAnchor="middle"
+                >
+                  {s.text}
+                </text>
+              </g>
+            ))}
+            {CONTEXT_LAND.filter((c) => c.label).map((c) => (
+              <g
+                key={c.id}
+                data-wx={c.label![0]}
+                data-wy={c.label![1]}
+                className={SMALL_COUNTRIES.has(c.id) ? 'atlas-lod-1' : undefined}
+              >
+                <text className="atlas-country-label" textAnchor="middle" dominantBaseline="middle">
+                  {c.name}
+                </text>
+              </g>
+            ))}
+          </g>
+        )}
+
+        {pins
+          .filter((p) => p.kind !== 'badge')
+          .map((p) => (
+            <g
+              key={p.id}
+              data-wx={p.x}
+              data-wy={p.y}
+              className={p.kind === 'capital' ? 'atlas-lod-1' : undefined}
+              pointerEvents="none"
+            >
+              {p.kind === 'federal-capital' ? (
+                <path
+                  className="atlas-capital-star"
+                  d="M0 -7.5L2.2 -2.3L7.6 -2.3L3.3 1L4.9 6.5L0 3.3L-4.9 6.5L-3.3 1L-7.6 -2.3L-2.2 -2.3Z"
+                />
+              ) : (
+                <circle r={2.6} className="atlas-capital-dot" />
+              )}
+              {p.label && (
+                <text
+                  className={`atlas-capital-label ${p.kind === 'federal-capital' ? 'atlas-lod-1' : 'atlas-lod-2'}`}
+                  x={p.kind === 'federal-capital' ? 0 : 6}
+                  y={p.kind === 'federal-capital' ? 18 : 3.5}
+                  textAnchor={p.kind === 'federal-capital' ? 'middle' : 'start'}
+                >
+                  {p.label}
+                </text>
+              )}
+            </g>
+          ))}
+
+        <g pointerEvents="none">
+          {regions.map((r) => {
+            const [ox, oy] = r.labelOffset ?? [0, 0];
+            const value = values?.[r.id];
+            const span = Math.min(r.bbox[2] - r.bbox[0], r.bbox[3] - r.bbox[1]);
+            return (
+              <Fragment key={r.id}>
+                <g
+                  data-wx={r.centroid[0]}
+                  data-wy={r.centroid[1]}
+                  data-ox={ox}
+                  data-oy={oy}
+                  className="atlas-region-label atlas-hide-lod-2"
+                >
+                  <text className="atlas-state-short" textAnchor="middle" dominantBaseline="middle">
+                    {r.short}
+                  </text>
+                </g>
+                <g
+                  data-wx={r.centroid[0]}
+                  data-wy={r.centroid[1]}
+                  data-ox={ox}
+                  data-oy={oy}
+                  data-minpx={110}
+                  data-span={r.bbox[2] - r.bbox[0]}
+                  className="atlas-region-label atlas-lod-2"
+                >
+                  <text className="atlas-state-name" textAnchor="middle" dominantBaseline="middle">
+                    {r.name}
+                  </text>
+                </g>
+                {value && (
+                  <g
+                    data-wx={r.centroid[0]}
+                    data-wy={r.centroid[1]}
+                    data-ox={ox}
+                    data-oy={oy}
+                    data-minpx={34}
+                    data-span={span}
+                    className="atlas-value"
+                  >
+                    <text textAnchor="middle" y={15}>
+                      {value}
+                    </text>
+                  </g>
+                )}
+              </Fragment>
+            );
+          })}
+        </g>
+
+        {pins
+          .filter((p) => p.kind === 'badge')
+          .map((p) => (
+            <g
+              key={p.id}
+              data-wx={p.x}
+              data-wy={p.y}
+              className={`atlas-badge atlas-tone-${p.tone ?? 'gold'}${p.minLod ? ` atlas-lod-${p.minLod}` : ''}`}
+              role={p.regionId ? 'button' : undefined}
+              aria-label={p.title}
+              onPointerEnter={() => setHover({ kind: 'pin', id: p.id })}
+              onPointerLeave={() => setHover(null)}
+              onClick={() => {
+                if (!suppressClick.current && p.regionId) select(p.regionId);
+              }}
+            >
+              <g transform={`translate(${p.offset?.[0] ?? 0} ${p.offset?.[1] ?? 0})`}>
+                <circle r={10.5} className="atlas-badge-disc" />
+                {p.icon && (
+                  <g transform="translate(-6.5 -6.5)">
+                    <Icon name={p.icon} size={13} strokeWidth={2.3} />
+                  </g>
+                )}
+                {p.count !== undefined && p.count > 1 && (
+                  <g transform="translate(9 -8)">
+                    <circle r={6.5} className="atlas-badge-count" />
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      className="atlas-badge-count-text"
+                    >
+                      {p.count > 9 ? '9+' : p.count}
+                    </text>
+                  </g>
+                )}
+              </g>
+            </g>
+          ))}
+      </>
+    ),
+    [context, pins, regions, values, select],
+  );
 
   return (
-    <div
-      ref={rootRef}
-      className="atlas"
-      data-lod="0"
-      onPointerLeave={() => setHover(null)}
-    >
+    <div ref={rootRef} className="atlas" data-lod="0" onPointerLeave={() => setHover(null)}>
       <svg
         ref={svgRef}
         className="atlas-svg"
@@ -585,151 +979,10 @@ export function Atlas({
         aria-label={ariaLabel}
         onPointerMove={onPointerMoveTooltip}
       >
-        <defs>
-          <pattern id={hatch} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="7" height="7" fill="#22323a" />
-            <line x1="0" y1="0" x2="0" y2="7" stroke="#5b7076" strokeWidth="2.2" strokeOpacity="0.55" />
-          </pattern>
-          <filter id={glow} x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3.5" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id={blur} x="-10%" y="-10%" width="120%" height="120%">
-            <feGaussianBlur stdDeviation="6" />
-          </filter>
-          {/* Geometria única das regiões, reaproveitada por <use>. O vector-effect fica aqui: no <use> ele não chega ao clone. */}
-          {regions.map((r) => (
-            <path key={r.id} id={`${uid}-r-${r.id}`} d={r.d} vectorEffect="non-scaling-stroke" />
-          ))}
-        </defs>
+        {defsLayer}
 
         <g ref={worldRef}>
-          {context && (
-            <g className="atlas-context" pointerEvents="none">
-              <path className="atlas-graticule" d={GRATICULE.d} vectorEffect="non-scaling-stroke" />
-              <path className="atlas-graticule-mark" d={GRATICULE.eq} vectorEffect="non-scaling-stroke" />
-              <path
-                className="atlas-graticule-mark atlas-dashed"
-                d={GRATICULE.tropic}
-                vectorEffect="non-scaling-stroke"
-              />
-              {CONTEXT_LAND.map((c) => (
-                <path key={c.id} className="atlas-neighbor" d={c.d} vectorEffect="non-scaling-stroke" />
-              ))}
-              <path className="atlas-neighbor-base" d={BRAZIL_OUTLINE} />
-            </g>
-          )}
-
-          {/* Sombra da costa e contorno nacional (traço por baixo do preenchimento: só a metade de fora aparece). */}
-          <g pointerEvents="none">
-            <g className="atlas-shadow" filter={`url(#${blur})`} transform="translate(0 6)">
-              {regions.map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} />
-              ))}
-            </g>
-            <g className="atlas-nation-outer">
-              {regions.map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} />
-              ))}
-            </g>
-            <g className="atlas-nation-inner">
-              {regions.map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} />
-              ))}
-            </g>
-            <g className="atlas-land-base">
-              {regions.map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} />
-              ))}
-            </g>
-          </g>
-
-          {/* Regiões interativas */}
-          <g
-            className="atlas-regions"
-            onPointerOver={(e) => {
-              const id = regionFromEvent(e);
-              if (id) setHover({ kind: 'region', id });
-            }}
-            onPointerOut={(e) => {
-              if (!(e.relatedTarget as Element | null)?.closest?.('[data-uf]')) setHover(null);
-            }}
-            onClick={(e) => {
-              if (suppressClick.current) return;
-              const id = regionFromEvent(e);
-              if (id) onSelect?.(id);
-            }}
-          >
-            {regions.map((r) => {
-              const p = paint[r.id];
-              return (
-                <path
-                  key={r.id}
-                  d={r.d}
-                  data-uf={r.id}
-                  className="atlas-region"
-                  fill={p?.fill ?? '#2a3a40'}
-                  fillOpacity={p?.opacity ?? 1}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={r.name}
-                  aria-pressed={selected === r.id}
-                  onFocus={(e) => setKeyboardFocus(e.currentTarget.matches(':focus-visible') ? r.id : null)}
-                  onBlur={() => setKeyboardFocus(null)}
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Enter' && e.key !== ' ') return;
-                    // Não deixa o Espaço chegar ao atalho global de pausa.
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onSelect?.(r.id);
-                  }}
-                />
-              );
-            })}
-          </g>
-
-          <g pointerEvents="none">
-            {regions
-              .filter((r) => paint[r.id]?.noData)
-              .map((r) => (
-                <use key={r.id} href={`#${uid}-r-${r.id}`} fill={`url(#${hatch})`} />
-              ))}
-          </g>
-
-          {context && (
-            <g className="atlas-water" pointerEvents="none">
-              {RIVERS.map((r, i) => (
-                <path
-                  key={`${r.name}-${i}`}
-                  d={r.d}
-                  className={`atlas-river atlas-river-${Math.min(6, Math.max(1, r.rank))}`}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {LAKES.map((l, i) => (
-                <path key={`${l.name}-${i}`} d={l.d} className="atlas-lake" vectorEffect="non-scaling-stroke" />
-              ))}
-            </g>
-          )}
-
-          <g className="atlas-borders" pointerEvents="none">
-            {regions.map((r) => (
-              <use key={r.id} href={`#${uid}-r-${r.id}`} />
-            ))}
-          </g>
-
-          {focusSet && (
-            <g className="atlas-dim" pointerEvents="none">
-              {regions
-                .filter((r) => !focusSet.has(r.id))
-                .map((r) => (
-                  <use key={r.id} href={`#${uid}-r-${r.id}`} />
-                ))}
-            </g>
-          )}
+          {worldLayers}
 
           <g pointerEvents="none">
             {pulses.map((p) =>
@@ -746,15 +999,13 @@ export function Atlas({
                 id &&
                 id !== selected &&
                 regionById.has(id) && (
-                  <use
-                    key={i}
-                    href={`#${uid}-r-${id}`}
-                    className="atlas-hover"
-                  />
+                  <use key={i} href={`#${uid}-r-${id}`} className="atlas-hover" />
                 ),
             )}
             {marked?.map((id) =>
-              regionById.has(id) ? <use key={`m-${id}`} href={`#${uid}-r-${id}`} className="atlas-marked" /> : null,
+              regionById.has(id) ? (
+                <use key={`m-${id}`} href={`#${uid}-r-${id}`} className="atlas-marked" />
+              ) : null,
             )}
             {selected && regionById.has(selected) && (
               <use
@@ -768,153 +1019,7 @@ export function Atlas({
 
         {/* Overlay em pixels de tela: rótulos e marcadores (posicionados pela câmera). */}
         <g ref={overlayRef} className="atlas-overlay">
-          {context && (
-            <g pointerEvents="none">
-              {GRATICULE.labels.map((l) => (
-                <g key={l.id} data-wx={l.x} data-wy={l.y} className="atlas-lod-0-only">
-                  <text className="atlas-grid-label" textAnchor="middle" dominantBaseline="middle">
-                    {l.text}
-                  </text>
-                </g>
-              ))}
-              {SEA_LABELS.map((s) => (
-                <g key={s.id} data-wx={s.at[0]} data-wy={s.at[1]}>
-                  <text className={s.id === 'atl' || s.id === 'pac' ? 'atlas-sea-label' : 'atlas-line-label'} textAnchor="middle">
-                    {s.text}
-                  </text>
-                </g>
-              ))}
-              {CONTEXT_LAND.filter((c) => c.label).map((c) => (
-                <g
-                  key={c.id}
-                  data-wx={c.label![0]}
-                  data-wy={c.label![1]}
-                  className={SMALL_COUNTRIES.has(c.id) ? 'atlas-lod-1' : undefined}
-                >
-                  <text className="atlas-country-label" textAnchor="middle" dominantBaseline="middle">
-                    {c.name}
-                  </text>
-                </g>
-              ))}
-            </g>
-          )}
-
-          {pins
-            .filter((p) => p.kind !== 'badge')
-            .map((p) => (
-              <g
-                key={p.id}
-                data-wx={p.x}
-                data-wy={p.y}
-                className={p.kind === 'capital' ? 'atlas-lod-1' : undefined}
-                pointerEvents="none"
-              >
-                {p.kind === 'federal-capital' ? (
-                  <path
-                    className="atlas-capital-star"
-                    d="M0 -7.5L2.2 -2.3L7.6 -2.3L3.3 1L4.9 6.5L0 3.3L-4.9 6.5L-3.3 1L-7.6 -2.3L-2.2 -2.3Z"
-                  />
-                ) : (
-                  <circle r={2.6} className="atlas-capital-dot" />
-                )}
-                {p.label && (
-                  <text
-                    className={`atlas-capital-label ${p.kind === 'federal-capital' ? 'atlas-lod-1' : 'atlas-lod-2'}`}
-                    x={p.kind === 'federal-capital' ? 0 : 6}
-                    y={p.kind === 'federal-capital' ? 18 : 3.5}
-                    textAnchor={p.kind === 'federal-capital' ? 'middle' : 'start'}
-                  >
-                    {p.label}
-                  </text>
-                )}
-              </g>
-            ))}
-
-          <g pointerEvents="none">
-            {regions.map((r) => {
-              const [ox, oy] = r.labelOffset ?? [0, 0];
-              const value = values?.[r.id];
-              const span = Math.min(r.bbox[2] - r.bbox[0], r.bbox[3] - r.bbox[1]);
-              return (
-                <Fragment key={r.id}>
-                  <g
-                    data-wx={r.centroid[0]}
-                    data-wy={r.centroid[1]}
-                    data-ox={ox}
-                    data-oy={oy}
-                    className="atlas-region-label atlas-hide-lod-2"
-                  >
-                    <text className="atlas-state-short" textAnchor="middle" dominantBaseline="middle">
-                      {r.short}
-                    </text>
-                  </g>
-                  <g
-                    data-wx={r.centroid[0]}
-                    data-wy={r.centroid[1]}
-                    data-ox={ox}
-                    data-oy={oy}
-                    data-minpx={110}
-                    data-span={r.bbox[2] - r.bbox[0]}
-                    className="atlas-region-label atlas-lod-2"
-                  >
-                    <text className="atlas-state-name" textAnchor="middle" dominantBaseline="middle">
-                      {r.name}
-                    </text>
-                  </g>
-                  {value && (
-                    <g
-                      data-wx={r.centroid[0]}
-                      data-wy={r.centroid[1]}
-                      data-ox={ox}
-                      data-oy={oy}
-                      data-minpx={34}
-                      data-span={span}
-                      className="atlas-value"
-                    >
-                      <text textAnchor="middle" y={15}>
-                        {value}
-                      </text>
-                    </g>
-                  )}
-                </Fragment>
-              );
-            })}
-          </g>
-
-          {pins
-            .filter((p) => p.kind === 'badge')
-            .map((p) => (
-              <g
-                key={p.id}
-                data-wx={p.x}
-                data-wy={p.y}
-                className={`atlas-badge atlas-tone-${p.tone ?? 'gold'}${p.minLod ? ` atlas-lod-${p.minLod}` : ''}`}
-                role={p.regionId ? 'button' : undefined}
-                aria-label={p.title}
-                onPointerEnter={() => setHover({ kind: 'pin', id: p.id })}
-                onPointerLeave={() => setHover(null)}
-                onClick={() => {
-                  if (!suppressClick.current && p.regionId) onSelect?.(p.regionId);
-                }}
-              >
-                <g transform={`translate(${p.offset?.[0] ?? 0} ${p.offset?.[1] ?? 0})`}>
-                  <circle r={10.5} className="atlas-badge-disc" />
-                  {p.icon && (
-                    <g transform="translate(-6.5 -6.5)">
-                      <Icon name={p.icon} size={13} strokeWidth={2.3} />
-                    </g>
-                  )}
-                  {p.count !== undefined && p.count > 1 && (
-                    <g transform="translate(9 -8)">
-                      <circle r={6.5} className="atlas-badge-count" />
-                      <text textAnchor="middle" dominantBaseline="central" className="atlas-badge-count-text">
-                        {p.count > 9 ? '9+' : p.count}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              </g>
-            ))}
+          {overlayLayers}
         </g>
       </svg>
 
@@ -929,13 +1034,28 @@ export function Atlas({
           <span ref={scaleLabelRef} className="atlas-scale-label" />
         </div>
         <div className="cartouche pointer-events-auto flex flex-col divide-y divide-gold-500/25 overflow-hidden rounded-[5px]">
-          <button type="button" className="atlas-ctl" onClick={() => zoomBy(1.6)} aria-label="Aproximar">
+          <button
+            type="button"
+            className="atlas-ctl"
+            onClick={() => zoomBy(1.6)}
+            aria-label="Aproximar"
+          >
             <Plus size={15} />
           </button>
-          <button type="button" className="atlas-ctl" onClick={() => zoomBy(1 / 1.6)} aria-label="Afastar">
+          <button
+            type="button"
+            className="atlas-ctl"
+            onClick={() => zoomBy(1 / 1.6)}
+            aria-label="Afastar"
+          >
             <Minus size={15} />
           </button>
-          <button type="button" className="atlas-ctl" onClick={recenter} aria-label="Enquadrar o mapa">
+          <button
+            type="button"
+            className="atlas-ctl"
+            onClick={recenter}
+            aria-label="Enquadrar o mapa"
+          >
             <Maximize2 size={13} />
           </button>
         </div>
@@ -988,10 +1108,16 @@ function CompassRose() {
         </g>
       ))}
       <circle r="3" fill="#0b1a22" stroke="#e3c372" strokeWidth="1" />
-      <text y="-46" textAnchor="middle" fontSize="9" fill="#e3c372" fontWeight="700" className="font-display">
+      <text
+        y="-46"
+        textAnchor="middle"
+        fontSize="9"
+        fill="#e3c372"
+        fontWeight="700"
+        className="font-display"
+      >
         N
       </text>
     </svg>
   );
 }
-

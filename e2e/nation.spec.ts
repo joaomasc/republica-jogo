@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openNav } from './helpers';
+import { openNav, waitMapIdle } from './helpers';
 
 /** Pasta para capturas de tela opcionais (SHOTS=<pasta>). */
 const SHOTS = process.env.SHOTS;
@@ -83,6 +83,7 @@ test.describe('Nação: economia, leis e Congresso', () => {
 
     // Região: seção econômica do estado.
     await page.keyboard.press('Escape');
+    await waitMapIdle(page);
     await page.locator('path[data-uf="SP"]').click({ force: true });
     await expect(page.getByTestId('state-economy-SP')).toBeVisible();
     await shot(page, '12-regiao');

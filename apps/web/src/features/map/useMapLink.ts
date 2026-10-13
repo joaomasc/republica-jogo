@@ -35,7 +35,11 @@ export function useMapPick(
   // Lista como chave estável: um array novo com os mesmos ids não re-registra.
   const key = selected.join(',');
   useEffect(() => {
-    setMapPick(enabled ? { hint, selected: key ? key.split(',') : [], pick: (id) => latest.current(id) } : null);
+    setMapPick(
+      enabled
+        ? { hint, selected: key ? key.split(',') : [], pick: (id) => latest.current(id) }
+        : null,
+    );
   }, [hint, key, enabled, setMapPick]);
   useEffect(() => () => setMapPick(null), [setMapPick]);
 }

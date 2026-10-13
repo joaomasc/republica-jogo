@@ -35,12 +35,16 @@ export interface ZoomLimits {
 }
 
 /** Área útil da tela depois de descontar a interface (nunca menor que um mínimo razoável). */
-export function safeArea(size: Size, insets: Insets): { x: number; y: number; width: number; height: number } {
+export function safeArea(
+  size: Size,
+  insets: Insets,
+): { x: number; y: number; width: number; height: number } {
   const width = Math.max(160, size.width - insets.left - insets.right);
   const height = Math.max(160, size.height - insets.top - insets.bottom);
   // Se a interface ocupa quase tudo, centraliza na tela inteira em vez de espremer o mapa.
   const x = size.width - insets.left - insets.right >= 160 ? insets.left : (size.width - width) / 2;
-  const y = size.height - insets.top - insets.bottom >= 160 ? insets.top : (size.height - height) / 2;
+  const y =
+    size.height - insets.top - insets.bottom >= 160 ? insets.top : (size.height - height) / 2;
   return { x, y, width, height };
 }
 
@@ -75,7 +79,13 @@ export function worldToScreen(cam: Camera, wx: number, wy: number): [number, num
 }
 
 /** Zoom por um fator mantendo fixo o ponto da tela (sx, sy) — o ponto sob o cursor não "foge". */
-export function zoomAround(cam: Camera, factor: number, sx: number, sy: number, limits: ZoomLimits): Camera {
+export function zoomAround(
+  cam: Camera,
+  factor: number,
+  sx: number,
+  sy: number,
+  limits: ZoomLimits,
+): Camera {
   const k = Math.min(limits.maxK, Math.max(limits.minK, cam.k * factor));
   const [wx, wy] = screenToWorld(cam, sx, sy);
   return { k, x: sx - wx * k, y: sy - wy * k };
@@ -85,7 +95,13 @@ export function zoomAround(cam: Camera, factor: number, sx: number, sy: number, 
  * Mantém parte do mundo sempre visível: o jogador não "perde" o mapa arrastando para fora.
  * Pelo menos `keep` (fração da área útil) do retângulo do mundo continua na tela em cada eixo.
  */
-export function clampCamera(cam: Camera, world: Bounds, size: Size, limits: ZoomLimits, keep = 0.35): Camera {
+export function clampCamera(
+  cam: Camera,
+  world: Bounds,
+  size: Size,
+  limits: ZoomLimits,
+  keep = 0.35,
+): Camera {
   const k = Math.min(limits.maxK, Math.max(limits.minK, cam.k));
   const clampAxis = (offset: number, w0: number, w1: number, screen: number) => {
     const span = (w1 - w0) * k;
@@ -149,12 +165,18 @@ export interface FrameOptions {
  * visível (parte dele pode ficar sob o painel, como um atlas aberto sobre a mesa), em vez de
  * encolher até sumir.
  */
-export function frameBounds(bounds: Bounds, size: Size, insets: Insets, options: FrameOptions = {}): Camera {
+export function frameBounds(
+  bounds: Bounds,
+  size: Size,
+  insets: Insets,
+  options: FrameOptions = {},
+): Camera {
   const { padding = 28, minFreeWidth = 420 } = options;
   const full = fitBounds(bounds, size, NO_INSETS, padding);
   const minK = options.minK ?? full.k * 0.7;
   const maxK = options.maxK ?? full.k;
-  const ins = size.width - insets.left - insets.right < minFreeWidth ? { ...insets, right: 0 } : insets;
+  const ins =
+    size.width - insets.left - insets.right < minFreeWidth ? { ...insets, right: 0 } : insets;
   const fit = fitBounds(bounds, size, ins, padding);
   const k = Math.max(minK, Math.min(maxK, fit.k));
   const area = safeArea(size, ins);

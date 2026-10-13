@@ -66,7 +66,11 @@ function Ranking({
 }) {
   const rows = Object.entries(active.layer.cells)
     .filter(([, c]) => Number.isFinite(c.value))
-    .map(([id, c]) => ({ id, cell: c, sort: active.layer.scale === 'categorical' ? (c.strength ?? c.value) : c.value }))
+    .map(([id, c]) => ({
+      id,
+      cell: c,
+      sort: active.layer.scale === 'categorical' ? (c.strength ?? c.value) : c.value,
+    }))
     .sort((a, b) => b.sort - a.sort);
   return (
     <ol className="mt-2 max-h-48 space-y-px overflow-y-auto pr-1" data-testid="map-ranking">
@@ -87,8 +91,12 @@ function Ranking({
                 className="h-2.5 w-2.5 shrink-0 rounded-[2px] ring-1 ring-black/50"
                 style={{ background: paint?.fill, opacity: paint?.opacity ?? 1 }}
               />
-              <span className="min-w-0 flex-1 truncate text-paper/90">{regionName(r.id, names)}</span>
-              <span className="shrink-0 font-semibold tabular-nums text-paper">{r.cell.short ?? ''}</span>
+              <span className="min-w-0 flex-1 truncate text-paper/90">
+                {regionName(r.id, names)}
+              </span>
+              <span className="shrink-0 font-semibold tabular-nums text-paper">
+                {r.cell.short ?? ''}
+              </span>
             </button>
           </li>
         );
@@ -116,8 +124,14 @@ function ContinuousScale({
     <div className="mt-2">
       <div className="relative h-3.5">
         {Object.entries(scale.position).map(([id, t]) => (
-          <span key={id} className="absolute bottom-0 flex" style={{ left: `calc(${(t * 100).toFixed(2)}% - 1px)` }}>
-            <Tooltip content={`${regionName(id, names)}: ${layer.cells[id]?.short ?? layer.cells[id]?.label ?? ''}`}>
+          <span
+            key={id}
+            className="absolute bottom-0 flex"
+            style={{ left: `calc(${(t * 100).toFixed(2)}% - 1px)` }}
+          >
+            <Tooltip
+              content={`${regionName(id, names)}: ${layer.cells[id]?.short ?? layer.cells[id]?.label ?? ''}`}
+            >
               <span
                 className={cn(
                   'block w-[2px] rounded-t-[1px]',
@@ -128,7 +142,10 @@ function ContinuousScale({
           </span>
         ))}
       </div>
-      <div className="h-2 rounded-[2px] ring-1 ring-black/50" style={{ background: scale.gradient }} />
+      <div
+        className="h-2 rounded-[2px] ring-1 ring-black/50"
+        style={{ background: scale.gradient }}
+      />
       <div className="mt-1 flex items-baseline justify-between gap-2 text-[10.5px] text-muted">
         {real ? (
           <>
@@ -170,12 +187,17 @@ function CategoricalScale({ active }: { active: ActiveLayer }) {
             key={g.label}
             className="flex items-center gap-1 rounded-[3px] bg-ink-950/60 px-1.5 py-0.5 text-[10.5px] text-paper/90 ring-1 ring-white/5"
           >
-            <span className="h-2 w-2 rounded-full ring-1 ring-black/60" style={{ background: g.color }} />
+            <span
+              className="h-2 w-2 rounded-full ring-1 ring-black/60"
+              style={{ background: g.color }}
+            />
             <span className="max-w-24 truncate">{g.label}</span>
             <span className="tabular-nums text-muted">{g.n}</span>
           </span>
         ))}
-        {list.length > 8 && <span className="px-1 text-[10.5px] text-muted">+{list.length - 8}</span>}
+        {list.length > 8 && (
+          <span className="px-1 text-[10.5px] text-muted">+{list.length - 8}</span>
+        )}
       </div>
       <div className="mt-1 text-[10.5px] text-muted">
         {active.layer.legend.low} · {active.layer.legend.high}
@@ -205,7 +227,10 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
   const auto = useUi((s) => s.mapAuto);
   const ranking = useUi((s) => s.mapRanking);
   const open = useUi((s) => s.mapLegendOpen);
-  const names = useMemo(() => Object.fromEntries(mapUnits(game).map((u) => [u.id, u.name])), [game]);
+  const names = useMemo(
+    () => Object.fromEntries(mapUnits(game).map((u) => [u.id, u.name])),
+    [game],
+  );
   const { layer, focus } = active;
   const onSelect = (id: string) => {
     selectUnit(id);
@@ -213,7 +238,10 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
   };
 
   return (
-    <div className="hud-surface pointer-events-auto rounded-[6px] px-3 py-2" data-testid="map-legend">
+    <div
+      className="hud-surface pointer-events-auto rounded-[6px] px-3 py-2"
+      data-testid="map-legend"
+    >
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -239,7 +267,11 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
               style={{ background: active.scale.gradient }}
             />
           )}
-          <Icon name={open ? 'chevron-down' : 'chevron-up'} size={13} className="shrink-0 text-muted" />
+          <Icon
+            name={open ? 'chevron-down' : 'chevron-up'}
+            size={13}
+            className="shrink-0 text-muted"
+          />
         </button>
         {focus && (
           <Tooltip content="Voltar ao modo do mapa">
@@ -293,7 +325,13 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
             <ContinuousScale active={active} names={names} selected={selected} />
           )}
           <div className="mt-2 flex items-center gap-1 border-t border-gold-500/20 pt-1.5">
-            <Toggle icon="hash" label="Números no mapa" on={numbers} onClick={() => toggle('mapNumbers')} testId="map-opt-numbers" />
+            <Toggle
+              icon="hash"
+              label="Números no mapa"
+              on={numbers}
+              onClick={() => toggle('mapNumbers')}
+              testId="map-opt-numbers"
+            />
             <Toggle
               icon="map-pin"
               label="Marcadores (obras e canteiros)"
@@ -324,7 +362,9 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
               <Icon name={ranking ? 'chevron-down' : 'chevron-up'} size={12} />
             </button>
           </div>
-          {ranking && <Ranking active={active} names={names} selected={selected} onSelect={onSelect} />}
+          {ranking && (
+            <Ranking active={active} names={names} selected={selected} onSelect={onSelect} />
+          )}
         </>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openNav } from './helpers';
+import { openNav, waitMapIdle } from './helpers';
 
 /** Pasta para capturas de tela opcionais (SHOTS=<pasta>). */
 const SHOTS = process.env.SHOTS;
@@ -18,8 +18,10 @@ async function startPresidency(page: Page) {
   await page.getByTestId('input-age').fill('50');
   for (let i = 0; i < 8; i++) {
     if (await page.getByTestId('start-game').isVisible()) break;
-    if (await page.getByTestId('bg-teacher').isVisible()) await page.getByTestId('bg-teacher').click();
-    if (await page.getByTestId('party-mdb').isVisible()) await page.getByTestId('party-mdb').click();
+    if (await page.getByTestId('bg-teacher').isVisible())
+      await page.getByTestId('bg-teacher').click();
+    if (await page.getByTestId('party-mdb').isVisible())
+      await page.getByTestId('party-mdb').click();
     await page.getByTestId('wizard-next').click();
   }
   await page.getByTestId('start-game').click();
@@ -34,7 +36,9 @@ async function centerX(page: Page, uf: string): Promise<number> {
 }
 
 test.describe('Atlas: mapa integrado aos painéis', () => {
-  test('legenda, números, ranking, painel → modo do mapa e câmera fora do painel', async ({ page }) => {
+  test('legenda, números, ranking, painel → modo do mapa e câmera fora do painel', async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
@@ -83,6 +87,7 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     await page.keyboard.press('Escape');
 
     // Região: clique abre o painel e a câmera voa até o estado.
+    await waitMapIdle(page);
     await page.locator('path[data-uf="BA"]').click({ force: true });
     await expect(page.getByTestId('unit-details')).toBeVisible();
     await shot(page, 'a05-regiao');
@@ -90,7 +95,9 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     expect(errors).toEqual([]);
   });
 
-  test('painéis usam o mapa: produção de um bem, polos de um edifício e escolher onde construir', async ({ page }) => {
+  test('painéis usam o mapa: produção de um bem, polos de um edifício e escolher onde construir', async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await startPresidency(page);
@@ -110,6 +117,7 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     const name = (await row.locator('td').first().innerText()).split(/\r?\n/)[0]!.trim();
     await row.click();
     await expect(page.getByTestId('map-legend')).toContainText(`Indústria: ${name}`);
+    await waitMapIdle(page);
     await page.locator('path[data-uf="PA"]').click({ force: true });
     await expect(page.getByTestId('construction-state')).toHaveValue('PA');
     // O painel continua aberto (o clique escolheu o estado, não abriu a região).
@@ -118,7 +126,9 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     expect(errors).toEqual([]);
   });
 
-  test('zoom pela roda e arrasto mexem a câmera sem erros, e "Enquadrar" volta ao Brasil inteiro', async ({ page }) => {
+  test('zoom pela roda e arrasto mexem a câmera sem erros, e "Enquadrar" volta ao Brasil inteiro', async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await startPresidency(page);

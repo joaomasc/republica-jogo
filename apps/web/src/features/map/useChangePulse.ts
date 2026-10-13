@@ -31,7 +31,11 @@ function snapshot(active: ActiveLayer): Record<string, number> {
  */
 export function useChangePulse(active: ActiveLayer, date: string): AtlasPulse[] {
   const p = period(date, active.key);
-  const [prev, setPrev] = useState(() => ({ key: active.key, period: p, values: snapshot(active) }));
+  const [prev, setPrev] = useState(() => ({
+    key: active.key,
+    period: p,
+    values: snapshot(active),
+  }));
   const [pulses, setPulses] = useState<AtlasPulse[]>([]);
   if (prev.key !== active.key || prev.period !== p) {
     const values = snapshot(active);

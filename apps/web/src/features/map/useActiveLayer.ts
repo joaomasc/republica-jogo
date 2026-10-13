@@ -85,7 +85,10 @@ export function useActiveLayer(): ActiveLayer {
   const focus = useUi((s) => s.mapFocus);
   const party = useUi((s) => s.mapPartyId);
   const axis = useUi((s) => s.mapAxis);
-  return useMemo(() => resolveLayer(game, stored, focus, party, axis), [game, stored, focus, party, axis]);
+  return useMemo(
+    () => resolveLayer(game, stored, focus, party, axis),
+    [game, stored, focus, party, axis],
+  );
 }
 
 /** Posição de uma região na leitura ativa ("3º de 27"), para dicas e painéis. */
@@ -94,7 +97,8 @@ export function rankOf(
   id: string,
   categorical: boolean,
 ): { rank: number; total: number } | null {
-  const sortValue = (c: { value: number; strength?: number }) => (categorical ? (c.strength ?? c.value) : c.value);
+  const sortValue = (c: { value: number; strength?: number }) =>
+    categorical ? (c.strength ?? c.value) : c.value;
   const list = Object.values(cells).filter((c) => Number.isFinite(c.value));
   const mine = cells[id];
   if (!mine || !Number.isFinite(mine.value)) return null;

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createCandidate, openNav } from './helpers';
+import { createCandidate, openNav, waitMapIdle } from './helpers';
 
 /** Começa o cenário "Presidência" (já no poder) para exercitar o shell do jogo. */
 async function startInOffice(page: Page) {
@@ -28,6 +28,7 @@ test.describe('Shell do jogo', () => {
     await expect(page.getByTestId('panel-close')).toBeHidden();
 
     // Região pelo mapa (clique) e pelo teclado (Enter no estado focado).
+    await waitMapIdle(page);
     await page.locator('path[data-uf="BA"]').click({ force: true });
     await expect(page.getByTestId('unit-details')).toBeVisible();
     await page.locator('path[data-uf="SP"]').focus();

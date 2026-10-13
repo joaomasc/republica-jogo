@@ -78,6 +78,11 @@ export async function advanceUntilElection(page: Page) {
   throw new Error('Não chegou ao dia da eleição');
 }
 
+/** Espera a câmera do mapa parar (voos ao abrir/fechar painéis) antes de clicar em estados. */
+export async function waitMapIdle(page: Page) {
+  await expect(page.locator('.atlas').first()).not.toHaveClass(/atlas-moving/, { timeout: 10_000 });
+}
+
 /** Abre um painel pelo dock; em telas baixas o item pode estar dentro de um grupo recolhido. */
 export async function openNav(page: Page, path: string) {
   const link = page.getByTestId(`nav-${path}`);

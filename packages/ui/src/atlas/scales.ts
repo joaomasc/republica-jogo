@@ -63,7 +63,10 @@ function hexToRgb(hex: string): Rgb {
 }
 
 function rgbToHex([r, g, b]: Rgb): string {
-  const c = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+  const c = (v: number) =>
+    Math.max(0, Math.min(255, Math.round(v)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${c(r)}${c(g)}${c(b)}`;
 }
 
@@ -71,7 +74,8 @@ const toLinear = (c: number) => {
   const v = c / 255;
   return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
 };
-const fromLinear = (v: number) => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+const fromLinear = (v: number) =>
+  255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
 
 function rgbToOklab([r8, g8, b8]: Rgb): Lab {
   const r = toLinear(r8);
@@ -102,7 +106,13 @@ function oklabToRgb([L, A, B]: Lab): Rgb {
 export function mixOklab(a: string, b: string, t: number): string {
   const la = rgbToOklab(hexToRgb(a));
   const lb = rgbToOklab(hexToRgb(b));
-  return rgbToHex(oklabToRgb([la[0] + (lb[0] - la[0]) * t, la[1] + (lb[1] - la[1]) * t, la[2] + (lb[2] - la[2]) * t]));
+  return rgbToHex(
+    oklabToRgb([
+      la[0] + (lb[0] - la[0]) * t,
+      la[1] + (lb[1] - la[1]) * t,
+      la[2] + (lb[2] - la[2]) * t,
+    ]),
+  );
 }
 
 /** Luminosidade perceptual (OKLab L, 0..1) — usada nos testes e para escolher a cor do rótulo. */
@@ -189,7 +199,10 @@ export function scaleLayer(
         continue;
       }
       const strength = Math.max(0, Math.min(1, cell.strength ?? v));
-      paint[id] = { fill: cell.color, opacity: 0.45 + 0.55 * Math.max(0, Math.min(1, (strength - 0.2) / 0.45)) };
+      paint[id] = {
+        fill: cell.color,
+        opacity: 0.45 + 0.55 * Math.max(0, Math.min(1, (strength - 0.2) / 0.45)),
+      };
       position[id] = strength;
       continue;
     }

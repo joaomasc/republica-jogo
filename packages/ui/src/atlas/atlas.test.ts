@@ -10,7 +10,14 @@ import {
   zoomAround,
   type Bounds,
 } from './camera';
-import { lightness, RAMP_AXIS, RAMP_GOOD_BAD, RAMP_SEQUENTIAL, rampColor, scaleLayer } from './scales';
+import {
+  lightness,
+  RAMP_AXIS,
+  RAMP_GOOD_BAD,
+  RAMP_SEQUENTIAL,
+  rampColor,
+  scaleLayer,
+} from './scales';
 
 const SIZE = { width: 1600, height: 900 };
 const BRAZIL: Bounds = [0, 0, 1000, 1031];
@@ -36,7 +43,10 @@ describe('câmera do Atlas', () => {
   });
 
   it('área útil nunca fica degenerada mesmo com interface maior que a tela', () => {
-    const area = safeArea({ width: 500, height: 400 }, { top: 0, right: 300, bottom: 0, left: 300 });
+    const area = safeArea(
+      { width: 500, height: 400 },
+      { top: 0, right: 300, bottom: 0, left: 300 },
+    );
     expect(area.width).toBeGreaterThanOrEqual(160);
     expect(area.x).toBeGreaterThanOrEqual(0);
   });
@@ -89,10 +99,20 @@ describe('escalas de cor do Atlas', () => {
   });
 
   it('valores próximos entre si são esticados à rampa inteira, com o domínio real informado', () => {
-    const r = scaleLayer('sequential', { A: { value: 0.45 }, B: { value: 0.5 }, C: { value: 0.6 } });
+    const r = scaleLayer('sequential', {
+      A: { value: 0.45 },
+      B: { value: 0.5 },
+      C: { value: 0.6 },
+    });
     expect(r.position.A).toBeCloseTo(0, 6);
     expect(r.position.C).toBeCloseTo(1, 6);
-    expect(r.domain).toMatchObject({ min: 0.45, max: 0.6, minId: 'A', maxId: 'C', stretched: true });
+    expect(r.domain).toMatchObject({
+      min: 0.45,
+      max: 0.6,
+      minId: 'A',
+      maxId: 'C',
+      stretched: true,
+    });
     expect(r.paint.A!.fill).not.toBe(r.paint.C!.fill);
   });
 
@@ -103,7 +123,11 @@ describe('escalas de cor do Atlas', () => {
   });
 
   it('divergente centrado mantém o meio no meio (ideologia: 50 = centro)', () => {
-    const r = scaleLayer('diverging', { A: { value: 0.4 }, B: { value: 0.5 }, C: { value: 0.55 } }, { centered: true });
+    const r = scaleLayer(
+      'diverging',
+      { A: { value: 0.4 }, B: { value: 0.5 }, C: { value: 0.55 } },
+      { centered: true },
+    );
     expect(r.position.B).toBeCloseTo(0.5, 6);
     expect(r.position.A).toBeCloseTo(0, 6);
     expect(r.position.C).toBeCloseTo(0.75, 6);
@@ -113,7 +137,10 @@ describe('escalas de cor do Atlas', () => {
     const r = scaleLayer('sequential', { A: { value: Number.NaN }, B: { value: 0.3 } });
     expect(r.paint.A!.noData).toBe(true);
     expect(r.position.A).toBeUndefined();
-    const c = scaleLayer('categorical', { A: { value: 1 }, B: { value: 1, color: '#ff0000', strength: 1 } });
+    const c = scaleLayer('categorical', {
+      A: { value: 1 },
+      B: { value: 1, color: '#ff0000', strength: 1 },
+    });
     expect(c.paint.A!.noData).toBe(true);
     expect(c.paint.B).toMatchObject({ fill: '#ff0000', opacity: 1 });
   });

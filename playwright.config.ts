@@ -24,6 +24,18 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
+      // A medição de desempenho roda à parte (npm run test:perf): em paralelo com outros
+      // navegadores os números não significam nada.
+      testIgnore: /perf\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1600, height: 960 },
+        ...(channel ? { channel } : {}),
+      },
+    },
+    {
+      name: 'perf',
+      testMatch: /perf\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1600, height: 960 },

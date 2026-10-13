@@ -1,4 +1,10 @@
-import { constructionQueueView, STATES, worksOverview, type GameState, type StateId } from '@republica/game-engine';
+import {
+  constructionQueueView,
+  STATES,
+  worksOverview,
+  type GameState,
+  type StateId,
+} from '@republica/game-engine';
 import { STATE_GEOMETRY, type AtlasPin } from '@republica/ui';
 import { isZoneMap } from './mapModes';
 
@@ -26,7 +32,8 @@ export function mapMarkers(game: GameState): AtlasPin[] {
   const name = (id: string) => STATES[id as StateId]?.name ?? id;
 
   const works = new Map<string, string[]>();
-  for (const w of worksOverview(game).mine) works.set(w.stateId, [...(works.get(w.stateId) ?? []), w.name]);
+  for (const w of worksOverview(game).mine)
+    works.set(w.stateId, [...(works.get(w.stateId) ?? []), w.name]);
   for (const [stateId, names] of works)
     add(stateId, {
       id: `works-${stateId}`,
