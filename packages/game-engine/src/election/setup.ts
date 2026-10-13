@@ -32,6 +32,8 @@ export interface ElectionSetup {
   playerIncumbent?: boolean;
   campaignDays?: number;
   startingMoney?: number;
+  /** Partidos aliados do jogador (entressafra): não lançam candidato contra ele. */
+  allies?: PartyId[];
 }
 
 function emptyPopRecord(value = 0): Record<PopTypeId, number> {
@@ -236,10 +238,14 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
       for (const p of others) opponentPlan.push({ partyId: p, incumbent: rng.chance(0.35) });
     } else {
       const count = Math.max(2, office.opponents + rng.int(-1, 1));
-      const incumbentParty = setup.playerIncumbent ? null : governingParty;
+      const allies = setup.allies ?? [];
+      const incumbentParty =
+        setup.playerIncumbent || (governingParty && allies.includes(governingParty))
+          ? null
+          : governingParty;
       // A maior força de oposição sempre lança nome (com 30 partidos, o sorteio a diluiria).
       const mainOpposition = Object.values(state.parties)
-        .filter((p) => p.id !== player.partyId && p.id !== incumbentParty)
+        .filter((p) => p.id !== player.partyId && p.id !== incumbentParty && !allies.includes(p.id))
         .sort(
           (a, b) =>
             localStrength(state, b, jurisdiction.stateId) -
@@ -249,7 +255,7 @@ export function setupElection(state: GameState, setup: ElectionSetup): Election 
         state,
         rng,
         count,
-        [player.partyId],
+        [player.partyId, ...allies],
         jurisdiction.stateId,
         [incumbentParty, mainOpposition, nemesisParty(state, setup, jurisdiction.stateId)].filter(
           (id): id is PartyId => !!id && id !== player.partyId,

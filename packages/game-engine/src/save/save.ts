@@ -17,6 +17,7 @@ import {
 import { createNationState } from '../nation/nation';
 import { LATE_INTEREST_GROUP_SEEDS } from '../politics/interestGroups.data';
 import { formatDateShort } from '../core/date';
+import { startInterlude } from '../career/interlude';
 import { OFFICES } from '../election/offices';
 import type { GameState } from '../simulation/state';
 
@@ -114,6 +115,17 @@ const MIGRATIONS: Record<number, Migration> = {
       state.interestGroups[seed.id] ??= { ...deepClone(seed), approval: 50 };
     state.events.flags ??= {};
     state.events.lastCategory ??= {};
+    return state as unknown as Record<string, unknown>;
+  },
+  /**
+   * v3 → v4 (v0.8 "Causalidade"): entressafra jogável (alvo, base, caixa, aliados) e patamar de
+   * popularidade dos partidos. Registros de causa (impacto de rivais, aprovação) começam vazios.
+   */
+  3: (raw) => {
+    const state = raw as unknown as GameState;
+    for (const party of Object.values(state.parties)) party.popularityBase ??= party.popularity;
+    if (state.phase === 'career' && !state.career.retired && !state.career.interlude)
+      startInterlude(state);
     return state as unknown as Record<string, unknown>;
   },
 };

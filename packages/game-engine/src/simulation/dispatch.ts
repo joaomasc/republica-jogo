@@ -8,7 +8,13 @@ import { summarizeAgenda, updateAgenda } from '../campaign/agenda';
 import { chooseWeekCard } from '../campaign/weekly';
 import { chooseCabinetCard } from '../government/cabinet';
 import { chooseObjectives } from '../government/objectives';
-import { advanceCareer, chooseOccupation, type OccupationId } from '../career/occupations';
+import { chooseOccupation, type OccupationId } from '../career/occupations';
+import {
+  advanceInterlude,
+  performPrep,
+  setInterludeTarget,
+  type PrepId,
+} from '../career/interlude';
 import { offerRunoffDeal } from '../election/runoff';
 import { chooseRunningMate } from '../campaign/runningMate';
 import type { RunoffOffer } from '../election/types';
@@ -121,6 +127,8 @@ export type GameAction =
   | { type: 'career/break' }
   | { type: 'career/occupation'; occupationId: OccupationId | null }
   | { type: 'career/advance' }
+  | { type: 'career/target'; officeId: OfficeId; stateId: StateId; cityId?: string | null }
+  | { type: 'career/prep'; prepId: PrepId; partyId?: PartyId }
   // Economia industrial
   | { type: 'industry/build'; stateId: StateId; buildingId: BuildingId; levels: number }
   | { type: 'works/start'; typeId: string; size: WorkSize; stateId?: StateId }
@@ -273,7 +281,11 @@ function apply(state: GameState, action: GameAction): ActionResult {
     case 'career/occupation':
       return chooseOccupation(state, action.occupationId);
     case 'career/advance':
-      return advanceCareer(state);
+      return advanceInterlude(state);
+    case 'career/target':
+      return setInterludeTarget(state, action.officeId, action.stateId, action.cityId ?? null);
+    case 'career/prep':
+      return performPrep(state, action.prepId, action.partyId);
     case 'career/run':
       return runForOffice(state, action.officeId, action.stateId, action.cityId);
     case 'career/switchParty':

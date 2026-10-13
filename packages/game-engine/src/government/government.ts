@@ -32,6 +32,7 @@ import {
 import { getPlayer, getPlayerParty, requireElection } from '../simulation/access';
 import type { GameState } from '../simulation/state';
 import { finalizePromises, setPromiseBaselines } from './promises';
+import { startInterlude } from '../career/interlude';
 import { measureApproval, recordApproval } from './approvalLog';
 import type { ApprovalCauseKind, GovernmentState, TermEvaluation } from './types';
 
@@ -463,6 +464,11 @@ export function endTerm(state: GameState): TermEvaluation | null {
   });
   state.government = null;
   state.phase = 'career';
+  // O mandato deixa base no lugar governado, conforme a aprovação final.
+  startInterlude(state, {
+    jurisdiction: gov.jurisdiction,
+    base: clamp(15 + (gov.approval - 40) * 0.6, 5, 45),
+  });
   return evaluation;
 }
 

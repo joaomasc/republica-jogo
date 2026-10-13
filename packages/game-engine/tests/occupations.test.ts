@@ -28,7 +28,7 @@ describe('Entressafra jogável', () => {
     expect(bad.result.ok).toBe(false);
   });
 
-  it('avançar 6 meses aplica os efeitos da ocupação e traz um acontecimento dela', () => {
+  it('avançar até o próximo marco aplica os efeitos da ocupação e traz um acontecimento', () => {
     let s = dispatch(base, { type: 'career/occupation', occupationId: 'influenciador' }).state;
     const fame = s.candidates[s.playerId]!.fame;
     const cred = s.candidates[s.playerId]!.attributes.credibility;

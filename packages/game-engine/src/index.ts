@@ -224,5 +224,26 @@ export { STREET_STAGES, streetView, streetFactors, type StreetResponse, type Str
 export { OBJECTIVES, objectiveProgress, objectiveTitle, type ObjectiveDef } from './government/objectives';
 export { federativeLinks, monthlyTransfers, type Alignment, type FederativeLink } from './government/federative';
 export { ACHIEVEMENTS, legacyScore, satisfiedAchievements, type AchievementCategory, type AchievementDef } from './career/achievements';
-export { OCCUPATION_IDS, OCCUPATIONS, type OccupationId } from './career/occupations';
+export {
+  OCCUPATION_IDS,
+  OCCUPATIONS,
+  occupationMonthly,
+  occupationNetFamePerYear,
+  type OccupationId,
+} from './career/occupations';
+export {
+  allianceChance,
+  interludeMilestones,
+  interludeView,
+  nextMilestone,
+  partyWindow,
+  prepOptions,
+  projectCandidacy,
+  targetLabel,
+  type CandidacyProjection,
+  type InterludeMilestone,
+  type PrepId,
+  type PrepOption,
+} from './career/interlude';
+export type { InterludeState, InterludeSummary, InterludeTarget } from './career/types';
 export { nemesisOf, rivalryScore, type RivalRecord, type RivalMemory } from './world/rivals';

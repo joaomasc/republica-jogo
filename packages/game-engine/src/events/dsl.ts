@@ -173,6 +173,10 @@ export const inelegivel = (years = 8): Effect => ({ type: 'ineligible', years })
 export const cassar = (reason: string): Effect => ({ type: 'removeFromOffice', reason });
 /** Reputação da carreira. */
 export const rep = (delta: number): Effect => ({ type: 'reputation', delta });
+/** Base eleitoral da pré-campanha (pontos). */
+export const base = (delta: number): Effect => ({ type: 'interlude', base: delta });
+/** Caixa da pré-campanha (fração do caixa inicial: 0,1 = +10%). */
+export const caixa = (delta: number): Effect => ({ type: 'interlude', warChest: delta });
 /** Renovação do governo: reduz o desgaste acumulado (use valores positivos). */
 export const renova = (amount: number): Effect => ({ type: 'wear', delta: -amount });
 /** Lealdade à liderança do partido (mandato legislativo). */
@@ -320,6 +324,8 @@ export interface EvInput {
   ctx?: Array<'unit' | 'opponent' | 'group' | 'party'>;
   cond?: (s: GameState) => boolean;
   mod?: (s: GameState) => number;
+  /** Texto da causa ("Por causa da sua ocupação: ..."). */
+  why?: (s: GameState) => string;
   states?: StateId[];
   regions?: RegionId[];
   cities?: string[];
@@ -358,6 +364,7 @@ export function ev(i: EvInput): EventDefinition {
     ...(i.ctx ? { context: i.ctx } : {}),
     ...(i.cond ? { condition: i.cond } : {}),
     ...(i.mod ? { weightModifier: i.mod } : {}),
+    ...(i.why ? { why: i.why } : {}),
     ...(i.states ? { states: i.states } : {}),
     ...(i.regions ? { regions: i.regions } : {}),
     ...(i.cities ? { cities: i.cities } : {}),

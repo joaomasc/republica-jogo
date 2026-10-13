@@ -96,6 +96,8 @@ export type Effect =
   | { type: 'wear'; delta: number }
   /** Reputação da carreira (0..100), usada fora do cargo e nas avaliações. */
   | { type: 'reputation'; delta: number }
+  /** Recursos da pré-campanha (entressafra): base eleitoral (pontos) e caixa (fração do inicial). */
+  | { type: 'interlude'; base?: number; warChest?: number }
   /** Dinheiro de campanha por fora (caixa 2): entra no caixa e fica registrado como não declarado. */
   | { type: 'undeclaredMoney'; amount: number }
   /** Inelegibilidade (Lei da Ficha Limpa) por N anos a partir de agora. */
@@ -166,6 +168,8 @@ export interface EventDefinition {
   condition?: (state: GameState) => boolean;
   /** Multiplicador dinâmico de peso. */
   weightModifier?: (state: GameState) => number;
+  /** Por que o evento saiu (texto para o jogador), quando o gatilho é uma condição própria. */
+  why?: (state: GameState) => string;
   cooldownDays?: number;
   once?: boolean;
   /** Só ocorre como continuação de outro evento. */

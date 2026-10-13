@@ -101,6 +101,7 @@ function causeOf(
   origin: string | undefined,
 ): { cause?: string; unforeseen?: boolean } {
   if (origin) return { cause: `Consequência de: ${origin}.` };
+  if (def.why) return { cause: def.why(state) };
   const fx = driverEffect(def, new DriverReader(state));
   if (fx) return { cause: describeCause(fx) };
   if (def.months)

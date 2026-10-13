@@ -1,4 +1,5 @@
 import { beginWeek } from '../campaign/weekly';
+import { startInterlude } from '../career/interlude';
 import { openRunoffDeals } from './runoff';
 import { archiveRivals } from '../world/rivals';
 import { addDays } from '../core/date';
@@ -163,6 +164,9 @@ export function continueAfterResults(state: GameState): ActionResult {
     return { ok: true, message: 'Você tomou posse!' };
   }
   state.phase = 'career';
+  // A derrota deixa base onde houve voto: ~0,6 ponto de base por ponto percentual.
+  const pct = election.outcome?.pct ?? election.results[0]?.pct[state.playerId] ?? 0;
+  startInterlude(state, { jurisdiction: election.jurisdiction, base: pct * 60 });
   state.campaign = null;
   state.election = null;
   state.interactions = { debate: null, interview: null };

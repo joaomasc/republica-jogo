@@ -26,11 +26,16 @@ export function computeStartingMoney(state: GameState, moneyScale: number): numb
   const compat = partyCompatibility(player.ideology, party) / 100;
   const partyFactor = 0.55 + party.money / 100;
   const compatFactor = 1 - GameConstants.party.compatibilityMoneyFactor * (1 - compat) * 0.5;
+  // Reputação: o partido aposta mais (ou menos) no nome. 50 = neutro.
+  const K = GameConstants.career;
+  const reputationFactor =
+    K.reputationMoneyBase + state.career.reputation * K.reputationMoneyFactor;
   return Math.round(
     C.baseStartingMoney *
       moneyScale *
       partyFactor *
       compatFactor *
+      reputationFactor *
       bg.moneyMultiplier *
       getDifficulty(state).resources,
   );
