@@ -88,6 +88,8 @@ export interface AtlasProps {
   pins?: AtlasPin[];
   pulses?: AtlasPulse[];
   selected?: string | null;
+  /** Regiões marcadas por um painel que usa o mapa como seletor (onde construir, onde anunciar). */
+  marked?: readonly string[] | null;
   /** Regiões em destaque; as demais ficam esmaecidas. */
   focus?: readonly string[] | null;
   /** Região para onde a câmera voa (muda → voo). */
@@ -194,6 +196,7 @@ export function Atlas({
   pins = [],
   pulses = [],
   selected = null,
+  marked = null,
   focus = null,
   flyTo = null,
   insets = NO_INSETS,
@@ -749,6 +752,9 @@ export function Atlas({
                     className="atlas-hover"
                   />
                 ),
+            )}
+            {marked?.map((id) =>
+              regionById.has(id) ? <use key={`m-${id}`} href={`#${uid}-r-${id}`} className="atlas-marked" /> : null,
             )}
             {selected && regionById.has(selected) && (
               <use

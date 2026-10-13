@@ -44,12 +44,15 @@ export function MapStage({
   const selectUnit = useUi((s) => s.selectUnit);
   const numbers = useUi((s) => s.mapNumbers);
   const showMarkers = useUi((s) => s.mapMarkers);
+  const mapPick = useUi((s) => s.mapPick);
   const active = useActiveLayer();
   const pulses = useChangePulse(active, game.date);
   const units = useMemo(() => mapUnits(game), [game]);
   const names = useMemo(() => Object.fromEntries(units.map((u) => [u.id, u.name])), [units]);
   const markers = useMemo(() => (showMarkers ? mapMarkers(game) : []), [game, showMarkers]);
-  const selected = match?.params.unitId ?? null;
+  const routeSelected = match?.params.unitId ?? null;
+  // Com um painel usando o mapa como seletor, o realce são as escolhas dele (e a câmera não voa).
+  const selected = mapPick ? null : routeSelected;
   const { layer, scale } = active;
   const isZones = units[0]?.kind === 'zone';
   const isCity = units.some((u) => u.zone?.type === 'center');
@@ -73,6 +76,10 @@ export function MapStage({
   const pins = useMemo<AtlasPin[]>(() => [...CAPITAL_PINS, ...markers], [markers]);
 
   const open = (id: string) => {
+    if (mapPick) {
+      mapPick.pick(id);
+      return;
+    }
     selectUnit(id);
     navigate(`/jogo/regiao/${id}`);
   };
@@ -94,7 +101,9 @@ export function MapStage({
             {rank.rank}º de {rank.total} · {active.focus ? layer.title : active.label}
           </div>
         )}
-        <div className="pt-0.5 text-[10.5px] text-muted">Clique para abrir o painel da região</div>
+        <div className={cn('pt-0.5 text-[10.5px]', mapPick ? 'text-gold-300' : 'text-muted')}>
+          {mapPick ? mapPick.hint : 'Clique para abrir o painel da região'}
+        </div>
       </div>
     );
   };
@@ -137,8 +146,9 @@ export function MapStage({
           pins={pins}
           pulses={pulses}
           selected={selected}
+          marked={mapPick?.selected ?? null}
           focus={focus}
-          flyTo={selected}
+          flyTo={routeSelected}
           insets={insets}
           onSelect={open}
           renderTooltip={tooltip}

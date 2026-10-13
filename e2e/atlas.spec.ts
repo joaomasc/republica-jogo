@@ -90,6 +90,34 @@ test.describe('Atlas: mapa integrado aos painéis', () => {
     expect(errors).toEqual([]);
   });
 
+  test('painéis usam o mapa: produção de um bem, polos de um edifício e escolher onde construir', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await startPresidency(page);
+
+    // Mercado: escolher o aço pinta o mapa com a produção de aço por estado.
+    await openNav(page, 'mercado');
+    await page.getByRole('cell', { name: 'Aço', exact: true }).click();
+    await expect(page.getByTestId('map-legend')).toContainText('Produção: Aço');
+    await shot(page, 'a07-mercado-aco');
+    // Fechar o painel devolve o mapa ao modo normal.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('map-legend')).not.toContainText('Produção');
+
+    // Indústria: escolher um edifício mostra onde ele existe; o mapa escolhe onde construir.
+    await openNav(page, 'industria');
+    const row = page.locator('[data-testid^="industry-row-"]').first();
+    const name = (await row.locator('td').first().innerText()).split(/\r?\n/)[0]!.trim();
+    await row.click();
+    await expect(page.getByTestId('map-legend')).toContainText(`Indústria: ${name}`);
+    await page.locator('path[data-uf="PA"]').click({ force: true });
+    await expect(page.getByTestId('construction-state')).toHaveValue('PA');
+    // O painel continua aberto (o clique escolheu o estado, não abriu a região).
+    await expect(page.getByTestId('unit-details')).toBeHidden();
+    await shot(page, 'a08-industria');
+    expect(errors).toEqual([]);
+  });
+
   test('zoom pela roda e arrasto mexem a câmera sem erros, e "Enquadrar" volta ao Brasil inteiro', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));

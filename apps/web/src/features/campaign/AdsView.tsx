@@ -18,6 +18,11 @@ import { Badge, Bar, Button, cn, EmptyState, Icon, Panel, Segmented, Slider } fr
 import { useState } from 'react';
 import { pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
+import { useMapPick } from '../map/useMapLink';
+
+function toggle<T>(list: T[], v: T): T[] {
+  return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+}
 
 export function AdsView() {
   const game = useGameState();
@@ -33,6 +38,13 @@ export function AdsView() {
   const [days, setDays] = useState(7);
   const [intensity, setIntensity] = useState(1);
   const def = CHANNELS[channel];
+  // Canal regional: o mapa (em intenção de voto) vira o seletor das regiões do anúncio.
+  useMapPick(
+    'Clique para incluir ou tirar esta região do anúncio',
+    unitIds,
+    (id) => setUnitIds((current) => toggle(current, id)),
+    !!election && !!campaign && def.regional,
+  );
   const opponents = election?.candidateIds.filter((id) => id !== game.playerId) ?? [];
   const target = opponent || opponents[0] || '';
   const daysLeft = election ? Math.max(1, diffDays(game.date, election.date)) : 1;
@@ -49,8 +61,6 @@ export function AdsView() {
   if (!election || !campaign)
     return <EmptyState icon="tv" title="Propaganda só durante a campanha" />;
   const cost = estimateAdCost(game, input);
-  const toggle = <T,>(list: T[], v: T) =>
-    list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
   const units = [...election.units].sort((a, b) => b.voters - a.voters);
 
   return (

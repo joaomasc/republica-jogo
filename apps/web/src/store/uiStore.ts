@@ -2,6 +2,16 @@ import type { BuildingId, GoodId, IdeologyAxis, MapMode } from '@republica/game-
 
 /** Recorte pedido ao mapa por um painel aberto (o mapa resolve no motor a cada estado novo). */
 export type MapFocus = { kind: 'good'; id: GoodId } | { kind: 'building'; id: BuildingId };
+
+/**
+ * Painel que usa o mapa como seletor: clicar num estado chama `pick` (ex.: onde construir, onde
+ * anunciar) em vez de abrir o painel da região; as escolhas (`selected`) ficam marcadas no mapa.
+ */
+export interface MapPick {
+  hint: string;
+  selected: readonly string[];
+  pick: (unitId: string) => void;
+}
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -18,6 +28,8 @@ interface UiStore {
   mapAxis: IdeologyAxis;
   /** Recorte pedido pelo painel aberto (produção de um bem, níveis de um edifício). */
   mapFocus: MapFocus | null;
+  /** Painel aberto usando o mapa como seletor. */
+  mapPick: MapPick | null;
   /** O modo do mapa acompanha o painel aberto (Economia → desemprego, Pesquisas → intenção...). */
   mapAuto: boolean;
   /** Escreve o valor do modo sobre cada estado. */
@@ -40,6 +52,7 @@ interface UiStore {
   setMapPartyId: (partyId: string | null) => void;
   setMapAxis: (axis: IdeologyAxis) => void;
   setMapFocus: (focus: MapFocus | null) => void;
+  setMapPick: (pick: MapPick | null) => void;
   toggleMapOption: (key: 'mapAuto' | 'mapNumbers' | 'mapMarkers' | 'mapRanking' | 'mapLegendOpen') => void;
   selectUnit: (unitId: string | null) => void;
   setPlaying: (playing: boolean) => void;
@@ -56,6 +69,7 @@ export const useUi = create<UiStore>()(
       mapPartyId: null,
       mapAxis: 'economy',
       mapFocus: null,
+      mapPick: null,
       mapAuto: true,
       mapNumbers: false,
       mapMarkers: true,
@@ -70,6 +84,7 @@ export const useUi = create<UiStore>()(
       setMapPartyId: (mapPartyId) => set({ mapPartyId }),
       setMapAxis: (mapAxis) => set({ mapAxis }),
       setMapFocus: (mapFocus) => set({ mapFocus }),
+      setMapPick: (mapPick) => set({ mapPick }),
       toggleMapOption: (key) => set((s) => ({ [key]: !s[key] })),
       selectUnit: (selectedUnitId) => set({ selectedUnitId }),
       setPlaying: (playing) => set({ playing }),
