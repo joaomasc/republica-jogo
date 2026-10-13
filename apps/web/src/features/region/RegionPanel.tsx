@@ -14,6 +14,7 @@ import { useParams } from 'react-router';
 import { pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 import { StateEconomySection } from '../economy/StateEconomySection';
+import { MapReading } from '../map/MapReading';
 
 /** Ações de campanha que só precisam de uma região como alvo. */
 const REGIONAL_ACTIONS = CAMPAIGN_ACTIONS.filter((a) => a.target === 'unit');
@@ -91,6 +92,8 @@ export function RegionPanel() {
           {unit.name}
         </h2>
       </div>
+
+      <MapReading unitId={unit.id} />
 
       <div className="grid grid-cols-2 gap-2">
         <StatTile

@@ -6,25 +6,30 @@ export interface MapModeMeta {
   icon: string;
   short: string;
   group: MapModeGroup;
+  /**
+   * Sentido "bom" do valor, para o tom dos pulsos de mudança: 1 = subir é bom, -1 = subir é ruim,
+   * 0 = neutro (sem pulso colorido: população, ideologia...).
+   */
+  polarity: 1 | -1 | 0;
 }
 
 /** Ícones e rótulos curtos dos modos de mapa (modos novos do motor caem no padrão). */
 const MODE_META: Record<string, MapModeMeta> = {
-  intention: { icon: 'vote', short: 'Intenção de voto', group: 'politica' },
-  popularity: { icon: 'star', short: 'Popularidade', group: 'politica' },
-  party: { icon: 'flag', short: 'Partidos', group: 'politica' },
-  campaign: { icon: 'megaphone', short: 'Campanha', group: 'politica' },
-  results: { icon: 'award', short: 'Resultados', group: 'politica' },
-  governors: { icon: 'landmark', short: 'Governos estaduais', group: 'politica' },
-  ideology: { icon: 'compass', short: 'Ideologia', group: 'sociedade' },
-  population: { icon: 'users', short: 'População', group: 'sociedade' },
-  income: { icon: 'wallet', short: 'Renda', group: 'sociedade' },
-  unemployment: { icon: 'user-x', short: 'Desemprego', group: 'sociedade' },
-  informality: { icon: 'hand-coins', short: 'Informalidade', group: 'sociedade' },
-  economy: { icon: 'chart-line', short: 'Economia', group: 'economia' },
-  industrialization: { icon: 'factory', short: 'Industrialização', group: 'economia' },
-  construction: { icon: 'construction', short: 'Obras', group: 'economia' },
-  resources: { icon: 'pickaxe', short: 'Recursos', group: 'economia' },
+  intention: { icon: 'vote', short: 'Intenção de voto', group: 'politica', polarity: 1 },
+  popularity: { icon: 'star', short: 'Popularidade', group: 'politica', polarity: 1 },
+  party: { icon: 'flag', short: 'Partidos', group: 'politica', polarity: 1 },
+  campaign: { icon: 'megaphone', short: 'Campanha', group: 'politica', polarity: 1 },
+  results: { icon: 'award', short: 'Resultados', group: 'politica', polarity: 0 },
+  governors: { icon: 'landmark', short: 'Governos estaduais', group: 'politica', polarity: 0 },
+  population: { icon: 'users', short: 'População', group: 'sociedade', polarity: 0 },
+  income: { icon: 'wallet', short: 'Renda', group: 'sociedade', polarity: 1 },
+  unemployment: { icon: 'user-x', short: 'Desemprego', group: 'sociedade', polarity: -1 },
+  informality: { icon: 'hand-coins', short: 'Informalidade', group: 'sociedade', polarity: -1 },
+  ideology: { icon: 'compass', short: 'Ideologia', group: 'sociedade', polarity: 0 },
+  economy: { icon: 'chart-line', short: 'Economia', group: 'economia', polarity: -1 },
+  industrialization: { icon: 'factory', short: 'Industrialização', group: 'economia', polarity: 1 },
+  construction: { icon: 'construction', short: 'Obras', group: 'economia', polarity: 0 },
+  resources: { icon: 'pickaxe', short: 'Recursos', group: 'economia', polarity: 0 },
 };
 
 export const MAP_MODE_GROUPS: { id: MapModeGroup; label: string }[] = [
@@ -38,7 +43,12 @@ export function modeLabel(mode: string): string {
 }
 
 export function modeMeta(mode: string): MapModeMeta {
-  return MODE_META[mode] ?? { icon: 'map', short: modeLabel(mode), group: 'economia' };
+  return MODE_META[mode] ?? { icon: 'map', short: modeLabel(mode), group: 'economia', polarity: 0 };
+}
+
+/** O mapa atual é de zonas (eleição de prefeito/governador desenhada por zonas). */
+export function isZoneMap(game: GameState): boolean {
+  return game.election?.units[0]?.kind === 'zone';
 }
 
 /** Modos que fazem sentido agora (sem eleição não há intenção nem campanha). */
@@ -47,7 +57,7 @@ export function availableModes(game: GameState): MapMode[] {
     if (m === 'results') return (game.election?.results.length ?? 0) > 0;
     if (m === 'intention' || m === 'campaign') return game.election !== null;
     // Governadores e ideologia são por UF: não fazem sentido no mapa de zonas de uma cidade/estado.
-    if (m === 'governors' || m === 'ideology') return game.election?.units[0]?.kind !== 'zone';
+    if (m === 'governors' || m === 'ideology') return !isZoneMap(game);
     return true;
   });
 }
@@ -61,4 +71,39 @@ export function defaultMode(game: GameState): MapMode {
 export function effectiveMode(stored: MapMode | null, game: GameState): MapMode {
   if (stored && availableModes(game).includes(stored)) return stored;
   return defaultMode(game);
+}
+
+/**
+ * Modo que cada painel sugere ao mapa (ARQUITETURA_VISUAL §5): abrir Economia mostra o
+ * desemprego por estado; Pesquisas, a intenção de voto... Lista em ordem de preferência — vale o
+ * primeiro disponível na situação do jogo.
+ */
+const SUGGESTED: Record<string, MapMode[]> = {
+  governo: ['popularity'],
+  grupos: ['popularity'],
+  decretos: ['popularity'],
+  orcamento: ['income'],
+  leis: ['ideology'],
+  nacao: ['ideology'],
+  congresso: ['party'],
+  partido: ['party'],
+  economia: ['unemployment'],
+  mercado: ['resources'],
+  industria: ['industrialization'],
+  comercio: ['industrialization'],
+  obras: ['construction'],
+  eleitores: ['population'],
+  campanha: ['campaign'],
+  agenda: ['campaign'],
+  propaganda: ['intention'],
+  pesquisas: ['intention'],
+  impacto: ['intention'],
+  eleicao: ['results', 'intention'],
+  candidato: ['popularity'],
+};
+
+export function suggestedMode(segment: string | null, game: GameState): MapMode | null {
+  if (!segment) return null;
+  const available = availableModes(game);
+  return SUGGESTED[segment]?.find((m) => available.includes(m)) ?? null;
 }

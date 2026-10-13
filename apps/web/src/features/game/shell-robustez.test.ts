@@ -1,10 +1,14 @@
 import type { MapLayer } from '@republica/game-engine';
-import { Bar, Delta, Slider } from '@republica/ui';
+import { Bar, Delta, scaleLayer, Slider } from '@republica/ui';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { stageFills } from '../map/mapPalette';
 import { alertRoute, NAV_GROUPS, routeMeta } from './navigation';
+
+/** Cores do mapa (Atlas) para uma camada. */
+function stageFills(l: MapLayer) {
+  return scaleLayer(l.scale, l.cells).paint;
+}
 
 function layer(scale: MapLayer['scale'], value: number): MapLayer {
   return {
