@@ -1,5 +1,6 @@
 import {
   Activity,
+  Box,
   Hash,
   Link2,
   ListOrdered,
@@ -353,6 +354,7 @@ export const ICONS: Record<string, LucideIcon> = {
   link: Link2,
   'list-ordered': ListOrdered,
   package: Package,
+  box: Box,
 };
 
 export interface IconProps {

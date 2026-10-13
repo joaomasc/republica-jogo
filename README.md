@@ -119,11 +119,12 @@ O desenho completo (ids, unidades, fórmulas) está em [docs/DESIGN_NACAO.md](do
 
 ## Atlas: o mapa no centro do jogo
 
-O mapa ([docs/ARQUITETURA_VISUAL.md](docs/ARQUITETURA_VISUAL.md)) é um renderizador próprio em SVG (`packages/ui/src/atlas`), sem dependências novas:
+O mapa ([docs/ARQUITETURA_VISUAL.md](docs/ARQUITETURA_VISUAL.md)) é um renderizador próprio em SVG (`packages/ui/src/atlas`), com uma versão 3D em three.js (a única dependência nova, carregada só com o mapa 3D):
 
 - **Carta em camadas:** o Brasil dentro da América do Sul (países vizinhos, rios, represas, graticulado, Equador e Trópico — Natural Earth 1:50m, gerado por `npm run generate:context-map`), capitais, barra de escala em km e rótulos com nível de detalhe por zoom.
 - **Câmera fora do React:** zoom no cursor, arrasto e voos escrevem o `transform` direto no SVG; o mapa desliza para a área livre quando um painel abre e voa até o estado aberto.
 - **Leitura honesta:** escala esticada do menor ao maior estado, com os valores reais nas pontas da legenda; "sem dados" é hachurado, nunca uma cor da escala.
+- **Mapa em 3D** (`packages/ui/src/atlas3d`, three.js num pedaço carregado sob demanda): estados como prismas com altura = valor do modo, luz e sombra, rótulos em HTML (focáveis por teclado). O 2D segue como opção e fallback sem WebGL.
 - **Mapa e painéis conversam** pelo `uiStore`: o painel sugere o modo (Economia → desemprego), pede um recorte (`useMapFocus`: produção de um bem, polos de um edifício) ou usa o mapa como seletor (`useMapPick`: onde construir, regiões da propaganda). O motor resolve tudo em seletores puros (`mapLayer`, `goodLayer`, `buildingLayer`, `lawCategoryAxis`).
 
 ## Dinamismo: eventos, gabinete, rivais e carreira

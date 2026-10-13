@@ -1,3 +1,5 @@
+import { lazy } from 'react';
+
 export * from './primitives';
 export * from './icons';
 export { Avatar } from './avatar/Avatar';
@@ -26,3 +28,8 @@ export {
   type ScaleDomain,
   type ScaleResult,
 } from './atlas/scales';
+
+/** Mapa 3D (three.js) — pedaço próprio, baixado só quando o 3D aparece. */
+export const Atlas3D = lazy(() => import('./atlas3d/Atlas3D'));
+export type { Atlas3DProps } from './atlas3d/Atlas3D';
+export { webglAvailable } from './atlas3d/webgl';

@@ -227,6 +227,7 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
   const auto = useUi((s) => s.mapAuto);
   const ranking = useUi((s) => s.mapRanking);
   const open = useUi((s) => s.mapLegendOpen);
+  const map3d = useUi((s) => s.map3d);
   const names = useMemo(
     () => Object.fromEntries(mapUnits(game).map((u) => [u.id, u.name])),
     [game],
@@ -345,6 +346,13 @@ export function MapLegendHud({ dense = false }: { dense?: boolean }) {
               on={auto}
               onClick={() => toggle('mapAuto')}
               testId="map-opt-auto"
+            />
+            <Toggle
+              icon="box"
+              label="Mapa em 3D: a altura de cada estado é o valor do modo (botão direito gira)"
+              on={map3d}
+              onClick={() => toggle('map3d')}
+              testId="map-opt-3d"
             />
             <span className="flex-1" />
             <button

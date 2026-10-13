@@ -195,7 +195,7 @@ const SECTIONS: Section[] = [
     title: 'O mapa: modos, legenda e painéis',
     icon: 'map',
     keywords:
-      'mapa atlas modo legenda ranking números marcadores pulso zoom enquadrar escala painel acompanha escolher região governadores ideologia produção',
+      'mapa atlas 3d relevo girar modo legenda ranking números marcadores pulso zoom enquadrar escala painel acompanha escolher região governadores ideologia produção',
     body: () => (
       <>
         <P>
@@ -247,6 +247,15 @@ const SECTIONS: Section[] = [
           para a parte livre quando um painel abre e voa até o estado que você abrir;
           &quot;Enquadrar&quot; volta ao Brasil inteiro. Aproximando, aparecem nomes, capitais e
           rios menores; a barra de escala mostra a distância em km.
+        </P>
+        <H>Mapa em 3D</H>
+        <P>
+          Com o botão de cubo da legenda, o mapa vira relevo: a altura de cada estado é o valor dele
+          no modo ativo (desemprego, intenção de voto, produção de um bem...). Trocar de modo faz os
+          estados subirem e descerem. Arrastar move, botão direito (ou Ctrl + arrastar) gira e
+          inclina, a roda aproxima; a rosa dos ventos mostra para onde é o norte. Sem suporte a 3D
+          no navegador, o jogo usa o mapa plano; os mapas de zonas de cidade e estado são sempre
+          planos.
         </P>
         <Tip>
           O painel de um estado traz &quot;Neste mapa&quot;: o valor dele no modo ativo e a posição

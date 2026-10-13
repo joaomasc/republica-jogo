@@ -117,3 +117,50 @@ test('desempenho do mapa: zoom, arrasto, voo e abertura de painéis', async ({ p
     expect(s.median).toBeLessThan(50);
   }
 });
+
+test.describe('mapa 3D', () => {
+  // Preferência padrão do jogador: 3D.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('desempenho do mapa 3D: arrasto, giro, zoom e mudança de modo', async ({ page }) => {
+    await startPresidency(page);
+    await expect(page.locator('.atlas3d-canvas')).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId('map-opt-numbers').click();
+    await page.waitForTimeout(800);
+    const box = (await page.getByTestId('map').boundingBox())!;
+    const cx = box.x + box.width * 0.45;
+    const cy = box.y + box.height * 0.5;
+
+    await page.mouse.move(cx, cy);
+    await startSampling(page);
+    await page.mouse.down();
+    for (let i = 0; i < 40; i++) await page.mouse.move(cx - i * 6, cy - i * 3);
+    await page.mouse.up();
+    const drag = await stopSampling(page);
+
+    await startSampling(page);
+    await page.mouse.down({ button: 'right' });
+    for (let i = 0; i < 30; i++) await page.mouse.move(cx + i * 6, cy - i * 2);
+    await page.mouse.up({ button: 'right' });
+    const orbit = await stopSampling(page);
+
+    await startSampling(page);
+    for (let i = 0; i < 10; i++) {
+      await page.mouse.wheel(0, i < 5 ? -150 : 150);
+      await page.waitForTimeout(40);
+    }
+    const zoom = await stopSampling(page);
+
+    // Mudança de modo: os prismas sobem/descem animados.
+    await startSampling(page);
+    await page.getByTestId('map-mode-unemployment').click();
+    await page.waitForTimeout(1200);
+    const relief = await stopSampling(page);
+
+    console.log(`[perf 3D] arrasto: ${fmt(drag)}`);
+    console.log(`[perf 3D] giro: ${fmt(orbit)}`);
+    console.log(`[perf 3D] zoom: ${fmt(zoom)}`);
+    console.log(`[perf 3D] relevo animado (troca de modo): ${fmt(relief)}`);
+    for (const s of [drag, orbit, zoom, relief]) expect(s.frames).toBeGreaterThan(5);
+  });
+});

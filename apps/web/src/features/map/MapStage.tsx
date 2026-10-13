@@ -1,6 +1,14 @@
 import { mapUnits } from '@republica/game-engine';
-import { Atlas, cn, NO_INSETS, type AtlasPin, type Insets } from '@republica/ui';
-import { useMemo, type CSSProperties } from 'react';
+import {
+  Atlas,
+  Atlas3D,
+  cn,
+  NO_INSETS,
+  webglAvailable,
+  type AtlasPin,
+  type Insets,
+} from '@republica/ui';
+import { Suspense, useMemo, useState, type CSSProperties } from 'react';
 import { useMatch, useNavigate } from 'react-router';
 import { useGameState } from '../../store/gameStore';
 import { useUi } from '../../store/uiStore';
@@ -53,6 +61,21 @@ export function MapStage({
     [jurisdiction],
   );
 
+  const map3d = useUi((s) => s.map3d);
+  // Sem WebGL (ou se a cena 3D falhar), o mapa fica no 2D.
+  const [no3d, setNo3d] = useState(() => !webglAvailable());
+  // As zonas de cidade/estado são recortadas por contorno (clipPath), só no 2D por enquanto.
+  const use3d = map3d && !no3d && !geometry.zones;
+  /** Relevo do 3D: posição de cada região na escala (categórico: força do líder). */
+  const heights = useMemo(() => {
+    const pos = scale.position;
+    const list = Object.values(pos);
+    const flat = list.length === 0 || Math.max(...list) - Math.min(...list) < 0.01;
+    return Object.fromEntries(
+      Object.keys(scale.paint).map((id) => [id, flat ? 0.2 : (pos[id] ?? 0)]),
+    );
+  }, [scale]);
+
   const values = useMemo(() => {
     if (!numbers) return null;
     const out: Record<string, string> = {};
@@ -100,6 +123,29 @@ export function MapStage({
     );
   };
 
+  const atlas2d = (
+    <Atlas
+      regions={geometry.regions}
+      world={geometry.world}
+      outline={geometry.outline ?? null}
+      backdrop={geometry.backdrop ?? []}
+      context={geometry.context ?? true}
+      {...(geometry.kmPerUnit !== undefined ? { kmPerUnit: geometry.kmPerUnit } : {})}
+      paint={scale.paint}
+      values={values}
+      pins={pins}
+      pulses={pulses}
+      selected={selected}
+      marked={mapPick?.selected ?? null}
+      focus={geometry.zones ? null : focus}
+      flyTo={routeSelected}
+      insets={insets}
+      onSelect={open}
+      renderTooltip={tooltip}
+      ariaLabel={geometry.zones ? 'Mapa das zonas eleitorais' : 'Mapa do Brasil'}
+    />
+  );
+
   return (
     <div
       className={cn('map-ocean absolute overflow-hidden', className)}
@@ -107,26 +153,32 @@ export function MapStage({
       data-testid="map"
     >
       <div className="map-vignette pointer-events-none absolute inset-0" />
-      <Atlas
-        regions={geometry.regions}
-        world={geometry.world}
-        outline={geometry.outline ?? null}
-        backdrop={geometry.backdrop ?? []}
-        context={geometry.context ?? true}
-        {...(geometry.kmPerUnit !== undefined ? { kmPerUnit: geometry.kmPerUnit } : {})}
-        paint={scale.paint}
-        values={values}
-        pins={pins}
-        pulses={pulses}
-        selected={selected}
-        marked={mapPick?.selected ?? null}
-        focus={geometry.zones ? null : focus}
-        flyTo={routeSelected}
-        insets={insets}
-        onSelect={open}
-        renderTooltip={tooltip}
-        ariaLabel={geometry.zones ? 'Mapa das zonas eleitorais' : 'Mapa do Brasil'}
-      />
+      {use3d ? (
+        <Suspense fallback={atlas2d}>
+          <Atlas3D
+            key={`${geometry.world.join(',')}`}
+            regions={geometry.regions}
+            world={geometry.world}
+            context={geometry.context ?? true}
+            paint={scale.paint}
+            heights={heights}
+            values={values}
+            pins={pins}
+            pulses={pulses}
+            selected={selected}
+            marked={mapPick?.selected ?? null}
+            focus={focus}
+            flyTo={routeSelected}
+            insets={insets}
+            onSelect={open}
+            renderTooltip={tooltip}
+            onUnavailable={() => setNo3d(true)}
+            ariaLabel="Mapa do Brasil em 3D"
+          />
+        </Suspense>
+      ) : (
+        atlas2d
+      )}
     </div>
   );
 }

@@ -40,6 +40,8 @@ interface UiStore {
   mapRanking: boolean;
   /** Detalhes da legenda do mapa expandidos. */
   mapLegendOpen: boolean;
+  /** Mapa em 3D (relevo = valor do modo). Sem WebGL, o mapa fica no 2D. */
+  map3d: boolean;
   selectedUnitId: string | null;
   /** Avanço automático do tempo ligado. */
   playing: boolean;
@@ -53,7 +55,9 @@ interface UiStore {
   setMapAxis: (axis: IdeologyAxis) => void;
   setMapFocus: (focus: MapFocus | null) => void;
   setMapPick: (pick: MapPick | null) => void;
-  toggleMapOption: (key: 'mapAuto' | 'mapNumbers' | 'mapMarkers' | 'mapRanking' | 'mapLegendOpen') => void;
+  toggleMapOption: (
+    key: 'mapAuto' | 'mapNumbers' | 'mapMarkers' | 'mapRanking' | 'mapLegendOpen' | 'map3d',
+  ) => void;
   selectUnit: (unitId: string | null) => void;
   setPlaying: (playing: boolean) => void;
   togglePlaying: () => void;
@@ -75,6 +79,7 @@ export const useUi = create<UiStore>()(
       mapMarkers: true,
       mapRanking: false,
       mapLegendOpen: true,
+      map3d: true,
       selectedUnitId: null,
       playing: false,
       outlinerOpen: true,
@@ -105,6 +110,7 @@ export const useUi = create<UiStore>()(
         mapMarkers: s.mapMarkers,
         mapRanking: s.mapRanking,
         mapLegendOpen: s.mapLegendOpen,
+        map3d: s.map3d,
       }),
     },
   ),

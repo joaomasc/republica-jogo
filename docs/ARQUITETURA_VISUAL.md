@@ -73,6 +73,22 @@ Custos do PixiJS para este jogo:
 milhares de marcadores animados. O Atlas separa câmera, geometria e camadas justamente para permitir
 trocar o desenho das camadas de preenchimento por um backend WebGL sem mexer em quem as usa.
 
+### 2.1b Three.js (WebGL 3D) — **adotado para o mapa 3D** (decisão posterior, 13/10/2026)
+
+O pedido mudou de "mapa 2D melhor" para "mapa em 3D". Aí o WebGL deixa de ser custo sem ganho:
+câmera em perspectiva, luz, sombra e extrusão não existem em SVG. Escolhas para conter os custos
+listados acima:
+
+- **three.js 0.186** (não PixiJS, que é 2D): ~600 KB / 152 KB gzip num pedaço **carregado só quando
+  o mapa 3D aparece** — a carga inicial não muda.
+- **Acessibilidade e texto em HTML:** os rótulos são botões HTML posicionados por projeção a cada
+  quadro (focáveis, Enter abre a região); fontes do tema, nítidas. O 3D não usa texto em WebGL.
+- **O 2D continua:** botão na legenda, fallback sem WebGL ou se a cena falhar, e é o mapa dos testes
+  e2e gerais (`e2e/storage-2d.json`); o 3D tem teste próprio (`e2e/atlas3d.spec.ts`).
+- **Relevo com significado:** altura de cada estado = posição dele na escala do modo ativo
+  (categórico: força do líder; sem variação: plano). Trocar de modo anima os prismas.
+- **Render sob demanda:** só desenha quando câmera, dados ou animações mudam.
+
 ### 2.2 D3 — **não adotar em tempo de execução**
 
 - `d3-geo`: a geometria já vem projetada por script (`scripts/generate-map.mjs`); projetar no
@@ -91,7 +107,8 @@ de execução: continua funcionando offline e no GitHub Pages.
 
 ### 2.4 Dependências novas
 
-**Nenhuma em tempo de execução.** O ganho vem de arquitetura, não de bibliotecas.
+**Nenhuma em tempo de execução** para o Atlas 2D: o ganho vem de arquitetura, não de bibliotecas.
+Depois, o mapa 3D trouxe o `three` (§2.1b), isolado num pedaço carregado sob demanda.
 
 ---
 
@@ -239,6 +256,7 @@ Entregue em 13/10/2026 (v0.9.0, branch `atlas`, um commit por etapa):
 | 5. Integração | `useMapFocus` (Mercado → produção do bem; Indústria → polos do edifício) e `useMapPick` (Indústria → onde construir; Propaganda → regiões do anúncio). |
 | 6. Desempenho | Rotas preguiçosas + pré-carregamento ocioso em produção; camadas memoizadas; `npm run test:perf`. |
 | 7. Telas | Eleição (Atlas + apuração por estado), Leis (eixo da categoria), Congresso (partido no mapa), Campanha (marcadores de agenda e propaganda), menu (Atlas decorativo). `BrazilMap` removido. |
+| 9. 3D | `packages/ui/src/atlas3d`: `rings.ts` (paths → polígonos com buracos, testado), `scene.ts` (cena three.js: oceano, graticulado, vizinhos em laje, prismas por região com altura animada, rios apoiados no topo de cada estado, sol com sombra, `MapControls`, voo, enquadramento na área livre via `setViewOffset`, raycast para dica e clique), `Atlas3D.tsx` (rótulos/marcadores HTML, bússola que gira com a câmera). Zonas de cidade/estado ficam no 2D (dependem de recorte por contorno). |
 | 8. Zonas | Mapas de zonas (prefeito, vereador, governador) no Atlas: `map/zoneGeometry.ts` gera cunhas, anel metropolitano e círculos recortados pelo contorno real (`outline`), os outros estados como fundo (`backdrop`) e a escala em km de cada cidade (`kmPerUnit`, gerado). `ZoneMap`, `useZoomPan` e `MapControls` removidos. |
 
 ### Medições (Chrome, 1600×960, `npm run test:perf`, máquina de desenvolvimento)
@@ -250,6 +268,9 @@ Entregue em 13/10/2026 (v0.9.0, branch `atlas`, um commit por etapa):
 | Voo "Enquadrar" | 13,4 ms | 40 ms |
 | Voo até um estado + montagem do painel da região | 26,6 ms | 67 ms (picos = render do painel) |
 
+Mapa 3D (mesmo teste, segundo cenário): arrasto 13,3 ms (p95 13,7), giro 13,4 ms (p95 26,7),
+zoom 13,3 ms (p95 13,5) e relevo animado na troca de modo 13,3 ms (p95 26,5).
+
 A hipótese da seção 2.1 se confirmou: com a câmera fora do React e filtros desligados no gesto,
 o SVG sustenta a taxa de quadros máxima para 27 UFs + contexto. PixiJS continua desnecessário.
 
@@ -257,6 +278,10 @@ Bundle (`vite build`): antes, um chunk de 2,5 MB (763 KB gzip). Depois, carga in
 (≈ 535 KB gzip: casca 348 KB + motor 1,34 MB), gráficos (381 KB) e ~50 telas sob demanda.
 
 ### Próximos passos
+
+- **Zonas em 3D:** as zonas de cidade/estado são recortadas por `clipPath` no 2D; no 3D precisam de
+  polígonos já recortados (interseção cunha × contorno, menos os círculos) — uma biblioteca de
+  operações booleanas de polígonos resolve, e o resultado serviria aos dois mapas.
 
 - **Motor em pedaços:** o maior bloco da carga inicial é o motor (textos de eventos, perguntas).
   Carregar os pacotes de eventos sob demanda exige `import()` dinâmico dentro do motor.

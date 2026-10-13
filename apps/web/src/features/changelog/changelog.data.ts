@@ -29,6 +29,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Painéis usam o mapa: no Mercado, veja onde cada bem é produzido; na Indústria, os polos de cada edifício e o estado onde construir; na Propaganda, clique nos estados do anúncio.',
       'Marcadores reais: agenda fixa, propaganda regional no ar, suas obras e canteiros industriais.',
       'Estados que mudaram de verdade no mês piscam em verde ou vermelho.',
+      'Mapa em 3D: cada estado vira um prisma com a altura do valor do modo ativo, com luz, sombra e rios sobre o relevo; gire e incline com o botão direito. O mapa plano continua a um clique.',
       'Câmera nova: zoom no cursor, arrasto suave, voo até o estado aberto, e o Brasil desliza para fora do painel aberto.',
       'Painel do estado com "Neste mapa": valor no modo ativo e posição entre os 27.',
       'Apuração ao vivo: na eleição, os estados ganham a cor do vencedor conforme a contagem fecha.',
