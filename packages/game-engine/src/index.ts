@@ -182,6 +182,7 @@ export * from './simulation/api';
 export { blockingReason, type AdvanceResult, type Interrupt } from './simulation/time';
 export { validateNewGame, type NewGameConfig, type SandboxOptions } from './simulation/startGame';
 export * from './simulation/selectors';
+export * from './simulation/focusLayers';
 export {
   getCandidate,
   getParty,

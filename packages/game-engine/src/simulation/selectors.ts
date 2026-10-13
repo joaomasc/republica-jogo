@@ -1,6 +1,6 @@
 import type { DerivedAttributes } from '../candidate/types';
 import { diffDays } from '../core/date';
-import { clamp, clamp100, round, sum } from '../core/math';
+import { clamp, clamp100, formatMoney, formatNumber, formatPct, round, sum } from '../core/math';
 import type { CandidateId, StateId, UnitId } from '../core/types';
 import { STATE_IDS } from '../core/types';
 import { OFFICES } from '../election/offices';
@@ -8,7 +8,7 @@ import { latestPoll } from '../election/polls';
 import type { ElectoralUnit, Poll } from '../election/types';
 import { computeIntentions, OTHERS_KEY, type IntentionSnapshot } from '../election/voterModel';
 import { evaluatePromise, promiseInOwnSphere } from '../government/promises';
-import { IDEOLOGY_AXES, type IdeologyVector } from '../ideology/axes';
+import { AXIS_DEFINITIONS, IDEOLOGY_AXES, type IdeologyAxis, type IdeologyVector } from '../ideology/axes';
 import { averageIdeology, ideologyExtremity } from '../ideology/ideology';
 import { ISSUES, topIssues, type IssueId } from '../ideology/issues';
 import { buildNationalUnits } from '../map/units';
@@ -117,8 +117,13 @@ export const MAP_MODES = [
   'informality',
   'construction',
   'resources',
+  'governors',
+  'ideology',
 ] as const;
 export type MapMode = (typeof MAP_MODES)[number];
+
+/** Camadas pedidas por um painel (produção de um bem, níveis de um edifício), fora dos modos fixos. */
+export type MapFocusKind = 'good' | 'building';
 
 export const MAP_MODE_LABELS: Record<MapMode, string> = {
   intention: 'Intenção de voto',
@@ -134,11 +139,15 @@ export const MAP_MODE_LABELS: Record<MapMode, string> = {
   informality: 'Informalidade',
   construction: 'Obras em andamento',
   resources: 'Recursos naturais',
+  governors: 'Governos estaduais',
+  ideology: 'Ideologia do eleitorado',
 };
 
 export interface MapCell {
   value: number;
   label: string;
+  /** Valor compacto para escrever sobre o mapa (ex.: "7,5%", "PT", "R$ 4,9 mil"). */
+  short?: string;
   /** Cor categórica (partido do líder), quando aplicável. */
   color?: string;
   leaderName?: string;
@@ -147,7 +156,7 @@ export interface MapCell {
 }
 
 export interface MapLayer {
-  mode: MapMode;
+  mode: MapMode | MapFocusKind;
   title: string;
   scale: 'sequential' | 'diverging' | 'categorical';
   cells: Record<UnitId, MapCell>;
@@ -188,7 +197,72 @@ function pollSupportForType(
   return null;
 }
 
-export function mapLayer(state: GameState, mode: MapMode, partyId?: string): MapLayer {
+/** Partido que governa cada UF (eleições atualizam `landscape.governors`). */
+function governorsLayer(state: GameState, units: ElectoralUnit[]): MapLayer {
+  const cells: Record<UnitId, MapCell> = {};
+  for (const u of units) {
+    const pid = state.landscape.governors[u.stateId] ?? state.regions[u.stateId]?.governorPartyId;
+    const party = pid ? state.parties[pid] : undefined;
+    if (!party) {
+      cells[u.id] = { value: 0, label: 'Governo estadual sem partido conhecido' };
+      continue;
+    }
+    cells[u.id] = {
+      value: 1,
+      label: `Governo estadual: ${party.acronym} (${party.name})`,
+      short: party.acronym,
+      color: party.color,
+      leaderName: party.acronym,
+      strength: 1,
+    };
+  }
+  return {
+    mode: 'governors',
+    title: 'Partido no governo de cada estado',
+    scale: 'categorical',
+    cells,
+    legend: { low: 'Cor = partido do governador', high: 'Eleições estaduais mudam o mapa' },
+  };
+}
+
+function leaning(v: number, axis: IdeologyAxis): string {
+  const def = AXIS_DEFINITIONS[axis];
+  if (v < 40) return def.low;
+  if (v > 60) return def.high;
+  return 'Centro';
+}
+
+/** Ideologia média do eleitorado de cada UF num eixo (0 = polo esquerdo do rótulo, 100 = direito). */
+function ideologyLayer(state: GameState, units: ElectoralUnit[], axis: IdeologyAxis): MapLayer {
+  const def = AXIS_DEFINITIONS[axis];
+  const cells: Record<UnitId, MapCell> = {};
+  for (const u of units) {
+    const v = state.regions[u.stateId]?.ideology[axis];
+    if (v === undefined) {
+      cells[u.id] = { value: Number.NaN, label: 'Sem dados' };
+      continue;
+    }
+    cells[u.id] = {
+      value: clamp(v / 100, 0, 1),
+      label: `${def.name}: ${round(v, 0)} (${leaning(v, axis)}) · 0 = ${def.low}, 100 = ${def.high}`,
+      short: `${round(v, 0)}`,
+    };
+  }
+  return {
+    mode: 'ideology',
+    title: `Eleitorado: ${def.name} (${def.low} ↔ ${def.high})`,
+    scale: 'diverging',
+    cells,
+    legend: { low: def.low, high: def.high },
+  };
+}
+
+export function mapLayer(
+  state: GameState,
+  mode: MapMode,
+  partyId?: string,
+  axis: IdeologyAxis = 'economy',
+): MapLayer {
   const units = mapUnits(state);
   const player = getPlayer(state);
   const status = getPlayerStatus(state);
@@ -212,6 +286,7 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
         cells[u.id] = {
           value: mine,
           label: `Você: ${pct(mine)} · Líder: ${pct(leaderShare / decided)}`,
+          short: formatPct(mine, 0),
           color: candidateColor(state, leaderId),
           leaderName: state.candidates[leaderId]?.ballotName ?? '',
           strength: leaderShare / decided,
@@ -238,12 +313,17 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
           cells[u.id] = {
             value: v,
             label: `Conhecimento ${pct(k)} · Rejeição (pesquisa) ${pct(rej)}`,
+            short: `${Math.round(v * 100)}`,
           };
         } else {
           const pops = popsOfState(state.population, u.stateId);
           const total = sum(pops.map((p) => p.size));
           const sat = total > 0 ? sum(pops.map((p) => p.satisfaction * p.size)) / total : 50;
-          cells[u.id] = { value: sat / 100, label: `Satisfação ${round(sat, 0)}%` };
+          cells[u.id] = {
+            value: sat / 100,
+            label: `Satisfação ${round(sat, 0)}%`,
+            short: `${round(sat, 0)}%`,
+          };
         }
       }
       return {
@@ -271,6 +351,7 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
         cells[u.id] = {
           value: clamp(strength / 100, 0, 1),
           label: `${party?.acronym ?? ''}: força ${round(strength, 0)} · Mais forte: ${leader?.acronym ?? '—'}`,
+          short: `${round(strength, 0)}`,
           ...(leader ? { color: leader.color, leaderName: leader.acronym } : {}),
         };
       }
@@ -289,6 +370,7 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
         cells[u.id] = {
           value: presence / 100,
           label: `Presença ${round(presence, 0)} · Conhecimento ${round(knowledge, 0)}`,
+          short: `${round(presence, 0)}`,
         };
       }
       return {
@@ -305,6 +387,7 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
         cells[u.id] = {
           value: Math.sqrt(u.voters / max),
           label: `${(u.voters / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi eleitores`,
+          short: formatNumber(u.voters),
         };
       return {
         mode,
@@ -325,11 +408,13 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
           cells[u.id] = {
             value: clamp(income / 9000, 0, 1),
             label: `Renda média R$ ${Math.round(income).toLocaleString('pt-BR')}`,
+            short: formatMoney(income),
           };
         } else
           cells[u.id] = {
             value: clamp((unemployment - 3) / 12, 0, 1),
             label: `Desemprego ${round(unemployment, 1)}%`,
+            short: formatPct(unemployment / 100),
           };
       }
       const zone = units[0]?.kind === 'zone';
@@ -348,6 +433,10 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
     case 'construction':
     case 'resources':
       return economyLayer(state, mode, units);
+    case 'governors':
+      return governorsLayer(state, units);
+    case 'ideology':
+      return ideologyLayer(state, units, axis);
     case 'results': {
       const result = state.election?.results[state.election.results.length - 1];
       for (const u of units) {
@@ -362,6 +451,7 @@ export function mapLayer(state: GameState, mode: MapMode, partyId?: string): Map
         cells[u.id] = {
           value: winnerShare,
           label: `Vencedor: ${state.candidates[r.winnerId]?.ballotName ?? ''} (${pct(winnerShare)}) · Você: ${pct(mine)}`,
+          short: formatPct(winnerShare, 0),
           color: candidateColor(state, r.winnerId),
           leaderName: state.candidates[r.winnerId]?.ballotName ?? '',
           strength: winnerShare,

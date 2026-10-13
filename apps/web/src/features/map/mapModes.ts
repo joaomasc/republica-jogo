@@ -15,6 +15,8 @@ const MODE_META: Record<string, MapModeMeta> = {
   party: { icon: 'flag', short: 'Partidos', group: 'politica' },
   campaign: { icon: 'megaphone', short: 'Campanha', group: 'politica' },
   results: { icon: 'award', short: 'Resultados', group: 'politica' },
+  governors: { icon: 'landmark', short: 'Governos estaduais', group: 'politica' },
+  ideology: { icon: 'compass', short: 'Ideologia', group: 'sociedade' },
   population: { icon: 'users', short: 'População', group: 'sociedade' },
   income: { icon: 'wallet', short: 'Renda', group: 'sociedade' },
   unemployment: { icon: 'user-x', short: 'Desemprego', group: 'sociedade' },
@@ -44,6 +46,8 @@ export function availableModes(game: GameState): MapMode[] {
   return MAP_MODES.filter((m) => {
     if (m === 'results') return (game.election?.results.length ?? 0) > 0;
     if (m === 'intention' || m === 'campaign') return game.election !== null;
+    // Governadores e ideologia são por UF: não fazem sentido no mapa de zonas de uma cidade/estado.
+    if (m === 'governors' || m === 'ideology') return game.election?.units[0]?.kind !== 'zone';
     return true;
   });
 }
