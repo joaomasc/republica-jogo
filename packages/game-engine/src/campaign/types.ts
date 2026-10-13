@@ -133,7 +133,11 @@ export type ImpactSource =
   | 'opponents'
   | 'decay'
   | 'airtime'
-  | 'time';
+  | 'time'
+  /** Início da semana: troca da pauta, temas que esfriam, rivais aderindo à pauta. */
+  | 'week'
+  /** Virada do mês: economia e satisfação dos eleitores. */
+  | 'economy';
 
 /** Carta da reunião semanal: uma oportunidade ou dilema com custo e risco. */
 export interface WeekCard {
@@ -179,6 +183,15 @@ export interface ImpactEntry extends ImpactDelta {
   key?: string;
 }
 
+/** Variação da intenção de um ADVERSÁRIO (explica por que um rival subiu ou caiu). */
+export interface RivalImpactEntry {
+  date: IsoDate;
+  candidateId: CandidateId;
+  source: ImpactSource;
+  label: string;
+  share: number;
+}
+
 export interface CampaignState {
   money: number;
   /** Escala monetária da campanha (depende do eleitorado e do cargo). */
@@ -202,6 +215,13 @@ export interface CampaignState {
   agenda?: AgendaState;
   /** Quanto cada fonte moveu a intenção de voto do jogador (mais recente primeiro). */
   impact?: ImpactEntry[];
+  /** O mesmo para cada adversário (mais recente primeiro). */
+  rivalImpact?: RivalImpactEntry[];
+  /**
+   * Soma de tudo o que o medidor já registrou para o jogador (fração). Cada pesquisa guarda o
+   * valor do momento: a diferença entre duas pesquisas é o quanto a intenção mudou DE FATO.
+   */
+  impactCum?: number;
   /** Arrecadação e gastos do último dia (para o painel financeiro). */
   lastDayIncome: number;
   lastDayExpenses: number;

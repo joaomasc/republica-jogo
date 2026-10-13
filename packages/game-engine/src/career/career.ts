@@ -13,14 +13,15 @@ import { rollCityMayors } from '../map/cities';
 import { publishNews } from '../media/news';
 import {
   createPartyFromInput,
-  driftParties,
   partyCompatibility,
   validatePartyInput,
   type CreatePartyInput,
 } from '../parties/parties';
+import { driftPartiesInState } from '../parties/drift';
 import { refreshPartyAffinities } from '../population/population';
 import { updatePopulationMonthly } from '../population/satisfaction';
 import { getPlayer, getPlayerParty } from '../simulation/access';
+import { applyInterludeToCampaign, interludeAllies } from './interlude';
 import { applyOccupationMonth } from './occupations';
 import type { GameState } from '../simulation/state';
 
@@ -35,7 +36,7 @@ export interface CareerOption {
   reelection: boolean;
 }
 
-function campaignStartFor(officeId: OfficeId, year: number): string {
+export function campaignStartFor(officeId: OfficeId, year: number): string {
   return addDays(firstSundayOfOctober(year), -OFFICES[officeId].campaignDays);
 }
 
@@ -65,6 +66,10 @@ export function careerOptions(state: GameState): CareerOption[] {
     if (reelection && !evaluation.canRunForReelection)
       reason = 'Limite de mandatos consecutivos atingido';
     reason ??= ineligibilityReason(state, year) ?? undefined;
+    // Filiação depois da janela partidária (5 de abril do ano da eleição) não vale para ela.
+    const joined = state.career.partyHistory.at(-1)?.from;
+    if (!reason && joined && joined > makeDate(year, 4, 5) && yearOf(joined) === year)
+      reason = `Filiação ao partido atual depois da janela partidária de ${year}`;
     return {
       officeId: office.id,
       year,
@@ -112,7 +117,7 @@ export function fastForward(state: GameState, toDate: string): void {
       state.date = next > toDate ? toDate : next;
       updateEconomy(state, rng);
       updatePopulationMonthly(state);
-      driftParties(state.parties, rng, 30);
+      driftPartiesInState(state, 30);
       player.scandal = clamp(player.scandal * 0.92, 0, 100);
       applyOccupationMonth(state);
       const y = yearOf(state.date);
@@ -152,7 +157,10 @@ export function runForOffice(
     cityId: cityId ?? null,
     year: option.year,
     playerIncumbent: option.reelection && !!evaluation,
+    allies: interludeAllies(state),
   });
+  // O que a entressafra construiu entra na campanha (base, caixa, coligação).
+  const prepared = applyInterludeToCampaign(state);
   const election = state.election;
   if (election && option.reelection && sameJurisdiction !== election.jurisdiction.label) {
     const status = election.participants[state.playerId];
@@ -165,6 +173,7 @@ export function runForOffice(
   addHistory(state, {
     kind: 'career',
     title: `Candidatura a ${office.name} (${election?.jurisdiction.label ?? ''})`,
+    ...(prepared.length ? { description: `Pré-campanha: ${prepared.join('; ')}.` } : {}),
     importance: 2,
   });
   publishNews(state, {

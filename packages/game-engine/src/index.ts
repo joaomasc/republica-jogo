@@ -89,7 +89,12 @@ export { dhondt } from './election/proportional';
 // Campanha
 export * from './campaign/types';
 export * from './campaign/actions.data';
-export { actionCost, canPerformAction, type CampaignActionInput } from './campaign/actions';
+export {
+  actionCost,
+  actionGaffeRisk,
+  canPerformAction,
+  type CampaignActionInput,
+} from './campaign/actions';
 export { AD_TONES, estimateAdCost, type AdCampaignInput } from './campaign/ads';
 export {
   STAFF_LEVELS,
@@ -108,6 +113,7 @@ export {
 } from './campaign/finance';
 export { internalPollCost } from './campaign/research';
 export { describeImpact, IMPACT_SOURCE_LABEL } from './campaign/impact';
+export * from './campaign/explain';
 export { RIVAL_STYLE_INFO } from './campaign/weekly';
 export {
   AGENDA_ACTIONS,
@@ -154,6 +160,7 @@ export { groupApprovalTarget } from './politics/interestGroups';
 export { coalitionSeats } from './politics/congress';
 export { PORTFOLIOS, availablePortfolios } from './politics/negotiation';
 export * from './government/types';
+export { APPROVAL_CAUSE_LABEL, explainApproval, type ApprovalExplanation } from './government/approvalLog';
 export { evaluatePromise, promiseStatusLabel } from './government/promises';
 export * from './career/types';
 export { careerOptions, nextAvailableElection, type CareerOption } from './career/career';
@@ -217,5 +224,26 @@ export { STREET_STAGES, streetView, streetFactors, type StreetResponse, type Str
 export { OBJECTIVES, objectiveProgress, objectiveTitle, type ObjectiveDef } from './government/objectives';
 export { federativeLinks, monthlyTransfers, type Alignment, type FederativeLink } from './government/federative';
 export { ACHIEVEMENTS, legacyScore, satisfiedAchievements, type AchievementCategory, type AchievementDef } from './career/achievements';
-export { OCCUPATION_IDS, OCCUPATIONS, type OccupationId } from './career/occupations';
+export {
+  OCCUPATION_IDS,
+  OCCUPATIONS,
+  occupationMonthly,
+  occupationNetFamePerYear,
+  type OccupationId,
+} from './career/occupations';
+export {
+  allianceChance,
+  interludeMilestones,
+  interludeView,
+  nextMilestone,
+  partyWindow,
+  prepOptions,
+  projectCandidacy,
+  targetLabel,
+  type CandidacyProjection,
+  type InterludeMilestone,
+  type PrepId,
+  type PrepOption,
+} from './career/interlude';
+export type { InterludeState, InterludeSummary, InterludeTarget } from './career/types';
 export { nemesisOf, rivalryScore, type RivalRecord, type RivalMemory } from './world/rivals';

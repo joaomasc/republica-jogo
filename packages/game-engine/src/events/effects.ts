@@ -145,6 +145,8 @@ export function applyEffects(
   state: GameState,
   effects: readonly Effect[],
   ctx: EventContext,
+  /** Decisão que causou estes efeitos (guardada nas continuações agendadas). */
+  origin?: string,
 ): string[] {
   const out: string[] = [];
   const player = getPlayer(state);
@@ -332,6 +334,7 @@ export function applyEffects(
             eventId: e.eventId,
             date: addDays(state.date, e.inDays),
             context: e.vars ? { ...ctx, extra: { ...ctx.extra, ...e.vars } } : { ...ctx },
+            ...(origin ? { origin } : {}),
           });
         break;
       }
@@ -361,6 +364,14 @@ export function applyEffects(
       case 'reputation':
         state.career.reputation = clamp100(state.career.reputation + e.delta);
         break;
+      case 'interlude': {
+        const it = state.career.interlude;
+        if (!it) break;
+        if (e.base) it.base = clamp(it.base + e.base, 0, 100);
+        if (e.warChest)
+          it.warChest = clamp(it.warChest + e.warChest, 0, GameConstants.career.interlude.warChestMax);
+        break;
+      }
       case 'wear':
         if (gov) gov.wear = clamp((gov.wear ?? 0) + e.delta, 0, GameConstants.government.wearMax);
         break;
@@ -500,6 +511,15 @@ export function describeEffect(e: Effect, moneyScale: number): string | null {
       return 'Exonera o auxiliar';
     case 'reputation':
       return `Reputação ${sign(e.delta)}`;
+    case 'interlude':
+      return [
+        e.base ? `Base eleitoral ${sign(e.base)}` : null,
+        e.warChest
+          ? `Caixa da pré-campanha ${e.warChest > 0 ? '+' : '−'}${Math.round(Math.abs(e.warChest) * 100)}%`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
     case 'wear':
       return e.delta < 0 ? 'Renova o governo (menos desgaste)' : 'Desgaste do governo';
     case 'partyLoyalty':

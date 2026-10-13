@@ -79,7 +79,14 @@ export interface Poll {
   pollster: string;
   kind: 'public' | 'internal';
   sampleSize: number;
+  /** Margem de erro total (95%): amostra + viés de instituto. */
   marginOfError: number;
+  /** Parte da margem que vem só do tamanho da amostra (ausente em saves antigos). */
+  samplingMargin?: number;
+  /** Parte que vem do viés de cada instituto (0 na pesquisa interna). */
+  houseMargin?: number;
+  /** Marca do medidor de impacto no dia da pesquisa (ver CampaignState.impactCum). */
+  realMark?: number;
   total: PollResultSet;
   rejection: Record<CandidateId, number>;
   knowledge: Record<CandidateId, number>;

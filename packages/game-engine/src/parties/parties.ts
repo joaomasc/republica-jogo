@@ -1,7 +1,6 @@
 import { deepClone } from '../core/clone';
 import { GameConstants } from '../config/constants';
 import { clamp, clamp100, round } from '../core/math';
-import type { Rng } from '../core/rng';
 import type { PartyId } from '../core/types';
 import type { IdeologyVector } from '../ideology/axes';
 import { ideologyAffinity, ideologyDistance, shiftIdeology } from '../ideology/ideology';
@@ -172,14 +171,40 @@ export function createPartyFromInput(input: CreatePartyInput, id: PartyId): Part
   return party;
 }
 
-/** Deriva diária da vida partidária: popularidade oscila, unidade tende a se acomodar. */
-export function driftParties(parties: Record<PartyId, Party>, rng: Rng, days: number): void {
+/** O que move a popularidade dos partidos além das notícias e eleições. */
+export interface PartyDriftContext {
+  /** Partido que governa o país e a avaliação do governo (−1 péssimo … +1 ótimo). */
+  governingPartyId: PartyId | null;
+  governingScore: number;
+  /** Partido do jogador quando ele governa, e a avaliação do mandato dele. */
+  playerPartyId: PartyId | null;
+  playerScore: number | null;
+}
+
+/** Avaliação (0–100) convertida em −1..+1 (50 = neutro; 25 ou 75 = máximo). */
+export function governmentScore(rating: number): number {
+  return clamp((rating - 50) / 25, -1, 1);
+}
+
+/**
+ * Deriva da vida partidária (sem sorteio): a popularidade volta aos poucos para o patamar do
+ * partido (as notícias passam) e quem governa ganha ou perde conforme a avaliação do governo;
+ * a unidade das facções tende a se acomodar.
+ */
+export function driftParties(
+  parties: Record<PartyId, Party>,
+  days: number,
+  ctx: PartyDriftContext,
+): void {
+  const months = days / 30;
   for (const party of Object.values(parties)) {
-    party.popularity = clamp(
-      party.popularity + rng.normal(0, C.popularityDriftSd * Math.sqrt(days / 30)),
-      3,
-      95,
-    );
+    party.popularityBase ??= party.popularity;
+    let pull = (party.popularityBase - party.popularity) * C.popularityReversion * months;
+    if (party.id === ctx.governingPartyId)
+      pull += ctx.governingScore * C.popularityGovernmentEffect * months;
+    if (party.id === ctx.playerPartyId && ctx.playerScore !== null)
+      pull += ctx.playerScore * C.popularityGovernmentEffect * months;
+    party.popularity = clamp(party.popularity + pull, 3, 95);
     for (const f of party.factions)
       f.satisfaction = clamp100(f.satisfaction + (60 - f.satisfaction) * C.unityDecayPerDay * days);
     party.unity = computeUnity(party);

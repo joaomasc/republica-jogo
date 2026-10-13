@@ -29,10 +29,15 @@ export function ministerPersonality(
   };
 }
 
-function trigger(state: GameState, eventId: string, m: Minister): void {
+function trigger(state: GameState, eventId: string, m: Minister, reason: string): void {
   const def = getEventDefinition(eventId);
   if (!def || state.events.pending.length > 0) return;
-  fireEvent(state, def, { partyId: m.partyId, extra: { pessoa: m.name, pasta: m.portfolio } });
+  fireEvent(
+    state,
+    def,
+    { partyId: m.partyId, extra: { pessoa: m.name, pasta: m.portfolio } },
+    reason,
+  );
 }
 
 /** Tick mensal do gabinete (chamado pelo governo executivo). */
@@ -50,26 +55,33 @@ export function processMinisters(state: GameState, rng: Rng): void {
       m.loyalty +
         ((gov.approval - 50) / 50) * M.approvalPull +
         (relation / 100) * M.relationPull -
-        (m.ambition / 100) * M.ambitionDrag +
-        rng.normal(0, 0.6),
+        (m.ambition / 100) * M.ambitionDrag,
       0,
       100,
     );
     m.hiddenScandal = clamp(
-      m.hiddenScandal +
-        (Math.max(0, 60 - m.competence) / 100) * M.scandalGrowth +
-        rng.range(0, 0.4),
+      m.hiddenScandal + (Math.max(0, 60 - m.competence) / 100) * M.scandalGrowth + 0.2,
       0,
       100,
     );
 
     if (m.hiddenScandal >= M.scandalThreshold && rng.chance(M.scandalChance)) {
       m.hiddenScandal = 0;
-      trigger(state, 'cab_ministro_escandalo', m);
+      trigger(
+        state,
+        'cab_ministro_escandalo',
+        m,
+        `${m.name} (${m.portfolio}), competência ${Math.round(m.competence)}, acumulou suspeitas na pasta`,
+      );
       continue;
     }
     if (m.loyalty <= M.leakLoyalty && rng.chance(M.leakChance)) {
-      trigger(state, 'cab_ministro_vaza', m);
+      trigger(
+        state,
+        'cab_ministro_vaza',
+        m,
+        `${m.name} (${m.portfolio}) com lealdade baixa (${Math.round(m.loyalty)})`,
+      );
       continue;
     }
     if (

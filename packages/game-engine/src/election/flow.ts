@@ -1,4 +1,5 @@
 import { beginWeek } from '../campaign/weekly';
+import { startInterlude } from '../career/interlude';
 import { openRunoffDeals } from './runoff';
 import { archiveRivals } from '../world/rivals';
 import { addDays } from '../core/date';
@@ -133,7 +134,10 @@ function recordElection(state: GameState, won: boolean, pct: number, round: 1 | 
     sentiment: won ? 1 : -1,
   });
   const party = getPlayerParty(state);
-  party.popularity = clamp100(party.popularity + (won ? 3 : -1));
+  // Resultado de eleição muda o patamar do partido (não é notícia que passa).
+  const shift = won ? 3 : -1;
+  party.popularity = clamp100(party.popularity + shift);
+  party.popularityBase = clamp100((party.popularityBase ?? party.popularity - shift) + shift);
   player.fame = clamp100(player.fame + (won ? 8 : 3));
 }
 
@@ -160,6 +164,9 @@ export function continueAfterResults(state: GameState): ActionResult {
     return { ok: true, message: 'Você tomou posse!' };
   }
   state.phase = 'career';
+  // A derrota deixa base onde houve voto: ~0,6 ponto de base por ponto percentual.
+  const pct = election.outcome?.pct ?? election.results[0]?.pct[state.playerId] ?? 0;
+  startInterlude(state, { jurisdiction: election.jurisdiction, base: pct * 60 });
   state.campaign = null;
   state.election = null;
   state.interactions = { debate: null, interview: null };

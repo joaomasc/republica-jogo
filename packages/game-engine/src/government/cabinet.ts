@@ -189,7 +189,12 @@ export function chooseCabinetCard(state: GameState, cardId: string | null): Acti
     playerName: player.ballotName,
     playerParty: getPlayerParty(state).acronym,
   };
-  const details = applyEffects(state, success ? card.effects : (card.failure ?? card.effects), ctx);
+  const details = applyEffects(
+    state,
+    success ? card.effects : (card.failure ?? card.effects),
+    ctx,
+    `Gabinete: ${card.title}`,
+  );
   meeting.pending = false;
   meeting.outcome = { cardId, success, details };
   if (success) gov.decisions = [...(gov.decisions ?? []), card.key];

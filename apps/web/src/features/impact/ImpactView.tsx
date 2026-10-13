@@ -32,6 +32,8 @@ const SOURCE_ICON: Record<ImpactSource, string> = {
   decay: 'trending-up',
   airtime: 'radio',
   time: 'calendar-check',
+  week: 'newspaper',
+  economy: 'trending-up',
 };
 
 const SOURCES = Object.keys(SOURCE_ICON) as ImpactSource[];
@@ -47,11 +49,12 @@ const GROUPS: { key: string; name: string; color: string; sources: ImpactSource[
   },
   { key: 'opp', name: 'Adversários', color: '#ff6b6b', sources: ['opponents'] },
   { key: 'events', name: 'Eventos', color: '#fb923c', sources: ['event'] },
+  { key: 'week', name: 'Pauta da semana', color: '#a78bfa', sources: ['week'] },
   {
     key: 'env',
-    name: 'Tempo, desgaste e horário gratuito',
+    name: 'Tempo, desgaste, economia e horário gratuito',
     color: '#8a9bc4',
-    sources: ['decay', 'time', 'airtime'],
+    sources: ['decay', 'time', 'airtime', 'economy'],
   },
 ];
 

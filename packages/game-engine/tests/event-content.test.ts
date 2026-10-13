@@ -184,6 +184,8 @@ describe('Dilemas (pacotes de conteúdo)', () => {
         return e.pct < 0 ? -1 : 1;
       case 'opponent':
         return 1;
+      case 'interlude':
+        return Math.sign((e.base ?? 0) + (e.warChest ?? 0) * 100);
       case 'economyShock':
         return (e.growth ?? 0) - (e.inflation ?? 0) - (e.unemployment ?? 0) >= 0 ? 1 : -1;
       case 'chain':

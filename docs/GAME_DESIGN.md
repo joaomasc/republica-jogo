@@ -164,6 +164,19 @@ No fim do mandato cada promessa é **cumprida, parcial ou não cumprida** (lei a
 
 Carreira não é linear: concorrer a qualquer cargo no próximo ciclo (anos passam: economia e cenário político evoluem, idade sobe, fama cai fora do cargo), trocar de partido (custa credibilidade), fundar partido, tirar um ano sabático ou se aposentar.
 
+**Entressafra (pré-campanha).** Fora do cargo, o jogador escolhe a próxima eleição (cargo, estado/cidade, ano) e avança por marcos: meio e fim de ano, janela partidária (5/abr do ano eleitoral: filiação depois disso não vale para aquela eleição), convenções e início da campanha. Em cada bloco faz uma preparação (trabalho de base, doadores, aliança com chance mostrada, mídia, treino), vive os eventos da ocupação e recebe um resumo do que mudou. Os recursos entram na campanha: base eleitoral → presença e conhecimento iniciais; caixa da pré-campanha → % do caixa inicial; aliados → não lançam candidato e transferem parte dos eleitores; fama → conhecimento; credibilidade → rejeição; reputação → fundo partidário e alianças. A tela mostra "se a campanha começasse hoje" com esses recursos.
+
+## 17a. Causalidade (regra de ouro)
+
+Nada muda "por acaso" do ponto de vista do jogador:
+
+- **Intenção de voto**: o medidor de impacto (`campaign/impact.ts`) mede cada etapa do dia com nome (cada adversário, cada evento, pauta da semana, desgaste, indecisos, economia). A auditoria (`scripts/audit-causality.ts`) e um teste garantem que 100% da variação real tem fonte registrada.
+- **Pesquisas**: o erro amostral e o viés de instituto são honestos e entram na margem anunciada; a interface separa o que a pesquisa mostra do que mudou de fato.
+- **Adversários**: ganhos diários determinísticos (orçamento × habilidade × estilo); só o ataque é sorteado, e vem com motivo.
+- **Aprovação**: sem ruído; a tendência mensal é registrada parcela por parcela (satisfação, lua de mel, desgaste, escândalo, déficit) e os processos do mês, com o fato que os causou.
+- **Eventos**: cada evento tem gatilho próprio, tema do estado (`events/drivers.ts`: saúde, segurança, economia, clima... mudam a chance entre 1/3 e 3×), calendário, ou é marcado como **Imprevisto**. Continuações mostram a decisão que as causou.
+- **Aleatoriedade aceita**: erro de pesquisa, dia da eleição, apostas com chance mostrada antes (cartas, manobras, alianças, acordos de 2º turno), imprevistos rotulados e choques da economia.
+
 ## 18. Dificuldade
 
 |           | Recursos | Custos | Volatilidade | Eventos | Viés negativo | Adversários | Leis  | Incerteza |

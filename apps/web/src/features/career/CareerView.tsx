@@ -1,6 +1,9 @@
 import {
   careerOptions,
   cityOf,
+  interludeMilestones,
+  interludeView,
+  partyWindow,
   formatDateLong,
   ISSUE_DEFINITIONS,
   ISSUES,
@@ -221,6 +224,8 @@ export function CareerView() {
 
   const options = careerOptions(game);
   const inCareerPhase = game.phase === 'career';
+  const interlude = inCareerPhase ? interludeView(game) : null;
+  const blocksLeft = inCareerPhase ? interludeMilestones(game).length : 0;
 
   return (
     <div className="space-y-3">
@@ -307,13 +312,21 @@ export function CareerView() {
             <div className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-4">
               {options.map((o) => {
                 const office = OFFICES[o.officeId];
+                const t = interlude?.target;
+                const isTarget =
+                  !!t &&
+                  t.officeId === o.officeId &&
+                  (office.unitsKind === 'states' || t.stateId === stateId) &&
+                  (office.unitsKind !== 'cityZones' || (t.cityId ?? null) === (cityId ?? null));
                 return (
                   <div
                     key={o.officeId}
                     className={cn(
                       'flex flex-col gap-1.5 rounded-xl border-2 p-3',
                       o.eligible
-                        ? 'border-ink-600 bg-ink-900'
+                        ? isTarget
+                          ? 'border-gold-400 bg-ink-900'
+                          : 'border-ink-600 bg-ink-900'
                         : 'border-ink-700 bg-ink-900/50 opacity-60',
                     )}
                   >
@@ -327,6 +340,26 @@ export function CareerView() {
                     </div>
                     {o.reelection && o.eligible && <Badge tone="gold">Reeleição</Badge>}
                     {o.reason && <div className="text-xs text-bad">{o.reason}</div>}
+                    {isTarget ? (
+                      <Badge tone="gold">Alvo da pré-campanha</Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="mt-auto"
+                        disabled={!o.eligible}
+                        onClick={() =>
+                          act({
+                            type: 'career/target',
+                            officeId: o.officeId,
+                            stateId,
+                            ...(office.unitsKind === 'cityZones' ? { cityId } : {}),
+                          })
+                        }
+                        data-testid={`target-${o.officeId}`}
+                      >
+                        Preparar esta eleição
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="primary"
@@ -354,8 +387,11 @@ export function CareerView() {
               })}
             </div>
             <p className="mt-2 text-xs text-muted">
-              O tempo avança até o início da campanha. Fora do cargo, você perde visibilidade com os
-              anos.
+              “Concorrer” avança direto até o início da campanha
+              {blocksLeft > 1
+                ? ` e pula ${blocksLeft - 1} bloco(s) de preparação (a ocupação segue rendendo, mas sem decisões)`
+                : ''}
+              . Fora do cargo, você perde visibilidade com os anos.
             </p>
           </Panel>
           <div className="grid gap-3 @2xl:grid-cols-2">
@@ -366,6 +402,13 @@ export function CareerView() {
                   <PartyEmblem party={party} size={22} showAcronym className="align-middle" />
                 )}{' '}
                 — trocar de partido custa credibilidade.
+                {interlude?.target && (
+                  <span className="block text-xs text-muted">
+                    Para disputar em {interlude.target.year}, a filiação precisa acontecer até a
+                    janela partidária (
+                    {partyWindow(interlude.target.year).split('-').reverse().join('/')}).
+                  </span>
+                )}
               </div>
               <div className="grid max-h-60 gap-1.5 overflow-y-auto pr-1">
                 {Object.values(game.parties)

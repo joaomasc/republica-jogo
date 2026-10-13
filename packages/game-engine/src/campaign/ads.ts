@@ -253,6 +253,39 @@ export function processAdsDaily(state: GameState, rng: Rng, meter?: ImpactMeter)
     const run = () => airAd(ad);
     if (meter) meter.step('ad', adLabel(state, ad), run, `ad:${ad.id}`);
     else run();
+    // Risco da peça (mostrado ao contratar): a repercussão negativa vira uma linha própria.
+    const channel = CHANNELS[ad.channel];
+    const tone = AD_TONES[ad.tone];
+    if (rng.chance(channel.risk * tone.risk * diff.negativeEventBias)) {
+      const fined = ad.tone === 'attack' && rng.chance(0.35);
+      const hit = () => backlash(ad, fined);
+      const label = `${fined ? 'Propaganda retirada pela Justiça' : 'Peça criticada'}: ${adLabel(state, ad)}`;
+      if (meter) meter.step('ad', label, hit, `adrisk:${ad.id}`);
+      else hit();
+    }
+  }
+
+  function backlash(ad: AdCampaign, fined: boolean): void {
+    if (!campaign || !status) return;
+    const channel = CHANNELS[ad.channel];
+    status.rejectionMod += 1.5;
+    if (fined) {
+      const fine = Math.round(ad.dailyCost * 3);
+      spend(state, Math.min(fine, campaign.money), 'fines', 'Multa da Justiça Eleitoral');
+      ad.active = false;
+      publishNews(state, {
+        headline: `Justiça Eleitoral manda retirar propaganda de ${player.ballotName}`,
+        category: 'campaign',
+        sentiment: -1,
+        importance: 2,
+      });
+    } else {
+      publishNews(state, {
+        headline: `Peça publicitária de ${player.ballotName} em ${channel.name.toLowerCase()} gera críticas`,
+        category: 'campaign',
+        sentiment: -1,
+      });
+    }
   }
 
   function airAd(ad: AdCampaign): void {
@@ -316,27 +349,5 @@ export function processAdsDaily(state: GameState, rng: Rng, meter?: ImpactMeter)
     if (channel.enthusiasm > 0)
       campaign.enthusiasm = clamp100(campaign.enthusiasm + channel.enthusiasm * 0.5);
     status.rejectionMod += tone.rejection;
-
-    if (rng.chance(channel.risk * tone.risk * diff.negativeEventBias)) {
-      status.rejectionMod += 1.5;
-      const fined = ad.tone === 'attack' && rng.chance(0.35);
-      if (fined) {
-        const fine = Math.round(ad.dailyCost * 3);
-        spend(state, Math.min(fine, campaign.money), 'fines', 'Multa da Justiça Eleitoral');
-        ad.active = false;
-        publishNews(state, {
-          headline: `Justiça Eleitoral manda retirar propaganda de ${player.ballotName}`,
-          category: 'campaign',
-          sentiment: -1,
-          importance: 2,
-        });
-      } else {
-        publishNews(state, {
-          headline: `Peça publicitária de ${player.ballotName} em ${channel.name.toLowerCase()} gera críticas`,
-          category: 'campaign',
-          sentiment: -1,
-        });
-      }
-    }
   }
 }

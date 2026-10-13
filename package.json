@@ -1,6 +1,6 @@
 {
   "name": "republica",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "description": "República — simulador político e eleitoral jogável no navegador",
   "type": "module",

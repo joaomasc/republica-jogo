@@ -126,24 +126,22 @@ export function offerRunoffDeal(
 }
 
 /** O rival negocia: tenta fechar com quem está mais perto dele (um por chamada). */
-export function rivalMoves(state: GameState, rng: Rng): void {
+/** O rival corteja um derrotado. Retorna o que aconteceu (para o medidor de impacto) ou null. */
+export function rivalMoves(state: GameState, rng: Rng): string | null {
   const election = state.election;
-  if (!election?.runoffDeals || election.round !== 2) return;
+  if (!election?.runoffDeals || election.round !== 2) return null;
   const rival = election.candidateIds.find((id) => id !== state.playerId);
-  if (!rival) return;
+  if (!rival) return null;
   const open = election.runoffDeals
     .filter((d) => d.status === 'open' && d.affinityRival > d.affinityPlayer)
     .sort((a, b) => b.share - a.share);
   const target = open[0];
-  if (!target || !rng.chance(R.rivalChance)) return;
+  if (!target || !rng.chance(R.rivalChance)) return null;
   target.status = 'rival';
   endorse(state, target, rival);
-  publishNews(state, {
-    headline: `${target.name} anuncia apoio a ${state.candidates[rival]?.ballotName ?? 'adversário'}`,
-    category: 'election',
-    sentiment: -1,
-    importance: 2,
-  });
+  const headline = `${target.name} anuncia apoio a ${state.candidates[rival]?.ballotName ?? 'adversário'}`;
+  publishNews(state, { headline, category: 'election', sentiment: -1, importance: 2 });
+  return headline;
 }
 
 /** Termo de utilidade do modelo de voto: eleitores dos partidos que apoiam o finalista. */

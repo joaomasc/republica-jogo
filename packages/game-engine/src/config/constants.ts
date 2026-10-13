@@ -11,7 +11,7 @@ import { NationConstants } from '../nation/constants';
  */
 export const GameConstants = {
   save: {
-    version: 3,
+    version: 4,
     format: 'republica-save',
   },
 
@@ -467,12 +467,44 @@ export const GameConstants = {
     militancyPartySwitch: 0.5,
     partyFoundingMoney: 400_000,
     partyFoundingPopularity: 8,
+    /** Reputação mexe no fundo partidário da próxima campanha: × (base + reputação × fator). */
+    reputationMoneyBase: 0.85,
+    reputationMoneyFactor: 0.003,
+    /** Entressafra jogável (career/interlude.ts). */
+    interlude: {
+      /** Base eleitoral perdida por mês sem trabalho. */
+      baseDecayPerMonth: 0.4,
+      /** No início da campanha: presença += base × fator; conhecimento += base × fator. */
+      basePresenceFactor: 0.3,
+      baseKnowledgeFactor: 0.35,
+      /** Fração da base que acompanha uma troca de alvo: mesma cidade, mesmo estado, outro estado. */
+      basePortability: { same: 1, state: 0.6, other: 0.15 },
+      /** Caixa da pré-campanha (fração do caixa inicial) — teto. */
+      warChestMax: 1,
+      /** Peso do apoio de um partido aliado (fração da identificação partidária que migra). */
+      allyWeight: 0.25,
+      maxAllies: 3,
+      /** Afinidade ideológica mínima (%) para uma aliança. */
+      allyMinCompatibility: 40,
+      prep: {
+        base: 8,
+        funds: 0.14,
+        fundsCredibility: -0.2,
+        media: 4,
+        mediaCredibility: -0.2,
+        /** Pontos de oratória/comunicação por treino, com retorno decrescente (× (1 − atributo/100)). */
+        training: 3,
+      },
+    },
   },
 
   party: {
     unityDecayPerDay: 0.02,
     factionDistanceFactor: 60,
-    popularityDriftSd: 1.5,
+    /** Fração da distância até o patamar que a popularidade recupera por mês. */
+    popularityReversion: 0.05,
+    /** Pontos de popularidade por mês para o partido de um governo ótimo (ou péssimo, negativo). */
+    popularityGovernmentEffect: 1,
     supportBaseShare: 0.3,
     compatibilityMoneyFactor: 0.6,
   },

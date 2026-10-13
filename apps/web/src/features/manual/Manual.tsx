@@ -746,15 +746,22 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
     id: 'pesquisas',
     title: 'Pesquisas',
     icon: 'bar-chart-3',
-    keywords: 'pesquisa instituto margem erro viés interna segmentos fiéis independentes mapa',
+    keywords:
+      'pesquisa instituto margem erro viés interna segmentos fiéis independentes mapa por que mudou',
     body: () => (
       <>
         <P>
           Você nunca vê a intenção real — só pesquisas. As públicas saem a cada{' '}
           {GameConstants.polls.publicIntervalDays} dias (n ={' '}
-          {GameConstants.polls.publicSampleSize.toLocaleString('pt-BR')}, margem ≈ ±2,4 p.p.) com
-          viés próprio de cada instituto, fixo durante a partida. Recortes por região e grupo têm
-          amostras menores e erram mais.
+          {GameConstants.polls.publicSampleSize.toLocaleString('pt-BR')}) com viés próprio de cada
+          instituto, fixo durante a partida. A margem anunciada (≈ ±3,4 p.p.) soma as duas coisas:
+          amostra (±2,4) e viés de instituto (±2,4). Recortes por região e grupo têm amostras
+          menores e erram mais.
+        </P>
+        <P>
+          O painel <b>Por que mudou?</b> (na tela de Pesquisas e na dica da Intenção, na barra
+          superior) separa o que a pesquisa mostra do que <b>mudou de fato</b> entre as duas
+          últimas pesquisas. A diferença é erro de pesquisa: amostra e troca de instituto.
         </P>
         <P>
           A <b>pesquisa interna</b> é paga (o estatístico barateia e amplia a amostra) e mostra os
@@ -850,26 +857,46 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
     id: 'eventos',
     title: 'Eventos, notícias e adversários',
     icon: 'newspaper',
-    keywords: 'evento escândalo crise notícia alerta adversário ataque memória',
+    keywords:
+      'evento escândalo crise notícia alerta adversário ataque memória imprevisto por que agora consequência',
     body: () => (
       <>
         <P>
-          Eventos surgem conforme a fase e o contexto (economia, partido, escândalos, região). Cada
-          opção tem efeitos visíveis na prévia; alguns eventos se encadeiam semanas depois (ex.:
-          doação suspeita → investigação).
+          Eventos dependem do estado do jogo. Cada evento mostra <b>Por que agora?</b>:
         </P>
+        <Ul>
+          <li>
+            <b>Tema do estado</b>: saúde, educação, segurança, cidade, trabalho, economia, clima,
+            integridade, ruas (e, na campanha, rivais, viabilidade, militância e mídia). O tema
+            mexe na chance de 1/3 a 3×: com a saúde mal financiada, filas na UPA saem muito mais;
+            com ela em dia, quase não saem. A frase mostra o dado e quanto ele mudou a chance.
+          </li>
+          <li>
+            <b>Consequência de</b> uma decisão anterior (ex.: aceitar uma proposta de lobista →
+            propina exposta semanas depois), de um grupo insatisfeito ou de um ministro.
+          </li>
+          <li>
+            <b>Época do ano</b> (chuvas, seca, festas) ou a sua ocupação, na entressafra.
+          </li>
+          <li>
+            <b>Imprevisto</b>: sai por sorteio e vem com esse selo. Acontece independentemente das
+            suas decisões.
+          </li>
+        </Ul>
         <P>
-          Os <b>adversários</b> fazem campanha todos os dias: ganham conhecimento, presença nas
-          regiões-foco e momentum nos grupos prioritários do partido deles. Eles atacam quem lidera
-          — ou você, se estiver crescendo.
+          Os <b>adversários</b> fazem campanha todos os dias conforme orçamento, habilidade e
+          estilo: ganham conhecimento, presença nas regiões-foco e numa região por dia em rodízio, e
+          momentum nos grupos prioritários. Só o ataque é sorteado (agressividade e tática da
+          semana) e sempre vem com motivo: quem está atrás ataca o líder; o líder ataca quem
+          encosta.
         </P>
         <Tip>
           Na tela{' '}
           <Link to="/jogo/impacto" className="underline">
             Impacto
           </Link>
-          , a linha &ldquo;Campanha dos adversários&rdquo; mostra quanto você perde por dia sem
-          fazer nada. É o ritmo mínimo que suas ações precisam superar.
+          , cada adversário tem a própria linha (&ldquo;Campanha de Fulano&rdquo;). No resumo da
+          disputa, cada candidato mostra quanto variou de fato em 7 dias e a principal causa.
         </Tip>
       </>
     ),
@@ -907,7 +934,7 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
     title: 'Governando',
     icon: 'landmark',
     keywords:
-      'governo mandato orçamento leis congresso aprovação capital político estabilidade ministros economia grupos de interesse',
+      'governo mandato orçamento leis congresso aprovação capital político estabilidade ministros economia grupos de interesse desgaste por que mudou',
     body: () => (
       <>
         <P>
@@ -916,8 +943,11 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
         </P>
         <Ul>
           <li>
-            <b>Aprovação</b> = satisfação média dos grupos governados + lua de mel (6 meses) −
-            escândalos − déficit.
+            <b>Aprovação</b> caminha todo mês 30% da distância até um alvo: satisfação média dos
+            grupos governados + lua de mel (6 meses) − desgaste − escândalos − déficit. Não há
+            sorteio: o painel <b>Por que a aprovação mudou?</b> (no Gabinete e na dica da barra
+            superior) lista cada parcela e cada fato do mês (eventos, greves, obras, Congresso,
+            suas decisões).
           </li>
           <li>
             <b>Satisfação</b> de cada grupo = economia (desemprego, inflação, crescimento) +
@@ -1217,7 +1247,8 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
     id: 'carreira',
     title: 'Partido e carreira',
     icon: 'award',
-    keywords: 'partido facções unidade trocar fundar carreira aposentar sabático reeleição',
+    keywords:
+      'partido facções unidade trocar fundar carreira aposentar sabático reeleição entressafra pré-campanha ocupação base caixa aliança janela partidária convenção',
     body: () => (
       <>
         <Ul>
@@ -1232,6 +1263,50 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
           <li>
             Ao fim do mandato: concorrer a outro cargo, à reeleição (máx. 2 mandatos seguidos no
             Executivo), tirar um ano sabático ou se aposentar. A fama cai fora do cargo.
+          </li>
+          <li>
+            A popularidade dos partidos não oscila por sorteio: volta aos poucos ao patamar do
+            partido, sobe ou cai com a avaliação de quem governa e muda com os resultados
+            eleitorais.
+          </li>
+        </Ul>
+        <P>
+          <b>Pré-campanha (entressafra).</b> Depois de uma derrota ou do fim do mandato, escolha a
+          próxima eleição (“Preparar esta eleição”) e avance de marco em marco: meio e fim de ano,{' '}
+          <b>janela partidária</b> (5 de abril do ano eleitoral; filiação depois disso não vale
+          para aquela eleição), convenções e início da campanha. Em cada bloco, faça uma
+          preparação:
+        </P>
+        <Table
+          head={['Preparação', 'O que rende na campanha']}
+          rows={[
+            ['Trabalho de base', 'Base eleitoral no lugar do alvo → presença e conhecimento desde o 1º dia.'],
+            ['Rodada com doadores', 'Caixa da pré-campanha → % a mais no caixa inicial.'],
+            [
+              'Costurar aliança',
+              'Partido aliado não lança candidato contra você e leva parte dos eleitores dele (chance mostrada antes).',
+            ],
+            ['Aparições na mídia', 'Fama → conhecimento inicial.'],
+            ['Preparação pessoal', 'Oratória e comunicação (retorno decrescente).'],
+          ]}
+        />
+        <Ul>
+          <li>
+            A <b>ocupação</b> rende todo mês (o consultor junta caixa, a ONG faz base, o cargo
+            internacional afasta da base) e traz eventos próprios. O efeito por ano já desconta a
+            fama que cai fora do cargo.
+          </li>
+          <li>
+            Mandato e derrota deixam base no lugar; sem trabalho, a base cai aos poucos e só parte
+            dela acompanha uma troca de cidade ou estado.
+          </li>
+          <li>
+            <b>Reputação</b> pesa no fundo partidário e nas alianças; <b>credibilidade</b> reduz a
+            rejeição.
+          </li>
+          <li>
+            A prévia <b>Se a campanha começasse hoje</b> mostra sua largada com os recursos atuais.
+            Ao fim de cada bloco, um resumo mostra o que mudou.
           </li>
         </Ul>
       </>
@@ -1282,14 +1357,22 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
             ],
             ['Propaganda paga', 'O efeito de cada peça em cada dia no ar.'],
             ['Debates / Entrevistas', 'A soma de todas as respostas e do resultado final.'],
-            ['Eventos', 'Suas decisões em eventos e os efeitos em andamento (modificadores).'],
-            ['Adversários', 'O que as campanhas dos outros candidatos tiraram (ou deram) a você.'],
-            ['Desgaste natural', 'Presença e momentum de todos os candidatos caindo a cada dia.'],
-            ['Horário eleitoral gratuito', 'Conhecimento distribuído nos últimos 35 dias.'],
+            ['Eventos', 'Cada evento pelo nome, suas decisões e os efeitos em andamento.'],
             [
-              'Passagem do tempo e outros',
-              'Indecisos diminuindo, economia, popularidade e partidos.',
+              'Adversários',
+              'A campanha de cada rival e cada ataque (com motivo), numa linha por candidato.',
             ],
+            [
+              'Pauta da semana',
+              'Nova pauta, seus temas que esfriam e rivais que aderem à pauta (modo semanal).',
+            ],
+            [
+              'Desgaste natural',
+              'Sua presença e lembrança esfriando, adversários perdendo fôlego e o humor do eleitor voltando ao normal.',
+            ],
+            ['Horário eleitoral gratuito', 'Conhecimento distribuído nos últimos 35 dias.'],
+            ['Indecisos decidindo', 'A eleição mais perto: menos indecisos a cada dia.'],
+            ['Economia e humor do eleitor', 'A virada do mês: desemprego, inflação e PIB.'],
           ]}
         />
         <Ul>
@@ -1306,6 +1389,10 @@ polarização = ${V.rejectionPolarizationFactor} × (0,6 + o quanto suas posiç�
             gastos: use-a para descobrir o que funciona para o seu candidato e o seu eleitorado.
           </li>
           <li>Os efeitos também aparecem na notificação de cada ação e no diário de campanha.</li>
+          <li>
+            Toda variação da sua intenção real passa por uma linha nomeada: nada muda sem causa
+            registrada. As 3 principais causas da semana aparecem em <b>Por que mudou?</b>.
+          </li>
         </Ul>
       </>
     ),

@@ -109,6 +109,7 @@ function rivalReactions(
   shares: Record<CandidateId, number>,
   previous: Record<CandidateId, number> | null,
   trend: IssueId,
+  meter: ImpactMeter,
 ): RivalMove[] {
   const election = state.election!;
   const me = state.playerId;
@@ -159,7 +160,9 @@ function rivalReactions(
       text = `${name} viu você crescer e vai disputar ${myBest.map((u) => u.name).join(' e ')}.`;
     } else if (st.style === 'populist' || st.style === 'digital' || rng.chance(0.3)) {
       st.tactic = { kind: 'trend' };
-      st.issueFocus[trend] = Math.min(100, (st.issueFocus[trend] ?? 0) + 20);
+      meter.step('week', `${name} abraçou a pauta da semana (${trendName})`, () => {
+        st.issueFocus[trend] = Math.min(100, (st.issueFocus[trend] ?? 0) + 20);
+      });
       text = `${name} abraçou a pauta da semana: ${trendName}.`;
     } else {
       st.tactic = { kind: 'base' };
@@ -540,8 +543,26 @@ function drawCards(
   return cards;
 }
 
-/** Abre a reunião da semana (chamada no início de cada semana de campanha). */
-export function startWeek(state: GameState, rng: Rng): void {
+/** Posição do tema no ranking de prioridades do eleitorado da disputa (1 = mais citado). */
+function trendRank(state: GameState, trend: IssueId): number {
+  const election = state.election!;
+  const weight: Partial<Record<IssueId, number>> = {};
+  for (const u of election.units)
+    for (const up of u.pops) {
+      const pop = state.population.pops[up.popId];
+      if (!pop) continue;
+      for (const issue of ISSUES)
+        weight[issue] = (weight[issue] ?? 0) + pop.priorities[issue] * up.voters;
+    }
+  return 1 + ISSUES.filter((i) => (weight[i] ?? 0) > (weight[trend] ?? 0)).length;
+}
+
+/**
+ * Abre a reunião da semana (chamada no início de cada semana de campanha). Cada mudança que
+ * mexe na intenção de voto vira uma linha no medidor de impacto: temas que esfriam, a nova pauta
+ * e os rivais que aderem a ela.
+ */
+export function startWeek(state: GameState, rng: Rng, outer?: ImpactMeter): void {
   const election = state.election;
   const campaign = state.campaign;
   if (!state.settings.weekly || !election || !campaign || state.phase !== 'campaign') return;
@@ -552,20 +573,42 @@ export function startWeek(state: GameState, rng: Rng): void {
   const prev = campaign.week;
   const index = Math.floor(diffDays(election.roundStartDate, state.date) / 7) + 1;
   if (prev && prev.startDate === state.date) return;
+  const meter = outer ?? new ImpactMeter(state);
   // Ênfase em temas esfria a cada semana (sem cair abaixo da base do partido): pauta velha não rende.
-  for (const id of election.candidateIds) {
-    const st = election.participants[id];
-    const party = state.parties[state.candidates[id]?.partyId ?? ''];
-    if (!st) continue;
-    for (const issue of Object.keys(st.issueFocus) as IssueId[]) {
-      const floor = party?.priorities.includes(issue) ? 30 : 0;
-      st.issueFocus[issue] = Math.max(floor, (st.issueFocus[issue] ?? 0) * 0.75);
+  const cool = (mine: boolean) => {
+    for (const id of election.candidateIds) {
+      if ((id === state.playerId) !== mine) continue;
+      const st = election.participants[id];
+      const party = state.parties[state.candidates[id]?.partyId ?? ''];
+      if (!st) continue;
+      for (const issue of Object.keys(st.issueFocus) as IssueId[]) {
+        const floor = party?.priorities.includes(issue) ? 30 : 0;
+        st.issueFocus[issue] = Math.max(floor, (st.issueFocus[issue] ?? 0) * 0.75);
+      }
     }
-  }
+  };
+  meter.step('week', 'Seus temas esfriaram (ênfase cai 25% por semana sem reforço)', () =>
+    cool(true),
+  );
+  meter.step('week', 'Temas dos adversários esfriaram', () => cool(false));
   const trend = pickTrend(state, rng, prev?.trend ?? null);
-  election.trend = trend;
+  const trendName = ISSUE_DEFINITIONS[trend].name;
+  meter.step(
+    'week',
+    `Nova pauta da semana: ${trendName} (prioridade nº ${trendRank(state, trend)} do eleitorado)${prev ? ` — sai ${ISSUE_DEFINITIONS[prev.trend].name}` : ''}`,
+    () => {
+      election.trend = trend;
+    },
+  );
   const sameRound = prev && prev.startDate >= election.roundStartDate;
-  const rivalMoves = rivalReactions(state, rng, shares, sameRound ? prev.shares : null, trend);
+  const rivalMoves = rivalReactions(
+    state,
+    rng,
+    shares,
+    sameRound ? prev.shares : null,
+    trend,
+    meter,
+  );
   const week: WeekState = {
     index,
     startDate: state.date,
@@ -607,7 +650,7 @@ export function chooseWeekCard(state: GameState, cardId: string | null): ActionR
   const meter = new ImpactMeter(state);
   let details: string[] = [];
   meter.step('card', card.title, () => {
-    details = applyEffects(state, effects, card.ctx);
+    details = applyEffects(state, effects, card.ctx, `Carta da semana: ${card.title}`);
   });
   week.pending = false;
   week.outcome = { cardId, success, details };

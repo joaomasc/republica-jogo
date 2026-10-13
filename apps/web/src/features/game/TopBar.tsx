@@ -18,11 +18,14 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { NationEmblem } from '../../components/NationEmblem';
+import { WhyApprovalCompact } from '../government/WhyApproval';
+import { WhyIntentionCompact } from '../impact/WhyChanged';
 import { num, PHASE_LABELS, pct } from '../../lib/format';
 import { useGame, useGameState } from '../../store/gameStore';
 import { GAME_SPEEDS, useSettings } from '../../store/settingsStore';
@@ -49,10 +52,12 @@ interface ReadingProps {
   details?: ReactNode;
   testId?: string;
   className?: string;
+  /** Clique abre o painel com a explicação completa. */
+  onClick?: () => void;
 }
 
 /** Leitura da barra superior: ícone + valor, com dica rica. */
-function Reading({ icon, label, value, tone = 'neutral', sub, hint, details, testId, className }: ReadingProps) {
+function Reading({ icon, label, value, tone = 'neutral', sub, hint, details, testId, className, onClick }: ReadingProps) {
   return (
     <Tooltip
       side="bottom"
@@ -71,10 +76,22 @@ function Reading({ icon, label, value, tone = 'neutral', sub, hint, details, tes
       }
     >
       <div
-        className="flex h-11 items-center gap-1.5 rounded-[4px] px-2 transition hover:bg-white/[0.045]"
+        className={cn(
+          'flex h-11 items-center gap-1.5 rounded-[4px] px-2 transition hover:bg-white/[0.045]',
+          onClick && 'cursor-pointer',
+        )}
         data-testid={testId}
         tabIndex={0}
         aria-label={`${label}: ${value}`}
+        {...(onClick
+          ? {
+              role: 'button',
+              onClick,
+              onKeyDown: (e: ReactKeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') onClick();
+              },
+            }
+          : {})}
       >
         <Icon name={icon} size={16} className="shrink-0 text-gold-400" />
         <div className="leading-none">
@@ -533,7 +550,9 @@ export function TopBar() {
             label="Intenção"
             value={`${pct(m.intention)}${m.intentionRank ? ` · ${m.intentionRank}º` : ''}`}
             tone="gold"
-            hint="Intenção de voto na pesquisa mais recente (com margem de erro)."
+            hint="Intenção de voto na pesquisa mais recente. Clique para ver por que mudou."
+            details={<WhyIntentionCompact game={game} />}
+            onClick={() => navigate('/jogo/pesquisas')}
             testId="metric-intention"
           />
         )}
@@ -544,7 +563,10 @@ export function TopBar() {
             label="Aprovação"
             value={`${m.approval}%`}
             tone={m.approval >= 50 ? 'good' : m.approval >= 35 ? 'warn' : 'bad'}
-            hint="Aprovação do seu mandato."
+            hint="Aprovação do seu mandato. Clique para ver por que mudou."
+            details={<WhyApprovalCompact game={game} />}
+            onClick={() => navigate('/jogo/governo')}
+            testId="metric-approval"
           />
         )}
         {legitimacy !== null && (

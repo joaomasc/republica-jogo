@@ -13,6 +13,7 @@ import { sphereOf } from './conditions';
 import { nemesisInRace } from '../world/rivals';
 import { ANNUAL_EVENTS } from './seasons';
 import { applyEffects, describeEffect } from './effects';
+import { describeCause, driverEffect, DriverReader } from './drivers';
 import { EVENT_DEFINITIONS, getEventDefinition } from './events.data';
 import type { EventContext, EventDefinition, PendingEvent } from './types';
 
@@ -66,7 +67,7 @@ function territoryOf(
   return { cityId: sphere.cityId, stateIds: [sphere.stateId] };
 }
 
-function isEligible(state: GameState, def: EventDefinition): boolean {
+function isEligible(state: GameState, def: EventDefinition, reader?: DriverReader): boolean {
   if (def.chainOnly) return false;
   if (!territoryOf(state, def)) return false;
   if (!def.phases.includes(state.phase)) return false;
@@ -81,12 +82,35 @@ function isEligible(state: GameState, def: EventDefinition): boolean {
   if (last && diffDays(last, state.date) < cooldown) return false;
   if (def.context?.includes('unit') && !state.election) return false;
   if (def.context?.includes('opponent') && opponentPool(state, def).length === 0) return false;
-  return def.condition ? def.condition(state) : true;
+  if (def.condition && !def.condition(state)) return false;
+  // Tema do estado: negativo sem tensão nenhuma (ou positivo em plena crise) não entra.
+  const fx = driverEffect(def, reader ?? new DriverReader(state));
+  return !fx?.blocked;
 }
 
 /** Eventos que podem sair agora (filtros de fase, esfera, território, recarga e condição). */
 export function eligibleEventIds(state: GameState): string[] {
-  return EVENT_DEFINITIONS.filter((d) => isEligible(state, d)).map((d) => d.id);
+  const reader = new DriverReader(state);
+  return EVENT_DEFINITIONS.filter((d) => isEligible(state, d, reader)).map((d) => d.id);
+}
+
+/** Por que o evento saiu agora (texto para o jogador). */
+function causeOf(
+  state: GameState,
+  def: EventDefinition,
+  origin: string | undefined,
+): { cause?: string; unforeseen?: boolean } {
+  if (origin) return { cause: `Consequência de: ${origin}.` };
+  if (def.why) return { cause: def.why(state) };
+  const fx = driverEffect(def, new DriverReader(state));
+  if (fx) return { cause: describeCause(fx) };
+  if (def.months)
+    return { cause: 'Época do ano: este tipo de acontecimento é comum nesta estação.' };
+  if (def.condition || def.weightModifier || def.chainOnly) return {};
+  return {
+    cause: 'Imprevisto: acontece independentemente das suas decisões.',
+    unforeseen: true,
+  };
 }
 
 function buildContext(
@@ -159,7 +183,10 @@ export function fireEvent(
   state: GameState,
   def: EventDefinition,
   baseContext?: EventContext,
+  /** O que provocou o evento (decisão anterior, grupo insatisfeito...). */
+  origin?: string,
 ): PendingEvent | null {
+  const why = causeOf(state, def, origin);
   const ctx = withRng(state, (rng) => buildContext(state, def, rng, baseContext));
   const { extra, ...plain } = ctx;
   const vars = { ...(plain as Record<string, string | undefined>), ...extra };
@@ -172,17 +199,18 @@ export function fireEvent(
 
   const firstOption = def.options[0];
   if (def.options.length === 1 && firstOption) {
-    applyEffects(state, firstOption.effects, ctx);
+    applyEffects(state, firstOption.effects, ctx, title);
     state.events.log.unshift({
       instanceId,
       eventId: def.id,
       date: state.date,
       title,
       choiceLabel: null,
+      ...(why.cause ? { cause: why.cause } : {}),
     });
     publishNews(state, {
       headline: title,
-      body: description,
+      body: why.cause ? `${description} ${why.cause}` : description,
       category: def.category === 'economy' ? 'economy' : 'event',
       sentiment: def.negative ? -1 : 1,
     });
@@ -190,7 +218,7 @@ export function fireEvent(
       kind: `event_${def.id}`,
       severity: def.negative ? 'warning' : 'success',
       title,
-      message: description,
+      message: why.cause ? `${description} ${why.cause}` : description,
       link: 'events',
     });
     return null;
@@ -206,6 +234,8 @@ export function fireEvent(
     title,
     description,
     context: ctx,
+    ...(why.cause ? { cause: why.cause } : {}),
+    ...(why.unforeseen ? { unforeseen: true } : {}),
     options: def.options.map((o) => {
       const available = o.requirement ? o.requirement(state) : true;
       return {
@@ -244,12 +274,14 @@ export function rollEvent(state: GameState, chance: number): PendingEvent | null
   const diff = getDifficulty(state);
   return withRng(state, (rng) => {
     if (!rng.chance(chance * diff.eventRate)) return null;
-    const eligible = EVENT_DEFINITIONS.filter((d) => isEligible(state, d));
+    const reader = new DriverReader(state);
+    const eligible = EVENT_DEFINITIONS.filter((d) => isEligible(state, d, reader));
     const def = rng.weightedPick(
       eligible,
       (d) =>
         d.weight *
         (d.weightModifier?.(state) ?? 1) *
+        (driverEffect(d, reader)?.mult ?? 1) *
         (d.negative ? diff.negativeEventBias : 1) *
         freshness(state, d),
     );
@@ -263,7 +295,7 @@ export function processScheduledEvents(state: GameState): void {
   state.events.scheduled = state.events.scheduled.filter((s) => s.date > state.date);
   for (const item of due) {
     const def = getEventDefinition(item.eventId);
-    if (def && def.phases.includes(state.phase)) fireEvent(state, def, item.context);
+    if (def && def.phases.includes(state.phase)) fireEvent(state, def, item.context, item.origin);
   }
 }
 
@@ -289,13 +321,19 @@ export function resolveEvent(state: GameState, instanceId: string, optionId: str
   if (!view.available) return { ok: false, message: view.reason ?? 'Opção indisponível.' };
   state.events.pending.splice(idx, 1);
   state.events.choices = { ...state.events.choices, [def.id]: optionId };
-  const details = applyEffects(state, option.effects, pending.context);
+  const details = applyEffects(
+    state,
+    option.effects,
+    pending.context,
+    `${pending.title} → ${view.label}`,
+  );
   state.events.log.unshift({
     instanceId,
     eventId: def.id,
     date: state.date,
     title: pending.title,
     choiceLabel: view.label,
+    ...(pending.cause ? { cause: pending.cause } : {}),
   });
   if (state.events.log.length > 100) state.events.log.length = 100;
   if (def.category !== 'opportunity' || def.negative) {
